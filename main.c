@@ -304,26 +304,6 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     return (gboolean)TRUE;
             }
 */
-/*        switch(event->keyval) {
-            case GDK_Page_Up:
-                webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_PAGES, -1);
-                break;
-            case GDK_Page_Down:
-                webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_PAGES, 1);
-                break;
-            case GDK_Left:
-                webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_VISUAL_POSITIONS, -1);
-                break;
-            case GDK_Right:
-                webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_VISUAL_POSITIONS, 1);
-                break;
-            case GDK_Up:
-                webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, -1);
-                break;
-            case GDK_Down:
-                webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, 1);
-                break;
-        } */
 }
 
 static GtkWidget*
