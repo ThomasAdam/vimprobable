@@ -200,7 +200,7 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             }
             count = 0;
             modkey = '\0';
-        } else {
+        } else if(event->state == 0) {
             switch(event->keyval) {
                 case GDK_g:
                     if(modkey == GDK_g)
