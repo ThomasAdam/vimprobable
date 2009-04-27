@@ -247,9 +247,6 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     jump_uri_and_set("");
                     mode = MODE_SEARCH;
                     break;
-                /*case GDK_colon:
-                    jump_uri_and_set(":");
-                    break;*/
                 case GDK_o: /* insert url */
                     if(modkey == GDK_z) {
                         webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
@@ -343,22 +340,6 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
 //                webkit_web_view_go_back (web_view);
 //                return (gboolean)TRUE;
 //        }
-/*        if(event->state == GDK_CONTROL_MASK)
-            switch(event->keyval) {
-                case GDK_l:
-                    gtk_widget_grab_focus((GtkWidget*) uri_entry);
-                    return (gboolean)TRUE;
-                case GDK_plus:
-                    webkit_web_view_zoom_in(web_view);
-                    return (gboolean)TRUE;
-                case GDK_minus:
-                    webkit_web_view_zoom_out(web_view);
-                    return (gboolean)TRUE;
-                case GDK_0:
-                    webkit_web_view_set_zoom_level(web_view, 1);
-                    return (gboolean)TRUE;
-            }
-*/
 }
 
 static GtkWidget*
