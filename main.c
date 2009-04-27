@@ -251,9 +251,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     jump_uri_and_set(":");
                     break;*/
                 case GDK_o: /* insert url */
-                    if(modkey == GDK_z)
+                    if(modkey == GDK_z) {
+                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
                         webkit_web_view_zoom_out(web_view);
-                    else
+                    } else
                         jump_uri_and_set("");
                     break;
                 case GDK_d:
@@ -274,27 +275,56 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                         return (gboolean)FALSE;
                     break;
                 /*
+                    full zooming
+                */
+                case GDK_I:
+                    if(modkey == GDK_z) {
+                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)TRUE);
+                        webkit_web_view_zoom_in(web_view);
+                    } else
+                         return (gboolean)FALSE;
+                    break;
+                case GDK_O:
+                    if(modkey == GDK_z) {
+                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)TRUE);
+                        webkit_web_view_zoom_out(web_view);
+                    } else
+                        return (gboolean)FALSE;
+                    break;
+                case GDK_Z:
+                    if(modkey == GDK_z) {
+                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)TRUE);
+                        webkit_web_view_set_zoom_level(web_view, (count ? ((float)count)/100.0 : 1.0));
+                    } else
+                        return (gboolean)FALSE;
+                    break;
+                /*
                     text zooming
-                    TODO: zm / zr and full zoom
                 */
                 case GDK_i:
-                    if(modkey == GDK_z)
+                    if(modkey == GDK_z) {
+                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
                         webkit_web_view_zoom_in(web_view);
-                    else
+                    } else
                         return (gboolean)FALSE;
+                    break;
                 case GDK_plus:
+                    webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
                     webkit_web_view_zoom_in(web_view);
                     break;
                 case GDK_minus:
+                    webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
                     webkit_web_view_zoom_out(web_view);
                     break;
                 case GDK_z:
-                    if(modkey == GDK_z)
+                    if(modkey == GDK_z) {
+                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
                         webkit_web_view_set_zoom_level(web_view, (count ? ((float)count)/100.0 : 1.0)); 
-                    else {
+                    } else {
                         modkey = GDK_z;
                         return (gboolean)TRUE;
                     }
+                    break;
                 default:
                     return (gboolean)FALSE;
             }
