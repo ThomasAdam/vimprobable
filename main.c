@@ -251,7 +251,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     jump_uri_and_set(":");
                     break;*/
                 case GDK_o: /* insert url */
-                    jump_uri_and_set("");
+                    if(modkey == GDK_z)
+                        webkit_web_view_zoom_out(web_view);
+                    else
+                        jump_uri_and_set("");
                     break;
                 case GDK_d:
                     gtk_main_quit();
@@ -270,6 +273,28 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     else
                         return (gboolean)FALSE;
                     break;
+                /*
+                    text zooming
+                    TODO: zm / zr and full zoom
+                */
+                case GDK_i:
+                    if(modkey == GDK_z)
+                        webkit_web_view_zoom_in(web_view);
+                    else
+                        return (gboolean)FALSE;
+                case GDK_plus:
+                    webkit_web_view_zoom_in(web_view);
+                    break;
+                case GDK_minus:
+                    webkit_web_view_zoom_out(web_view);
+                    break;
+                case GDK_z:
+                    if(modkey == GDK_z)
+                        webkit_web_view_set_zoom_level(web_view, (count ? ((float)count)/100.0 : 1.0)); 
+                    else {
+                        modkey = GDK_z;
+                        return (gboolean)TRUE;
+                    }
                 default:
                     return (gboolean)FALSE;
             }
