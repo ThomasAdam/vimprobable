@@ -37,6 +37,7 @@
 #define MODE_NORMAL  0
 #define MODE_INSERT  1
 #define MODE_SEARCH  2
+#define MODE_HINTS   3
 
 static GtkWidget* vbox;
 static GtkWidget* main_window;
@@ -160,6 +161,15 @@ key_press_uri_entry_cb (WebKitWebView* page, GdkEventKey* event)
 }
 
 static gboolean
+console_message_cb (WebKitWebView* page, gchar* message, gint line, gchar* source_id, gpointer user_data)
+{
+    if(strcmp(message, "hintmode_off") != 0)
+        return (gboolean)FALSE;
+    mode = MODE_NORMAL;
+    return (gboolean)TRUE;
+} 
+
+static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
 /*
@@ -176,6 +186,11 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
 // TODO add INPUT mode
     if(mode == MODE_SEARCH && key_press_uri_entry_cb(page, event))
         return (gboolean)TRUE;
+    if(mode == MODE_HINTS) {
+        if(event->keyval == GDK_Escape)
+            webkit_web_view_execute_script( web_view, "clear();");
+        return (gboolean)FALSE;
+    }
     if(mode != MODE_INSERT) {
         if(event->keyval >= GDK_0 && event->keyval <= GDK_9) {
             count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
@@ -202,6 +217,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             modkey = '\0';
         } else if(event->state == 0 || event->state == GDK_SHIFT_MASK) {
             switch(event->keyval) {
+                case GDK_f:
+                    mode = MODE_HINTS;
+                    webkit_web_view_execute_script(web_view, " height = window.innerHeight; width = window.innerWidth; scrollX = document.defaultView.scrollX; scrollY = document.defaultView.scrollY;var hinttags = \"//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select\";var r = document.evaluate(hinttags, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);i = 1;div = document.createElement(\"div\"); document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0'); a = [];while(elem = r.iterateNext()) { rect = elem.getBoundingClientRect(); if (!rect || rect.top > height || rect.bottom < 0 || rect.left > width || rect.right < 0 || !(elem.getClientRects()[0])) continue;var computedStyle = document.defaultView.getComputedStyle(elem, null); if (computedStyle.getPropertyValue(\"visibility\") != \"visible\" || computedStyle.getPropertyValue(\"display\") == \"none\") continue;var leftpos = Math.max((rect.left + scrollX), scrollX); var toppos =Math.max((rect.top + scrollY), scrollY);a.push(elem);div.innerHTML += '<span id=\"hint' + i + '\" style=\"position: absolute; top: ' + toppos + 'px; left: ' + leftpos + 'px; background: red; color: #fff; font: bold 10px monospace\">' + (i++) + '</span>'; } for(e in a) a[e].className += \" hinting_mode_hint\"; document.getElementsByTagName(\"body\")[0].appendChild(div);s = \"\"; h = null; window.onkeypress = function(e) { if(e.which == 13 && s != \"\") fire(parseInt(s)); key = String.fromCharCode(e.which); if (isNaN(parseInt(key))) return; s += key; n = parseInt(s); if(h != null) h.style.background = \"#ff0\"; if (i < n * 10) fire(n); else a[n - 1].style.background = \"#8f0\"; };function fire(n) { el = a[n - 1]; tag = el.nodeName.toLowerCase(); if(tag == \"iframe\" || tag == \"frame\") { el.focus(); return; } var evObj = document.createEvent('MouseEvents'); evObj.initMouseEvent( 'click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null); el.dispatchEvent(evObj); console.log(\"hintmode_off\"); }function cleanup() { for(e in a) a[e].className = a[e].className.replace(/hinting_mode_hint/,''); div.parentNode.removeChild(div); }function clear() { cleanup();console.log(\"hintmode_off\"); } ");
+                    break;
                 case GDK_g:
                     if(modkey == GDK_g)
                         webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_BUFFER_ENDS, -1);
@@ -357,6 +376,8 @@ create_browser ()
     g_signal_connect (G_OBJECT (web_view), "hovering-over-link", G_CALLBACK (link_hover_cb), web_view);
 
     g_signal_connect (G_OBJECT (web_view), "key-press-event", G_CALLBACK(key_press_cb), web_view);
+    /* hack for hinting mode */
+    g_signal_connect (G_OBJECT (web_view), "console-message", G_CALLBACK(console_message_cb), web_view);
 
     return scrolled_window;
 }
