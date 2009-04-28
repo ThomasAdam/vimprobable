@@ -44,6 +44,7 @@
     var r = document.evaluate(hinttags, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null); \
     div = document.createElement(\"div\"); \
     document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0');\
+    document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0');\
     i = 1; \
     a = []; \
     while(elem = r.iterateNext()) \
@@ -67,19 +68,21 @@
     h = null; \
     window.onkeyup = function(e) \
     { \
-        if(e.which == 13 && s != \"\") \
+        if(e.which == 13 && s != \"\") { \
+            h.className = h.className.replace(\"_focus\",\"\"); \
             fire(parseInt(s)); \
+        } \
         key = String.fromCharCode(e.which); \
         if (isNaN(parseInt(key))) \
             return; \
         s += key; \
         n = parseInt(s); \
         if(h != null) \
-            h.style.background = \"#ff0\"; \
+            h.className = h.className.replace(\"_focus\",\"\"); \
         if (i < n * 10) \
             fire(n); \
         else \
-            a[n - 1].style.background = \"#8f0\"; \
+            a[n - 1].className = a[n - 1].className.replace(\"hinting_mode_hint\", \"hinting_mode_hint_focus\"); \
     }; \
     function fire(n) \
     { \
