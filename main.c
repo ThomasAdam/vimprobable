@@ -65,7 +65,7 @@
     document.getElementsByTagName(\"body\")[0].appendChild(div); \
     s = \"\"; \
     h = null; \
-    window.onkeypress = function(e) \
+    window.onkeyup = function(e) \
     { \
         if(e.which == 13 && s != \"\") \
             fire(parseInt(s)); \
@@ -85,15 +85,14 @@
     { \
         el = a[n - 1]; \
         tag = el.nodeName.toLowerCase(); \
-        if(tag == \"iframe\" || tag == \"frame\") \
-        { \
+        clear(); \
+        if(tag == \"iframe\" || tag == \"frame\" || tag == \"textarea\" || (tag == \"input\" && el.type == \"text\")) \
             el.focus(); \
-            return; \
+        else { \
+            var evObj = document.createEvent('MouseEvents'); \
+            evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null); \
+            el.dispatchEvent(evObj); \
         } \
-        var evObj = document.createEvent('MouseEvents'); \
-        evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null); \
-        el.dispatchEvent(evObj); \
-        console.log(\"hintmode_off\"); \
     } \
     function cleanup() \
     { \
