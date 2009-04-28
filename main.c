@@ -36,6 +36,75 @@
 #define NO_FANCY_FUNCTIONS
 #endif
 
+#define JS_ENABLE_HINTS "height = window.innerHeight; \
+    width = window.innerWidth; \
+    scrollX = document.defaultView.scrollX; \
+    scrollY = document.defaultView.scrollY; \
+    var hinttags = \"//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select\"; \
+    var r = document.evaluate(hinttags, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null); \
+    div = document.createElement(\"div\"); \
+    document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0');\
+    i = 1; \
+    a = []; \
+    while(elem = r.iterateNext()) \
+    { \
+        rect = elem.getBoundingClientRect(); \
+        if (!rect || rect.top > height || rect.bottom < 0 || rect.left > width || rect.right < 0 || !(elem.getClientRects()[0])) \
+            continue; \
+        var computedStyle = document.defaultView.getComputedStyle(elem, null); \
+        if (computedStyle.getPropertyValue(\"visibility\") != \"visible\" || computedStyle.getPropertyValue(\"display\") == \"none\") \
+            continue; \
+        var leftpos = Math.max((rect.left + scrollX), scrollX); \
+        var toppos = Math.max((rect.top + scrollY), scrollY); \
+        a.push(elem); \
+        div.innerHTML += '<span id=\"hint' + i + '\" style=\"position: absolute; top: ' + toppos + 'px; left: ' + leftpos + 'px; background: red; color: #fff; font: bold 10px monospace\">' + (i++) + '</span>';\
+    } \
+    for(e in a) \
+        a[e].className += \" hinting_mode_hint\"; \
+    document.getElementsByTagName(\"body\")[0].appendChild(div); \
+    s = \"\"; \
+    h = null; \
+    window.onkeypress = function(e) \
+    { \
+        if(e.which == 13 && s != \"\") \
+            fire(parseInt(s)); \
+        key = String.fromCharCode(e.which); \
+        if (isNaN(parseInt(key))) \
+            return; \
+        s += key; \
+        n = parseInt(s); \
+        if(h != null) \
+            h.style.background = \"#ff0\"; \
+        if (i < n * 10) \
+            fire(n); \
+        else \
+            a[n - 1].style.background = \"#8f0\"; \
+    }; \
+    function fire(n) \
+    { \
+        el = a[n - 1]; \
+        tag = el.nodeName.toLowerCase(); \
+        if(tag == \"iframe\" || tag == \"frame\") \
+        { \
+            el.focus(); \
+            return; \
+        } \
+        var evObj = document.createEvent('MouseEvents'); \
+        evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null); \
+        el.dispatchEvent(evObj); \
+        console.log(\"hintmode_off\"); \
+    } \
+    function cleanup() \
+    { \
+        for(e in a) \
+            a[e].className = a[e].className.replace(/hinting_mode_hint/,''); \
+        div.parentNode.removeChild(div); \
+    } \
+    function clear() \
+    { \
+        cleanup(); \
+    } "
+
 #define APPNAME   "WebKit Browser"
 #define STARTPAGE "https://blog.fefe.de/?css=fefe.css"
 
@@ -228,7 +297,7 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             switch(event->keyval) {
                 case GDK_f:
                     mode = MODE_HINTS;
-                    webkit_web_view_execute_script(web_view, " height = window.innerHeight; width = window.innerWidth; scrollX = document.defaultView.scrollX; scrollY = document.defaultView.scrollY;var hinttags = \"//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select\";var r = document.evaluate(hinttags, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);i = 1;div = document.createElement(\"div\"); document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0'); a = [];while(elem = r.iterateNext()) { rect = elem.getBoundingClientRect(); if (!rect || rect.top > height || rect.bottom < 0 || rect.left > width || rect.right < 0 || !(elem.getClientRects()[0])) continue;var computedStyle = document.defaultView.getComputedStyle(elem, null); if (computedStyle.getPropertyValue(\"visibility\") != \"visible\" || computedStyle.getPropertyValue(\"display\") == \"none\") continue;var leftpos = Math.max((rect.left + scrollX), scrollX); var toppos =Math.max((rect.top + scrollY), scrollY);a.push(elem);div.innerHTML += '<span id=\"hint' + i + '\" style=\"position: absolute; top: ' + toppos + 'px; left: ' + leftpos + 'px; background: red; color: #fff; font: bold 10px monospace\">' + (i++) + '</span>'; } for(e in a) a[e].className += \" hinting_mode_hint\"; document.getElementsByTagName(\"body\")[0].appendChild(div);s = \"\"; h = null; window.onkeypress = function(e) { if(e.which == 13 && s != \"\") fire(parseInt(s)); key = String.fromCharCode(e.which); if (isNaN(parseInt(key))) return; s += key; n = parseInt(s); if(h != null) h.style.background = \"#ff0\"; if (i < n * 10) fire(n); else a[n - 1].style.background = \"#8f0\"; };function fire(n) { el = a[n - 1]; tag = el.nodeName.toLowerCase(); if(tag == \"iframe\" || tag == \"frame\") { el.focus(); return; } var evObj = document.createEvent('MouseEvents'); evObj.initMouseEvent( 'click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null); el.dispatchEvent(evObj); console.log(\"hintmode_off\"); }function cleanup() { for(e in a) a[e].className = a[e].className.replace(/hinting_mode_hint/,''); div.parentNode.removeChild(div); }function clear() { cleanup();console.log(\"hintmode_off\"); } ");
+                    webkit_web_view_execute_script(web_view, JS_ENABLE_HINTS);
                     break;
                 case GDK_g:
                     if(modkey == GDK_g)
