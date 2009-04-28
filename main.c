@@ -36,6 +36,19 @@
 #define NO_FANCY_FUNCTIONS
 #endif
 
+#define JS_DETECT_INSERT_MODE "function v(e, y) { \
+t = e.nodeName.toLowerCase(); \
+if((t == 'input' && /^(text|password)$/.test(e.type)) || /^(select|textarea)$/.test(t) || e.contentEditable == 'true') \
+    console.log('insertmode_'+(y=='focus'?'on':'off')); \
+} \
+if(document.activeElement) \
+    v(document.activeElement,'focus'); \
+m=['focus','blur']; \
+for(i in m) \
+    document.getElementsByTagName('body')[0].addEventListener(m[i], function(x) { \
+        v(x.target,x.type); \
+    }, true);"
+
 #define JS_ENABLE_HINTS "height = window.innerHeight; \
     width = window.innerWidth; \
     scrollX = document.defaultView.scrollX; \
@@ -197,6 +210,12 @@ progress_change_cb (WebKitWebView* page, gint progress, gpointer data)
 }
 
 static void
+load_finished_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
+{
+    webkit_web_view_execute_script(page, JS_DETECT_INSERT_MODE);    
+}
+
+static void
 load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
 {
     const gchar* uri = webkit_web_frame_get_uri(frame);
@@ -246,10 +265,14 @@ key_press_uri_entry_cb (WebKitWebView* page, GdkEventKey* event)
 static gboolean
 console_message_cb (WebKitWebView* page, gchar* message, gint line, gchar* source_id, gpointer user_data)
 {
-    if(strcmp(message, "hintmode_off") != 0)
-        return (gboolean)FALSE;
-    mode = MODE_NORMAL;
-    return (gboolean)TRUE;
+    if(strcmp(message, "hintmode_off") == 0 || strcmp(message, "insertmode_off") == 0) {
+        mode = MODE_NORMAL;
+        return (gboolean)TRUE;
+    } else if(strcmp(message, "insertmode_on") == 0) {
+        mode = MODE_INSERT;
+        return (gboolean)TRUE;
+    }
+    return (gboolean)FALSE;
 } 
 
 static gboolean
@@ -274,7 +297,13 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             webkit_web_view_execute_script( web_view, "clear();");
         return (gboolean)FALSE;
     }
-    if(mode != MODE_INSERT) {
+    if(mode == MODE_INSERT) {
+        if(event->keyval == GDK_Escape) {
+            mode = MODE_NORMAL;
+            return key_press_cb(page, event);
+        } else
+            return (gboolean)FALSE;
+    } else {
         if(event->keyval >= GDK_0 && event->keyval <= GDK_9) {
             count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
             modkey = '\0';
@@ -457,6 +486,7 @@ create_browser ()
 
     g_signal_connect (G_OBJECT (web_view), "title-changed", G_CALLBACK (title_change_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "load-progress-changed", G_CALLBACK (progress_change_cb), web_view);
+    g_signal_connect (G_OBJECT (web_view), "load-finished", G_CALLBACK (load_finished_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "load-committed", G_CALLBACK (load_commit_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "hovering-over-link", G_CALLBACK (link_hover_cb), web_view);
 
