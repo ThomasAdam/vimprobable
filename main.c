@@ -40,6 +40,7 @@
     width = window.innerWidth; \
     scrollX = document.defaultView.scrollX; \
     scrollY = document.defaultView.scrollY; \
+    document.getElementsByTagName(\"body\")[0].appendChild(document.createElement(\"style\")); \
     var hinttags = \"//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select\"; \
     var r = document.evaluate(hinttags, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null); \
     div = document.createElement(\"div\"); \
