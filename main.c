@@ -31,6 +31,11 @@
 #include <webkit/webkit.h>
 #include <gdk/gdkkeysyms.h>
 
+#ifndef GTK_ENTRY_ICON_PRIMARY
+#define GTK_ENTRY_ICON_PRIMARY 0
+#define NO_FANCY_FUNCTIONS
+#endif
+
 #define APPNAME   "WebKit Browser"
 #define STARTPAGE "https://blog.fefe.de/?css=fefe.css"
 
@@ -111,7 +116,9 @@ static void
 progress_change_cb (WebKitWebView* page, gint progress, gpointer data)
 {
     load_progress = progress;
+#ifndef NO_FANCY_FUNCTIONS
     gtk_entry_set_progress_fraction((GtkEntry*)uri_entry, load_progress == 100 ? 0 : (double)load_progress / 100);
+#endif
     update_title (GTK_WINDOW (main_window));
 }
 
@@ -150,8 +157,10 @@ key_press_uri_entry_cb (WebKitWebView* page, GdkEventKey* event)
         webkit_web_view_unmark_text_matches(web_view);
         /* revert to url bar */
         gtk_entry_set_text (GTK_ENTRY (uri_entry), webkit_web_view_get_uri(web_view));
+#ifndef NO_FANCY_FUNCTIONS
         /* remove icon */
         gtk_entry_set_icon_from_pixbuf(GTK_ENTRY(uri_entry), GTK_ENTRY_ICON_PRIMARY, NULL);
+#endif
         /* focus webview */
         gtk_widget_grab_focus((GtkWidget*)web_view);
         mode = MODE_NORMAL;
@@ -262,7 +271,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     webkit_web_view_reload_bypass_cache (web_view);
                     break;
                 case GDK_slash: /* set up search mode */
+#ifndef NO_FANCY_FUNCTIONS
                     gtk_entry_set_icon_from_stock(GTK_ENTRY(uri_entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_FIND);
+#endif
                     jump_uri_and_set("");
                     mode = MODE_SEARCH;
                     break;
