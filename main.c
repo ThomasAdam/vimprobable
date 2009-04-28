@@ -103,6 +103,7 @@
     function clear() \
     { \
         cleanup(); \
+        console.log(\"hintmode_off\") \
     } "
 
 #define APPNAME   "WebKit Browser"
