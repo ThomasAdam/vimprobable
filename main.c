@@ -58,8 +58,8 @@ for(i in m) \
     scrollX = document.defaultView.scrollX; \
     scrollY = document.defaultView.scrollY; \
     document.getElementsByTagName(\"body\")[0].appendChild(document.createElement(\"style\")); \
-    var hinttags = \"//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select\"; \
-    var r = document.evaluate(hinttags, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null); \
+    var hinttags = \"//html:*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //html:input[not(@type='hidden')] | //html:a | //html:area | //html:iframe | //html:textarea | //html:button | //html:select\"; \
+    var r = document.evaluate(hinttags, document, function(p) { return 'http://www.w3.org/1999/xhtml'; }, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null); \
     div = document.createElement(\"div\"); \
     document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0');\
     document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0');\
@@ -87,7 +87,7 @@ for(i in m) \
     window.onkeyup = function(e) \
     { \
         if(e.which == 13 && s != \"\") { \
-            h.className = h.className.replace(\"_focus\",\"\"); \
+            if(h) h.className = h.className.replace(\"_focus\",\"\"); \
             fire(parseInt(s)); \
         } \
         key = String.fromCharCode(e.which); \
@@ -97,10 +97,10 @@ for(i in m) \
         n = parseInt(s); \
         if(h != null) \
             h.className = h.className.replace(\"_focus\",\"\"); \
-        if (i < n * 10) \
+        if (i - 1 < n * 10) \
             fire(n); \
         else \
-            a[n - 1].className = a[n - 1].className.replace(\"hinting_mode_hint\", \"hinting_mode_hint_focus\"); \
+            (h = a[n - 1]).className = a[n - 1].className.replace(\"hinting_mode_hint\", \"hinting_mode_hint_focus\"); \
     }; \
     function fire(n) \
     { \
@@ -236,7 +236,7 @@ destroy_cb (GtkWidget* widget, gpointer data)
 static void
 icon_loaded_cb (WebKitWebView* page, gpointer data)
 {
-    // gtk_entry_set_icon_from_gicon((GtkEntry*)uri_entry, GTK_ENTRY_ICON_PRIMARY, data);
+    //gtk_entry_set_icon_from_gicon((GtkEntry*)uri_entry, GTK_ENTRY_ICON_PRIMARY, data);
 }
 
 static void
