@@ -128,7 +128,9 @@ for(i in m) \
     } "
 
 #define APPNAME   "WebKit Browser"
+
 #define STARTPAGE "https://blog.fefe.de/?css=fefe.css"
+#define SETTING_USER_CSS_FILE NULL
 
 #define MODE_NORMAL  0
 #define MODE_INSERT  1
@@ -487,6 +489,12 @@ create_browser ()
     gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 
     web_view = WEBKIT_WEB_VIEW (webkit_web_view_new ());
+
+    WebKitWebSettings* settings = webkit_web_settings_new();
+    g_object_set (G_OBJECT(settings), "user-stylesheet-uri", SETTING_USER_CSS_FILE, NULL);
+
+    webkit_web_view_set_settings(web_view, settings);
+
     gtk_container_add (GTK_CONTAINER (scrolled_window), GTK_WIDGET (web_view));
 
     g_signal_connect (G_OBJECT (web_view), "title-changed", G_CALLBACK (title_change_cb), web_view);
