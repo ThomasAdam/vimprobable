@@ -36,7 +36,11 @@
 #define NO_FANCY_FUNCTIONS
 #endif
 
-#define JS_DETECT_INSERT_MODE "function v(e, y) { \
+#define JS_DETECT_INSERT_MODE "function clearfocus() {\
+ if(document.activeElement && document.activeElement.blur) \
+        document.activeElement.blur();\
+} \
+function v(e, y) { \
 t = e.nodeName.toLowerCase(); \
 if((t == 'input' && /^(text|password)$/.test(e.type)) || /^(select|textarea)$/.test(t) || e.contentEditable == 'true') \
     console.log('insertmode_'+(y=='focus'?'on':'off')); \
@@ -77,8 +81,7 @@ for(i in m) \
     for(e in a) \
         a[e].className += \" hinting_mode_hint\"; \
     document.getElementsByTagName(\"body\")[0].appendChild(div); \
-    if(document.activeElement && document.activeElement.blur) \
-        document.activeElement.blur(); \
+    clearfocus(); \
     s = \"\"; \
     h = null; \
     window.onkeyup = function(e) \
@@ -300,6 +303,7 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
     }
     if(mode == MODE_INSERT) {
         if(event->keyval == GDK_Escape) {
+            webkit_web_view_execute_script(web_view, "clearfocus()");
             mode = MODE_NORMAL;
             return key_press_cb(page, event);
         } else
