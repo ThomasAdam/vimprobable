@@ -72,12 +72,13 @@ for(i in m) \
         var leftpos = Math.max((rect.left + scrollX), scrollX); \
         var toppos = Math.max((rect.top + scrollY), scrollY); \
         a.push(elem); \
-        elem.blur(); \
         div.innerHTML += '<span id=\"hint' + i + '\" style=\"position: absolute; top: ' + toppos + 'px; left: ' + leftpos + 'px; background: red; color: #fff; font: bold 10px monospace\">' + (i++) + '</span>';\
     } \
     for(e in a) \
         a[e].className += \" hinting_mode_hint\"; \
     document.getElementsByTagName(\"body\")[0].appendChild(div); \
+    if(document.activeElement && document.activeElement.blur) \
+        document.activeElement.blur(); \
     s = \"\"; \
     h = null; \
     window.onkeyup = function(e) \
