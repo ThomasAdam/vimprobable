@@ -224,9 +224,19 @@ load_finished_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
 static void
 load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
 {
+    GdkColor color;
     const gchar* uri = webkit_web_frame_get_uri(frame);
-    if (uri)
+    if (uri) {
         gtk_entry_set_text (GTK_ENTRY (uri_entry), uri);
+        if(g_str_has_prefix (uri, "https://")) {
+            gtk_entry_set_icon_from_stock(GTK_ENTRY(uri_entry), GTK_ENTRY_ICON_SECONDARY, GTK_STOCK_DIALOG_AUTHENTICATION);
+            gdk_color_parse("#b0ff00", &color);
+            gtk_widget_modify_base((GtkWidget*)uri_entry, GTK_STATE_NORMAL, &color);
+        } else {
+            gtk_entry_set_icon_from_pixbuf(GTK_ENTRY(uri_entry), GTK_ENTRY_ICON_SECONDARY, NULL);        
+            gtk_widget_modify_base((GtkWidget*)uri_entry, GTK_STATE_NORMAL, NULL);
+        }
+    }
 }
 
 static void
