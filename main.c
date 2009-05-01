@@ -380,7 +380,7 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     webkit_web_view_go_back_or_forward(web_view, (gint)(count ? count : 1));
                     break;
                 case GDK_space:
-                    do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_PAGES, 1);
+                    do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_PAGES, (event->state == GDK_SHIFT_MASK ? -1 : 1));
                     while(--count > 0);
                     break;
                 case GDK_r:
