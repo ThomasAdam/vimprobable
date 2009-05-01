@@ -394,7 +394,8 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
 #ifndef NO_FANCY_FUNCTIONS
                     gtk_entry_set_icon_from_stock(GTK_ENTRY(uri_entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_FIND);
 #endif
-                    jump_uri_and_set("");
+                    gtk_entry_set_text (GTK_ENTRY (uri_entry), "");
+                    gtk_widget_grab_focus((GtkWidget*) uri_entry);
                     mode = MODE_SEARCH;
                     break;
                 case GDK_o: /* insert url */
@@ -402,7 +403,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                         webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
                         webkit_web_view_zoom_out(web_view);
                     } else
-                        jump_uri_and_set("");
+                        gtk_entry_set_text (GTK_ENTRY (uri_entry), "http://");
+                        gtk_widget_grab_focus((GtkWidget*) uri_entry);
+                        gtk_editable_set_position((GtkEditable*)uri_entry, -1);
                     break;
                 case GDK_d:
                     gtk_main_quit();
@@ -435,8 +438,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     if(modkey == GDK_z) {
                         webkit_web_view_set_full_content_zoom(web_view, (gboolean)TRUE);
                         webkit_web_view_zoom_out(web_view);
-                    } else
-                        return (gboolean)FALSE;
+                    } else { /* append to url */
+                        gtk_widget_grab_focus((GtkWidget*) uri_entry);
+                        gtk_editable_set_position((GtkEditable*)uri_entry, -1);
+                    }
                     break;
                 case GDK_Z:
                     if(modkey == GDK_z) {
