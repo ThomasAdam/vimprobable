@@ -130,7 +130,7 @@ for(i in m) \
 
 #define APPNAME   "WebKit Browser"
 
-#define STARTPAGE "https://blog.fefe.de/?css=fefe.css"
+#define STARTPAGE "https://projects.ring0.de/webkitbrowser/"
 #define SETTING_USER_CSS_FILE NULL
 
 #define MODE_NORMAL  0
