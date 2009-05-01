@@ -251,13 +251,6 @@ icon_loaded_cb (WebKitWebView* page, gpointer data)
     //gtk_entry_set_icon_from_gicon((GtkEntry*)uri_entry, GTK_ENTRY_ICON_PRIMARY, data);
 }
 
-static void
-jump_uri_and_set (const char* str)
-{
-    gtk_widget_grab_focus((GtkWidget*) uri_entry);
-    gtk_entry_set_text (GTK_ENTRY (uri_entry), str);
-}
-
 static gboolean
 key_press_uri_entry_cb (WebKitWebView* page, GdkEventKey* event)
 {
