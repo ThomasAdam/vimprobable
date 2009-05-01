@@ -1,5 +1,6 @@
 /*
-    (C) 2009 by Leon Winter
+    Based on the gtk-launcher from webkit/gtk as seen in the license block below.
+    License for the modified code is MIT License see LICENSE file.
 */
 /*
  * Copyright (C) 2006, 2007 Apple Inc.
