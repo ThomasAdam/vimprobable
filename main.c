@@ -323,6 +323,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_PAGES, -1);
                     while(--count > 0);
                     break;
+                case GDK_e:
+                    do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, -1);
+                    while(--count > 0);
+                    break;
                 case GDK_f:
                     do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_PAGES, 1);
                     while(--count > 0);
@@ -335,6 +339,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     break;
                 case GDK_o: /* fwd */
                     webkit_web_view_go_back_or_forward(web_view, (gint)(count ? count : 1));
+                    break;
+                case GDK_y:
+                    do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, 1);
+                    while(--count > 0);
                     break;
                 default:
                     return (gboolean)FALSE;
