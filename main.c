@@ -148,6 +148,8 @@ static int mode;  // vimperator mode
 static int count; // cmdcounter for multiple command execution (vimperator style)
 static gchar modkey; // vimperator modkey e.g. "g" für gg or gf
 static gfloat zoomstep;
+static GtkClipboard* xclipboard;
+static GtkClipboard* clipboard;
 
 static void
 activate_uri_entry_cb (GtkWidget* entry, gpointer data)
@@ -296,6 +298,7 @@ console_message_cb (WebKitWebView* page, gchar* message, gint line, gchar* sourc
 static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
+    const gchar* txt;
 /*
     Vimperator modes
 
@@ -492,6 +495,14 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                         return (gboolean)TRUE;
                     }
                     break;
+                case GDK_y:
+                    txt = webkit_web_view_get_uri(web_view);
+                    gtk_clipboard_set_text(xclipboard, txt, -1);
+                    gtk_clipboard_set_text(clipboard, txt, -1);
+                    break;
+                case GDK_Y:
+                    webkit_web_view_copy_clipboard(web_view);
+                    break;
                 default:
                     return (gboolean)FALSE;
             }
@@ -605,6 +616,8 @@ main (int argc, char* argv[])
     gtk_box_pack_start (GTK_BOX (vbox), create_browser (), TRUE, TRUE, 0);
     //inspector = webkit_web_view_get_inspector (WEBKIT_WEB_VIEW(web_view));
 
+    xclipboard = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
+    clipboard = gtk_clipboard_get(GDK_NONE);
     main_window = create_window ();
     gtk_container_add (GTK_CONTAINER (main_window), vbox);
 
