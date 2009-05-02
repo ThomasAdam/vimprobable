@@ -414,10 +414,11 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     if(modkey == GDK_z) {
                         webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
                         webkit_web_view_zoom_out(web_view);
-                    } else
+                    } else {
                         gtk_entry_set_text (GTK_ENTRY (uri_entry), "http://");
                         gtk_widget_grab_focus((GtkWidget*) uri_entry);
                         gtk_editable_set_position((GtkEditable*)uri_entry, -1);
+                    }
                     break;
                 case GDK_d:
                     gtk_main_quit();
