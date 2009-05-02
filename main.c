@@ -147,6 +147,7 @@ static gint load_progress;
 static int mode;  // vimperator mode
 static int count; // cmdcounter for multiple command execution (vimperator style)
 static gchar modkey; // vimperator modkey e.g. "g" für gg or gf
+static gfloat zoomstep;
 
 static void
 activate_uri_entry_cb (GtkWidget* entry, gpointer data)
@@ -174,6 +175,13 @@ find_next (gboolean direction)
 {
     const gchar* txt = gtk_entry_get_text (GTK_ENTRY (uri_entry));
     webkit_web_view_search_text(web_view, txt, (gboolean)FALSE, (gboolean)direction, (gboolean)TRUE);
+}
+
+static void
+zoom (int times, gboolean direction, gboolean fullzoom)
+{
+    webkit_web_view_set_full_content_zoom(web_view, fullzoom);
+    webkit_web_view_set_zoom_level(web_view, webkit_web_view_get_zoom_level(web_view) + (gfloat)((direction ? 1.0 : -1.0) * zoomstep * (float)(times ? times : 1)));
 }
 
 static void
@@ -411,10 +419,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     mode = MODE_SEARCH;
                     break;
                 case GDK_o: /* insert url */
-                    if(modkey == GDK_z) {
-                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
-                        webkit_web_view_zoom_out(web_view);
-                    } else {
+                    if(modkey == GDK_z)
+                        zoom(count, (gboolean)FALSE, (gboolean)FALSE);
+                    else {
                         gtk_entry_set_text (GTK_ENTRY (uri_entry), "http://");
                         gtk_widget_grab_focus((GtkWidget*) uri_entry);
                         gtk_editable_set_position((GtkEditable*)uri_entry, -1);
@@ -441,17 +448,15 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     full zooming
                 */
                 case GDK_I:
-                    if(modkey == GDK_z) {
-                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)TRUE);
-                        webkit_web_view_zoom_in(web_view);
-                    } else
+                    if(modkey == GDK_z)
+                        zoom(count, (gboolean)TRUE, (gboolean)TRUE);
+                    else
                          return (gboolean)FALSE;
                     break;
                 case GDK_O:
-                    if(modkey == GDK_z) {
-                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)TRUE);
-                        webkit_web_view_zoom_out(web_view);
-                    } else { /* append to url */
+                    if(modkey == GDK_z)
+                        zoom(count, (gboolean)FALSE, (gboolean)TRUE);
+                    else { /* append to url */
                         gtk_widget_grab_focus((GtkWidget*) uri_entry);
                         gtk_editable_set_position((GtkEditable*)uri_entry, -1);
                     }
@@ -467,19 +472,16 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     text zooming
                 */
                 case GDK_i:
-                    if(modkey == GDK_z) {
-                        webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
-                        webkit_web_view_zoom_in(web_view);
-                    } else
+                    if(modkey == GDK_z)
+                        zoom(count, (gboolean)TRUE, (gboolean)FALSE);
+                    else
                         return (gboolean)FALSE;
                     break;
                 case GDK_plus:
-                    webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
-                    webkit_web_view_zoom_in(web_view);
+                    zoom(count, (gboolean)TRUE, (gboolean)FALSE);
                     break;
                 case GDK_minus:
-                    webkit_web_view_set_full_content_zoom(web_view, (gboolean)FALSE);
-                    webkit_web_view_zoom_out(web_view);
+                    zoom(count, (gboolean)FALSE, (gboolean)FALSE);
                     break;
                 case GDK_z:
                     if(modkey == GDK_z) {
@@ -520,6 +522,7 @@ create_browser ()
 
     WebKitWebSettings* settings = webkit_web_settings_new();
     g_object_set (G_OBJECT(settings), "user-stylesheet-uri", SETTING_USER_CSS_FILE, NULL);
+    g_object_get (G_OBJECT(settings), "zoom-step", &zoomstep, NULL);
 
     webkit_web_view_set_settings(web_view, settings);
 
