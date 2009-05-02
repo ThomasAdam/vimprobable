@@ -164,9 +164,9 @@ activate_uri_entry_cb (GtkWidget* entry, gpointer data)
         webkit_web_view_set_highlight_text_matches(web_view, (gboolean)TRUE);
         webkit_web_view_search_text(web_view, uri, (gboolean)FALSE, (gboolean)TRUE, (gboolean)TRUE);
         printf("%d\n", c);
-        /* focus webview */
-        gtk_widget_grab_focus (GTK_WIDGET (web_view));
     }
+    /* focus webview */
+    gtk_widget_grab_focus (GTK_WIDGET (web_view));
 }
 
 static void
