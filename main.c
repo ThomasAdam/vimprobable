@@ -138,6 +138,9 @@ for(i in m) \
 #define MODE_SEARCH  2
 #define MODE_HINTS   3
 
+#define TARGET_CURRENT 0
+#define TARGET_NEW     1
+
 static GtkWidget* vbox;
 static GtkWidget* main_window;
 static GtkWidget* uri_entry;
@@ -147,6 +150,7 @@ static gint load_progress;
 static int mode;  // vimperator mode
 static int count; // cmdcounter for multiple command execution (vimperator style)
 static gchar modkey; // vimperator modkey e.g. "g" für gg or gf
+static int target;
 static gfloat zoomstep;
 static GtkClipboard* xclipboard;
 static GtkClipboard* clipboard;
@@ -170,6 +174,7 @@ activate_uri_entry_cb (GtkWidget* entry, gpointer data)
         webkit_web_view_search_text(web_view, uri, (gboolean)FALSE, (gboolean)TRUE, (gboolean)TRUE);
         printf("%d\n", c);
     }
+    target = TARGET_CURRENT;
     /* focus webview */
     gtk_widget_grab_focus (GTK_WIDGET (web_view));
 }
@@ -279,6 +284,7 @@ key_press_uri_entry_cb (WebKitWebView* page, GdkEventKey* event)
         /* focus webview */
         gtk_widget_grab_focus((GtkWidget*)web_view);
         mode = MODE_NORMAL;
+        target = TARGET_CURRENT;
         return (gboolean)TRUE;
     }
     return (gboolean)FALSE;
@@ -310,7 +316,20 @@ clipboard_uri_cb(GtkClipboard *c, const gchar *uri, gpointer data)
         next_clipboard = 1;
 }
 
-static void
+static gboolean
+navigation_request_cb (WebKitWebView* page, GObject* arg1, GObject* arg2, gpointer user_data)
+{
+    const char* url;
+    if(target == TARGET_NEW) {
+        url = webkit_network_request_get_uri((WebKitNetworkRequest*)arg2);
+        exec(url);
+        target = TARGET_CURRENT;
+        return (gboolean)TRUE;
+    }
+    return (gboolean)FALSE;
+}
+
+void
 exec(const char *param)
 {
     GString* cmdline = g_string_new("");
@@ -336,8 +355,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
     if(mode == MODE_SEARCH && key_press_uri_entry_cb(page, event))
         return (gboolean)TRUE;
     if(mode == MODE_HINTS) {
-        if(event->keyval == GDK_Escape)
+        if(event->keyval == GDK_Escape) {
             webkit_web_view_execute_script( web_view, "clear();");
+        }
         return (gboolean)FALSE;
     }
     if(mode == MODE_INSERT) {
@@ -387,6 +407,11 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             switch(event->keyval) {
                 case GDK_f:
                     mode = MODE_HINTS;
+                    webkit_web_view_execute_script(web_view, JS_ENABLE_HINTS);
+                    break;
+                case GDK_F:
+                    mode = MODE_HINTS;
+                    target = TARGET_NEW;
                     webkit_web_view_execute_script(web_view, JS_ENABLE_HINTS);
                     break;
                 case GDK_g:
@@ -531,7 +556,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     break;
                 /* tabs */
                 case GDK_t:
-                    exec("about:blank");
+                    target = TARGET_NEW;
+                    gtk_entry_set_text (GTK_ENTRY (uri_entry), "http://");
+                    gtk_widget_grab_focus((GtkWidget*) uri_entry);
+                    gtk_editable_set_position((GtkEditable*)uri_entry, -1);
                     break;
                 default:
                     return (gboolean)FALSE;
@@ -574,7 +602,7 @@ create_browser ()
     g_signal_connect (G_OBJECT (web_view), "load-finished", G_CALLBACK (load_finished_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "load-committed", G_CALLBACK (load_commit_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "hovering-over-link", G_CALLBACK (link_hover_cb), web_view);
-
+    g_signal_connect (G_OBJECT (web_view), "navigation-requested", G_CALLBACK(navigation_request_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "key-press-event", G_CALLBACK(key_press_cb), web_view);
     /* hack for hinting mode */
     g_signal_connect (G_OBJECT (web_view), "console-message", G_CALLBACK(console_message_cb), web_view);
@@ -652,6 +680,7 @@ main (int argc, char* argv[])
     gtk_container_add (GTK_CONTAINER (main_window), vbox);
 
     mode = MODE_NORMAL;
+    target = TARGET_CURRENT;
 
     gchar* uri = (gchar*) (argc > 1 ? argv[1] : STARTPAGE);
     webkit_web_view_load_uri (web_view, uri);
