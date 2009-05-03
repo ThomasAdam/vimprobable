@@ -457,8 +457,11 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                         do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_VISUAL_POSITIONS, -1);
                         while(--count > 0);
                     break;
-                case GDK_H: /* back */
-                    webkit_web_view_go_back_or_forward(web_view, (gint)(-1 * (count ? count : 1)));
+                case GDK_H:
+                    if(modkey == GDK_g)
+                        exec(STARTPAGE);
+                    else
+                        webkit_web_view_go_back_or_forward(web_view, (gint)(-1 * (count ? count : 1)));
                     break;
                 case GDK_j:
                     do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, -1);
