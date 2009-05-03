@@ -166,6 +166,8 @@ activate_uri_entry_cb (GtkWidget* entry, gpointer data)
     const gchar* uri = gtk_entry_get_text (GTK_ENTRY (entry));
     g_assert (uri);
     if(mode == MODE_NORMAL) {
+        if(target == TARGET_NEW)
+            gtk_entry_set_text (GTK_ENTRY (uri_entry), webkit_web_view_get_uri(web_view));
         webkit_web_view_load_uri (web_view, uri);
     } else if(mode == MODE_SEARCH) {
         /* unmark the old hits if any */
@@ -176,7 +178,6 @@ activate_uri_entry_cb (GtkWidget* entry, gpointer data)
         webkit_web_view_search_text(web_view, uri, (gboolean)FALSE, (gboolean)TRUE, (gboolean)TRUE);
         printf("%d\n", c);
     }
-    target = TARGET_CURRENT;
     /* focus webview */
     gtk_widget_grab_focus (GTK_WIDGET (web_view));
 }
