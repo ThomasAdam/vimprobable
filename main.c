@@ -150,6 +150,7 @@ static gchar modkey; // vimperator modkey e.g. "g" für gg or gf
 static gfloat zoomstep;
 static GtkClipboard* xclipboard;
 static GtkClipboard* clipboard;
+static int next_clipboard;
 
 static void
 activate_uri_entry_cb (GtkWidget* entry, gpointer data)
@@ -295,10 +296,24 @@ console_message_cb (WebKitWebView* page, gchar* message, gint line, gchar* sourc
     return (gboolean)FALSE;
 } 
 
+static void
+clipboard_uri_cb(GtkClipboard *c, const gchar *uri, gpointer data)
+{
+    if(uri && (g_str_has_prefix(uri, "http://") || g_str_has_prefix(uri, "https://"))) {
+        webkit_web_view_load_uri(web_view, uri);
+        next_clipboard = 1;
+    } else if(next_clipboard) {
+        next_clipboard = 0;
+        gtk_clipboard_request_text(clipboard, &clipboard_uri_cb, NULL);
+    } else
+        next_clipboard = 1;
+}
+
 static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
     const gchar* txt;
+    const gboolean check_next;
 /*
     Vimperator modes
 
@@ -502,6 +517,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     break;
                 case GDK_Y:
                     webkit_web_view_copy_clipboard(web_view);
+                    break;
+                case GDK_p:
+                    next_clipboard = 1;
+                    gtk_clipboard_request_text(xclipboard, &clipboard_uri_cb, NULL);
                     break;
                 default:
                     return (gboolean)FALSE;
