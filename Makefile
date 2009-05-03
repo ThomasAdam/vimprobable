@@ -4,9 +4,16 @@ LIBS  += webkit-1.0
 FLAGS  = `pkg-config --cflags --libs $(LIBS)`
 SOURCE = main.c
 TARGET = webkitbrowser
+INSTALLDIR = /usr/local/bin
 
 all:
 	$(GCC) $(FLAGS) -o $(TARGET) $(SOURCE)
 
 clean:
 	rm -f $(TARGET)
+
+install:
+	cp $(TARGET) $(INSTALLDIR)
+
+uninstall:
+	rm -f $(INSTALLDIR)/$(TARGET)
