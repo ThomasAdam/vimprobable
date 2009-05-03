@@ -344,6 +344,23 @@ exec(const char *param)
 }
 
 static gboolean
+button_release_cb (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+    const gchar *xcontent = gtk_clipboard_wait_for_text (xclipboard);
+    const gchar *content = gtk_clipboard_wait_for_text (clipboard);
+    if(event->type == GDK_BUTTON_RELEASE && event->button == 2) {
+        if(xcontent) {
+            gtk_clipboard_set_text(clipboard, xcontent, -1);
+            webkit_web_view_paste_clipboard(web_view);
+            gtk_clipboard_set_text(clipboard, content, -1);
+        } else
+            webkit_web_view_paste_clipboard(web_view);
+        return (gboolean)TRUE;
+    }
+    return (gboolean)FALSE;
+}
+
+static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
     const gchar* txt;
@@ -614,6 +631,7 @@ create_browser ()
     g_signal_connect (G_OBJECT (web_view), "hovering-over-link", G_CALLBACK (link_hover_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "navigation-requested", G_CALLBACK(navigation_request_cb), web_view);
     g_signal_connect (G_OBJECT (web_view), "key-press-event", G_CALLBACK(key_press_cb), web_view);
+    g_signal_connect (G_OBJECT (web_view), "button-release-event", G_CALLBACK(button_release_cb), web_view);
     /* hack for hinting mode */
     g_signal_connect (G_OBJECT (web_view), "console-message", G_CALLBACK(console_message_cb), web_view);
 
