@@ -151,6 +151,7 @@ static gfloat zoomstep;
 static GtkClipboard* xclipboard;
 static GtkClipboard* clipboard;
 static int next_clipboard;
+static char* cmd;
 
 static void
 activate_uri_entry_cb (GtkWidget* entry, gpointer data)
@@ -307,6 +308,15 @@ clipboard_uri_cb(GtkClipboard *c, const gchar *uri, gpointer data)
         gtk_clipboard_request_text(clipboard, &clipboard_uri_cb, NULL);
     } else
         next_clipboard = 1;
+}
+
+static void
+exec(const char *param)
+{
+    GString* cmdline = g_string_new("");
+    g_string_append_printf(cmdline, "%s %s", cmd, param);
+    g_spawn_command_line_async(cmdline->str, NULL);
+    g_string_free(cmdline, TRUE);
 }
 
 static gboolean
@@ -519,6 +529,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     next_clipboard = 1;
                     gtk_clipboard_request_text(xclipboard, &clipboard_uri_cb, NULL);
                     break;
+                /* tabs */
+                case GDK_t:
+                    exec("about:blank");
+                    break;
                 default:
                     return (gboolean)FALSE;
             }
@@ -621,6 +635,7 @@ embed_inspector (WebKitWebInspector *web_inspector, WebKitWebView *target, gpoin
 int
 main (int argc, char* argv[])
 {
+    cmd = argv[0];
     //WebKitWebInspector *inspector;
     gtk_init (&argc, &argv);
     if (!g_thread_supported ())
