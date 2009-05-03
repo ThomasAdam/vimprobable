@@ -313,7 +313,6 @@ static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
     const gchar* txt;
-    const gboolean check_next;
 /*
     Vimperator modes
 
@@ -324,8 +323,6 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
 */
     //if(event->type != GDK_KEY_PRESS)
     //    return (gboolean)FALSE;
-// TODO check for no control mask!
-// TODO add INPUT mode
     if(mode == MODE_SEARCH && key_press_uri_entry_cb(page, event))
         return (gboolean)TRUE;
     if(mode == MODE_HINTS) {
@@ -591,7 +588,6 @@ create_toolbar ()
     g_signal_connect (G_OBJECT (uri_entry), "key-press-event", G_CALLBACK (key_press_uri_entry_cb), NULL);    
 
     gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, -1);
-    // gtk_entry_set_icon_from_stock( GTK_ENTRY( uri_entry ), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_ABOUT );
 
     return toolbar;
 }
