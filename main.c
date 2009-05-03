@@ -698,6 +698,8 @@ embed_inspector (WebKitWebInspector *web_inspector, WebKitWebView *target, gpoin
 int
 main (int argc, char* argv[])
 {
+    int i;
+
     cmd = argv[0];
     //WebKitWebInspector *inspector;
     gtk_init (&argc, &argv);
@@ -720,6 +722,8 @@ main (int argc, char* argv[])
     gchar* uri = (gchar*) (argc > 1 ? argv[1] : STARTPAGE);
     webkit_web_view_load_uri (web_view, uri);
 
+    for(i = 2; i < argc; i++)
+        exec(argv[i]);
     //g_signal_connect (G_OBJECT (inspector), "inspect-web-view", G_CALLBACK(embed_inspector), NULL);
 
     gtk_widget_grab_focus (GTK_WIDGET (web_view));
