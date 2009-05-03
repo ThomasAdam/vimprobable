@@ -363,6 +363,29 @@ button_release_cb (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
     return (gboolean)FALSE;
 }
 
+static void
+uri_last_number (int count, int direction)
+{
+    const gchar *uri = webkit_web_view_get_uri(web_view);
+    int diff = (count ? count : 1) * direction;
+    GRegex *regex;
+    GMatchInfo *match_info;
+    const gchar *prev;
+    const gint64 *number;
+    GString *url = g_string_new("");
+
+    regex = g_regex_new("^(.+?)([0-9]+)$", 0, 0, NULL);
+    if(g_regex_match(regex, uri, 0, &match_info)) {
+        prev = g_match_info_fetch(match_info, 1);
+        number = g_ascii_strtoll(g_match_info_fetch(match_info, 2), NULL, 0) + diff;
+        g_string_printf(url, "%s%d", prev, number);
+        webkit_web_view_load_uri(web_view, url->str);
+    }
+    g_string_free(url, TRUE);
+    g_match_info_free(match_info);
+    g_regex_unref(regex);
+}
+
 static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
@@ -398,6 +421,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             modkey = '\0';
         } else if(event->state == GDK_CONTROL_MASK) {
             switch(event->keyval) {
+                case GDK_a:
+                    uri_last_number(count, 1);
+                    break;
                 case GDK_b:
                     do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_PAGES, -1);
                     while(--count > 0);
@@ -422,6 +448,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                 case GDK_y:
                     do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, -1);
                     while(--count > 0);
+                    break;
+                case GDK_x:
+                    uri_last_number(count, -1);
                     break;
                 default:
                     return (gboolean)FALSE;
