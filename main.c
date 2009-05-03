@@ -386,6 +386,37 @@ uri_last_number (int count, int direction)
     g_regex_unref(regex);
 }
 
+static void
+uri_nth_subdir (int count)
+{
+    const gchar *uri = webkit_web_view_get_uri(web_view);
+    GRegex *regex;
+    GMatchInfo *match_info;
+    GString *pattern = g_string_new("");
+
+    g_string_printf(pattern, "^([a-z]+://.+?)((?:/[^/]+){%d})$", count ? count : 1);
+    regex = g_regex_new(pattern->str, 0, 0, NULL);
+    if(g_regex_match(regex, uri, 0, &match_info))
+        webkit_web_view_load_uri(web_view, g_match_info_fetch(match_info, 1));
+    g_string_free(pattern, TRUE);
+    g_match_info_free(match_info);
+    g_regex_unref(regex);
+}
+
+static void
+uri_root ()
+{
+    const gchar *uri = webkit_web_view_get_uri(web_view);
+    GRegex *regex;
+    GMatchInfo *match_info;
+
+    regex = g_regex_new("^([a-z]+://[^/]+)", 0, 0, NULL);
+    if(g_regex_match(regex, uri, 0, &match_info))
+        webkit_web_view_load_uri(web_view, g_match_info_fetch(match_info, 1));
+    g_match_info_free(match_info);
+    g_regex_unref(regex);
+}
+
 static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
@@ -616,6 +647,18 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     if(!open_from_clipboard(xclipboard))
                         open_from_clipboard(clipboard);
                     target = TARGET_CURRENT;
+                    break;
+                case GDK_u:
+                    if(modkey == GDK_g)
+                        uri_nth_subdir(count);
+                    else
+                        return (gboolean)FALSE;
+                    break;
+                case GDK_U:
+                    if(modkey == GDK_g)
+                        uri_root();
+                    else
+                        return (gboolean)FALSE;
                     break;
                 /* tabs */
                 case GDK_t:
