@@ -157,6 +157,8 @@ static GtkClipboard* clipboard;
 static int next_clipboard;
 static char* cmd;
 
+void exec(const char *param);
+
 static void
 activate_uri_entry_cb (GtkWidget* entry, gpointer data)
 {
