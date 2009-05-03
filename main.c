@@ -315,8 +315,10 @@ clipboard_uri_cb(GtkClipboard *c, const gchar *uri, gpointer data)
     } else if(next_clipboard) {
         next_clipboard = 0;
         gtk_clipboard_request_text(clipboard, &clipboard_uri_cb, NULL);
-    } else
+    } else {
         next_clipboard = 1;
+        target = TARGET_CURRENT;
+    }
 }
 
 static gboolean
@@ -554,6 +556,11 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     webkit_web_view_copy_clipboard(web_view);
                     break;
                 case GDK_p:
+                    next_clipboard = 1;
+                    gtk_clipboard_request_text(xclipboard, &clipboard_uri_cb, NULL);
+                    break;
+                case GDK_P:
+                    target = TARGET_NEW;
                     next_clipboard = 1;
                     gtk_clipboard_request_text(xclipboard, &clipboard_uri_cb, NULL);
                     break;
