@@ -371,7 +371,7 @@ uri_last_number (int count, int direction)
     GRegex *regex;
     GMatchInfo *match_info;
     const gchar *prev;
-    const gint64 *number;
+    int number;
     GString *url = g_string_new("");
 
     regex = g_regex_new("^(.+?)([0-9]+)$", 0, 0, NULL);
