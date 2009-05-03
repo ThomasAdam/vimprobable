@@ -250,11 +250,15 @@ load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
     if (uri) {
         gtk_entry_set_text (GTK_ENTRY (uri_entry), uri);
         if(g_str_has_prefix (uri, "https://")) {
+#ifndef NO_FANCY_FUNCTIONS
             gtk_entry_set_icon_from_stock(GTK_ENTRY(uri_entry), GTK_ENTRY_ICON_SECONDARY, GTK_STOCK_DIALOG_AUTHENTICATION);
+#endif
             gdk_color_parse("#b0ff00", &color);
             gtk_widget_modify_base((GtkWidget*)uri_entry, GTK_STATE_NORMAL, &color);
         } else {
+#ifndef NO_FANCY_FUNCTIONS
             gtk_entry_set_icon_from_pixbuf(GTK_ENTRY(uri_entry), GTK_ENTRY_ICON_SECONDARY, NULL);        
+#endif
             gtk_widget_modify_base((GtkWidget*)uri_entry, GTK_STATE_NORMAL, NULL);
         }
     }
