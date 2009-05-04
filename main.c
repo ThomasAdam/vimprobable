@@ -77,7 +77,7 @@ for(i in m) \
         var leftpos = Math.max((rect.left + scrollX), scrollX); \
         var toppos = Math.max((rect.top + scrollY), scrollY); \
         a.push(elem); \
-        div.innerHTML += '<span id=\"hint' + i + '\" style=\"position: absolute; top: ' + toppos + 'px; left: ' + leftpos + 'px; background: red; color: #fff; font: bold 10px monospace\">' + (i++) + '</span>';\
+        div.innerHTML += '<span id=\"hint' + i + '\" style=\"position: absolute; top: ' + toppos + 'px; left: ' + leftpos + 'px; background: red; color: #fff; font: bold 10px monospace; z-index: 99\">' + (i++) + '</span>';\
     } \
     for(e in a) \
         a[e].className += \" hinting_mode_hint\"; \
