@@ -28,6 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
 #include <gdk/gdkkeysyms.h>
@@ -154,7 +155,6 @@ static int target;
 static gfloat zoomstep;
 static GtkClipboard* xclipboard;
 static GtkClipboard* clipboard;
-static int next_clipboard;
 static char* cmd;
 
 void exec(const char *param);
@@ -273,11 +273,13 @@ destroy_cb (GtkWidget* widget, gpointer data)
     gtk_main_quit ();
 }
 
+/*
 static void
 icon_loaded_cb (WebKitWebView* page, gpointer data)
 {
-    //gtk_entry_set_icon_from_gicon((GtkEntry*)uri_entry, GTK_ENTRY_ICON_PRIMARY, data);
+    gtk_entry_set_icon_from_gicon((GtkEntry*)uri_entry, GTK_ENTRY_ICON_PRIMARY, data);
 }
+*/
 
 static gboolean
 key_press_uri_entry_cb (WebKitWebView* page, GdkEventKey* event)
@@ -303,7 +305,7 @@ key_press_uri_entry_cb (WebKitWebView* page, GdkEventKey* event)
 static gboolean
 console_message_cb (WebKitWebView* page, gchar* message, gint line, gchar* source_id, gpointer user_data)
 {
-    if(strcmp(message, "hintmode_off") == 0 || strcmp(message, "insertmode_off") == 0) {
+    if(strncmp(message, "hintmode_off", strlen(message)) == 0 || strncmp(message, "insertmode_off", strlen(message)) == 0) {
         mode = MODE_NORMAL;
         return (gboolean)TRUE;
     } else if(strcmp(message, "insertmode_on") == 0) {
