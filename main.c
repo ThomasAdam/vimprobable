@@ -417,6 +417,16 @@ uri_root ()
     g_regex_unref(regex);
 }
 
+static void
+toggle_setting (const gchar* setting)
+{
+    gboolean value;
+    WebKitWebSettings* settings = webkit_web_view_get_settings(web_view);
+    g_object_get (G_OBJECT(settings), setting, &value, NULL);
+    g_object_set (G_OBJECT(settings), setting, !value, NULL);
+    webkit_web_view_set_settings(web_view, settings);
+}
+
 static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
@@ -490,6 +500,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             modkey = '\0';
         } else if(event->state == 0 || event->state == GDK_SHIFT_MASK) {
             switch(event->keyval) {
+                case GDK_numbersign: /* # */
+                    modkey = GDK_numbersign;
+                    return (gboolean)TRUE;
+                    break;
                 case GDK_f:
                     mode = MODE_HINTS;
                     webkit_web_view_execute_script(web_view, JS_ENABLE_HINTS);
@@ -524,8 +538,11 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                         webkit_web_view_go_back_or_forward(web_view, (gint)(-1 * (count ? count : 1)));
                     break;
                 case GDK_j:
-                    do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, 1);
-                    while(--count > 0);
+                    if(modkey == GDK_numbersign)
+                        toggle_setting("enable-scripts");
+                    else
+                        do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, 1);
+                        while(--count > 0);
                     break;
                 case GDK_k:
                     do webkit_web_view_move_cursor (web_view, GTK_MOVEMENT_DISPLAY_LINES, -1);
@@ -610,7 +627,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     text zooming
                 */
                 case GDK_i:
-                    if(modkey == GDK_z)
+                    if(modkey == GDK_numbersign)
+                        toggle_setting("auto-load-images");
+                    else if(modkey == GDK_z)
                         zoom(count, (gboolean)TRUE, (gboolean)FALSE);
                     else
                         return (gboolean)FALSE;
