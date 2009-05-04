@@ -7,7 +7,7 @@ TARGET = webkitbrowser
 INSTALLDIR = /usr/local/bin
 
 all:
-	$(GCC) $(FLAGS) -o $(TARGET) $(SOURCE)
+	$(GCC) $(FLAGS) -Wall -o $(TARGET) $(SOURCE)
 
 clean:
 	rm -f $(TARGET)
