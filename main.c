@@ -343,6 +343,14 @@ exec(const char *param)
 }
 
 static gboolean
+new_window_cb (WebKitWebView *web_view, WebKitWebFrame *frame, WebKitNetworkRequest *request, WebKitWebNavigationAction *n, WebKitWebPolicyDecision *p, gpointer user_data)
+{
+    const gchar* url = webkit_network_request_get_uri (request);
+    exec(url);
+    return (gboolean)FALSE;
+}
+
+static gboolean
 button_release_cb (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
     const gchar *xcontent = gtk_clipboard_wait_for_text(xclipboard);
@@ -724,6 +732,7 @@ create_browser ()
     g_signal_connect((GObject*)web_view, "load-committed", (GCallback)load_commit_cb, web_view);
     g_signal_connect((GObject*)web_view, "hovering-over-link", (GCallback)link_hover_cb, web_view);
     g_signal_connect((GObject*)web_view, "navigation-requested", (GCallback)navigation_request_cb, web_view);
+    g_signal_connect((GObject*)web_view, "new-window-policy-decision-requested", (GCallback)new_window_cb, web_view);
     g_signal_connect((GObject*)web_view, "key-press-event", (GCallback)key_press_cb, web_view);
     g_signal_connect((GObject*)web_view, "button-release-event", (GCallback)button_release_cb, web_view);
     /* hack for hinting mode */
