@@ -134,13 +134,8 @@ for(i in m) \
 #define STARTPAGE "https://projects.ring0.de/webkitbrowser/"
 #define SETTING_USER_CSS_FILE NULL
 
-#define MODE_NORMAL  0
-#define MODE_INSERT  1
-#define MODE_SEARCH  2
-#define MODE_HINTS   3
-
-#define TARGET_CURRENT 0
-#define TARGET_NEW     1
+enum { MODE_NORMAL, MODE_INSERT, MODE_SEARCH, MODE_HINTS };
+enum { TARGET_CURRENT, TARGET_NEW };
 
 static GtkWidget* vbox;
 static GtkWidget* main_window;
