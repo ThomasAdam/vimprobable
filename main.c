@@ -133,6 +133,7 @@ for(i in m) \
 
 #define STARTPAGE "https://projects.ring0.de/webkitbrowser/"
 #define SETTING_USER_CSS_FILE NULL
+#define DOWNLOADER "xterm -e screen wget"
 
 enum { MODE_NORMAL, MODE_INSERT, MODE_SEARCH, MODE_HINTS };
 enum { TARGET_CURRENT, TARGET_NEW };
@@ -347,6 +348,26 @@ new_window_cb (WebKitWebView *web_view, WebKitWebFrame *frame, WebKitNetworkRequ
 {
     const gchar* url = webkit_network_request_get_uri (request);
     exec(url);
+    return (gboolean)FALSE;
+}
+
+static gboolean
+mimetype_decision_cb (WebKitWebView *page, WebKitWebFrame *frame, WebKitNetworkRequest *request, const gchar* mime_type, WebKitWebPolicyDecision* decision, gpointer user_data)
+{
+    if(webkit_web_view_can_show_mime_type(page, mime_type))
+        return (gboolean)FALSE;
+    webkit_web_policy_decision_download(decision);
+    webkit_web_view_stop_loading(page);
+    return (gboolean)TRUE;
+}
+
+static gboolean
+download_request_cb (WebKitWebView *web_view, GObject *download, gpointer user_data) {
+    const gchar* url = webkit_download_get_uri((WebKitDownload*)download);
+    GString* cmdline = g_string_new("");
+    g_string_append_printf(cmdline, "%s '%s'", DOWNLOADER, url);
+    g_spawn_command_line_async(cmdline->str, NULL);
+    g_string_free(cmdline, TRUE);
     return (gboolean)FALSE;
 }
 
@@ -733,6 +754,8 @@ create_browser ()
     g_signal_connect((GObject*)web_view, "hovering-over-link", (GCallback)link_hover_cb, web_view);
     g_signal_connect((GObject*)web_view, "navigation-requested", (GCallback)navigation_request_cb, web_view);
     g_signal_connect((GObject*)web_view, "new-window-policy-decision-requested", (GCallback)new_window_cb, web_view);
+    g_signal_connect((GObject*)web_view, "download-requested", (GCallback)download_request_cb, web_view);
+    g_signal_connect((GObject*)web_view, "mime-type-policy-decision-requested", (GCallback)mimetype_decision_cb, web_view);
     g_signal_connect((GObject*)web_view, "key-press-event", (GCallback)key_press_cb, web_view);
     g_signal_connect((GObject*)web_view, "button-release-event", (GCallback)button_release_cb, web_view);
     /* hack for hinting mode */
