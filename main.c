@@ -47,7 +47,6 @@ t = e.nodeName.toLowerCase(); \
 if((t == 'input' && /^(text|password)$/.test(e.type)) || /^(select|textarea)$/.test(t) || e.contentEditable == 'true') \
     console.log('insertmode_'+(y=='focus'?'on':'off')); \
 } \
-window.onload = function() { \
 if(document.activeElement) \
     v(document.activeElement,'focus'); \
 m=['focus','blur']; \
@@ -58,7 +57,6 @@ for(i in m) \
 document.getElementsByTagName(\"body\")[0].appendChild(document.createElement(\"style\")); \
 document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0');\
 document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0');\
-}; \
 function show_hints() { \
     var height = window.innerHeight; \
     var width = window.innerWidth; \
@@ -258,8 +256,13 @@ load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
 #endif
             gtk_widget_modify_base((GtkWidget*)uri_entry, GTK_STATE_NORMAL, NULL);
         }
-        webkit_web_view_execute_script(page, JS_SETUP);
     }
+}
+
+static void
+load_finished_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
+{
+    webkit_web_view_execute_script(page, JS_SETUP);
 }
 
 static void
@@ -751,8 +754,9 @@ create_browser ()
 
     g_signal_connect((GObject*)web_view, "title-changed", (GCallback)title_change_cb, web_view);
     g_signal_connect((GObject*)web_view, "load-progress-changed", (GCallback)progress_change_cb, web_view);
-    g_signal_connect((GObject*)web_view, "load-committed", (GCallback)load_commit_cb, web_view);
     g_signal_connect((GObject*)web_view, "hovering-over-link", (GCallback)link_hover_cb, web_view);
+    g_signal_connect((GObject*)web_view, "load-committed", (GCallback)load_commit_cb, web_view);
+    g_signal_connect((GObject*)web_view, "load-finished", (GCallback)load_finished_cb, web_view);
     g_signal_connect((GObject*)web_view, "navigation-requested", (GCallback)navigation_request_cb, web_view);
     g_signal_connect((GObject*)web_view, "new-window-policy-decision-requested", (GCallback)new_window_cb, web_view);
     g_signal_connect((GObject*)web_view, "download-requested", (GCallback)download_request_cb, web_view);
