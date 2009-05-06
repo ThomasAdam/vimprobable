@@ -38,7 +38,7 @@
 #define NO_FANCY_FUNCTIONS
 #endif
 
-#define JS_DETECT_INSERT_MODE "function clearfocus() {\
+#define JS_SETUP "function clearfocus() {\
  if(document.activeElement && document.activeElement.blur) \
         document.activeElement.blur();\
 } \
@@ -47,24 +47,26 @@ t = e.nodeName.toLowerCase(); \
 if((t == 'input' && /^(text|password)$/.test(e.type)) || /^(select|textarea)$/.test(t) || e.contentEditable == 'true') \
     console.log('insertmode_'+(y=='focus'?'on':'off')); \
 } \
+window.onload = function() { \
 if(document.activeElement) \
     v(document.activeElement,'focus'); \
 m=['focus','blur']; \
 for(i in m) \
     document.getElementsByTagName('body')[0].addEventListener(m[i], function(x) { \
         v(x.target,x.type); \
-    }, true);"
-
-#define JS_ENABLE_HINTS "height = window.innerHeight; \
-    width = window.innerWidth; \
-    scrollX = document.defaultView.scrollX; \
-    scrollY = document.defaultView.scrollY; \
-    document.getElementsByTagName(\"body\")[0].appendChild(document.createElement(\"style\")); \
+    }, true); \
+document.getElementsByTagName(\"body\")[0].appendChild(document.createElement(\"style\")); \
+document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0');\
+document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0');\
+}; \
+function show_hints() { \
+    var height = window.innerHeight; \
+    var width = window.innerWidth; \
+    var scrollX = document.defaultView.scrollX; \
+    var scrollY = document.defaultView.scrollY; \
     var hinttags = \"//html:*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //html:input[not(@type='hidden')] | //html:a | //html:area | //html:iframe | //html:textarea | //html:button | //html:select\"; \
     var r = document.evaluate(hinttags, document, function(p) { return 'http://www.w3.org/1999/xhtml'; }, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null); \
     div = document.createElement(\"div\"); \
-    document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0');\
-    document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0');\
     i = 1; \
     a = []; \
     while(elem = r.iterateNext()) \
@@ -104,6 +106,7 @@ for(i in m) \
         else \
             (h = a[n - 1]).className = a[n - 1].className.replace(\"hinting_mode_hint\", \"hinting_mode_hint_focus\"); \
     }; \
+} \
     function fire(n) \
     { \
         el = a[n - 1]; \
@@ -122,12 +125,14 @@ for(i in m) \
         for(e in a) \
             a[e].className = a[e].className.replace(/hinting_mode_hint/,''); \
         div.parentNode.removeChild(div); \
+        window.onkeyup = null; \
     } \
     function clear() \
     { \
         cleanup(); \
         console.log(\"hintmode_off\") \
     } "
+#define JS_ENABLE_HINTS "show_hints();"
 
 #define APPNAME   "WebKit Browser"
 
@@ -235,12 +240,6 @@ progress_change_cb (WebKitWebView* page, gint progress, gpointer data)
 }
 
 static void
-load_finished_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
-{
-    webkit_web_view_execute_script(page, JS_DETECT_INSERT_MODE);    
-}
-
-static void
 load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
 {
     GdkColor color;
@@ -259,6 +258,7 @@ load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data)
 #endif
             gtk_widget_modify_base((GtkWidget*)uri_entry, GTK_STATE_NORMAL, NULL);
         }
+        webkit_web_view_execute_script(page, JS_SETUP);
     }
 }
 
@@ -743,6 +743,7 @@ create_browser ()
     WebKitWebSettings* settings = webkit_web_settings_new();
     g_object_set((GObject*)settings, "user-stylesheet-uri", SETTING_USER_CSS_FILE, NULL);
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
+    //g_object_set (G_OBJECT(settings), "enable-developer-extras", TRUE, NULL);
 
     webkit_web_view_set_settings(web_view, settings);
 
@@ -750,7 +751,6 @@ create_browser ()
 
     g_signal_connect((GObject*)web_view, "title-changed", (GCallback)title_change_cb, web_view);
     g_signal_connect((GObject*)web_view, "load-progress-changed", (GCallback)progress_change_cb, web_view);
-    g_signal_connect((GObject*)web_view, "load-finished", (GCallback)load_finished_cb, web_view);
     g_signal_connect((GObject*)web_view, "load-committed", (GCallback)load_commit_cb, web_view);
     g_signal_connect((GObject*)web_view, "hovering-over-link", (GCallback)link_hover_cb, web_view);
     g_signal_connect((GObject*)web_view, "navigation-requested", (GCallback)navigation_request_cb, web_view);
