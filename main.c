@@ -469,6 +469,7 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
     if(mode == MODE_SEARCH && key_press_uri_entry_cb(page, event))
         return (gboolean)TRUE;
     if(mode == MODE_HINTS) {
+        target = TARGET_CURRENT;
         if(event->keyval == GDK_Escape) {
             webkit_web_view_execute_script( web_view, "clear();");
         }
