@@ -141,6 +141,9 @@ function show_hints() { \
 #define WEBSEARCH_SCROOGLE  "https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s"
 #define WEBSEARCH_WIKIPEDIA "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go"
 
+/* magic number from Apple(tm) */
+#define SCROLL_STEP 40
+
 enum { MODE_NORMAL, MODE_INSERT, MODE_SEARCH, MODE_WEBSEARCH, MODE_HINTS };
 enum { TARGET_CURRENT, TARGET_NEW };
 
@@ -148,6 +151,8 @@ static GtkWidget* vbox;
 static GtkWidget* main_window;
 static GtkWidget* uri_entry;
 static WebKitWebView* web_view;
+static GtkAdjustment* adjust_h;
+static GtkAdjustment* adjust_v;
 static gchar* main_title;
 static gint load_progress;
 static int mode;  // vimperator mode
@@ -515,17 +520,14 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                 case GDK_a:
                     uri_last_number(count, 1);
                     break;
-                case GDK_b:
-                    do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_PAGES, -1);
-                    while(--count > 0);
+                case GDK_b: /* like shift-space */
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + (gtk_adjustment_get_page_size(adjust_v) * (count ? count : 1) * -1));
                     break;
-                case GDK_e:
-                    do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_DISPLAY_LINES, 1);
-                    while(--count > 0);
+                case GDK_e: /* exactly like j */
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + SCROLL_STEP * (count ? count : 1));
                     break;
-                case GDK_f:
-                    do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_PAGES, 1);
-                    while(--count > 0);
+                case GDK_f: /* like space */
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + (gtk_adjustment_get_page_size(adjust_v) * (count ? count : 1)));
                     break;
                 case GDK_c:
                     webkit_web_view_stop_loading(web_view);
@@ -536,9 +538,8 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                 case GDK_o: /* fwd */
                     webkit_web_view_go_back_or_forward(web_view, (gint)(count ? count : 1));
                     break;
-                case GDK_y:
-                    do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_DISPLAY_LINES, -1);
-                    while(--count > 0);
+                case GDK_y: /* exactly like k */
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) - SCROLL_STEP * (count ? count : 1));
                     break;
                 case GDK_x:
                     uri_last_number(count, -1);
@@ -572,21 +573,20 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     break;
                 case GDK_g:
                     if(modkey == GDK_g)
-                        webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_BUFFER_ENDS, -1);
+                        gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_lower(adjust_v));
                     else {
                         modkey = GDK_g;
                         return (gboolean)TRUE;
                     }
                     break;
                 case GDK_G:
-                    webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_BUFFER_ENDS, 1);
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v));
                     break;
                 case GDK_h:
                     if(modkey == GDK_g)
                         webkit_web_view_load_uri(web_view, STARTPAGE);
                     else
-                        do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_VISUAL_POSITIONS, -1);
-                        while(--count > 0);
+                        gtk_adjustment_set_value(adjust_h, gtk_adjustment_get_value(adjust_h) - SCROLL_STEP * (count ? count : 1));
                     break;
                 case GDK_H:
                     if(modkey == GDK_g)
@@ -598,23 +598,19 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     if(modkey == GDK_numbersign)
                         toggle_setting("enable-scripts");
                     else
-                        do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_DISPLAY_LINES, 1);
-                        while(--count > 0);
+                        gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + SCROLL_STEP * (count ? count : 1));
                     break;
                 case GDK_k:
-                    do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_DISPLAY_LINES, -1);
-                    while(--count > 0);
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) - SCROLL_STEP * (count ? count : 1));
                     break;
                 case GDK_l:
-                    do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_VISUAL_POSITIONS, 1);
-                    while(--count > 0);
+                    gtk_adjustment_set_value(adjust_h, gtk_adjustment_get_value(adjust_h) + SCROLL_STEP * (count ? count : 1));
                     break;
                 case GDK_L: /* fwd */
                     webkit_web_view_go_back_or_forward(web_view, (gint)(count ? count : 1));
                     break;
                 case GDK_space:
-                    do webkit_web_view_move_cursor(web_view, GTK_MOVEMENT_PAGES, (event->state == GDK_SHIFT_MASK ? -1 : 1));
-                    while(--count > 0);
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + (gtk_adjustment_get_page_size(adjust_v) * (count ? count : 1) * (event->state == GDK_SHIFT_MASK ? -1 : 1)));
                     break;
                 case GDK_r:
                     webkit_web_view_reload(web_view);
@@ -851,6 +847,8 @@ int
 main (int argc, char* argv[])
 {
     int i;
+    GtkScrollbar* scroll_h;
+    GtkScrollbar* scroll_v;
 
     cmd = argv[0];
     //WebKitWebInspector *inspector;
@@ -877,6 +875,12 @@ main (int argc, char* argv[])
     for(i = 2; i < argc; i++)
         exec(argv[i]);
     //g_signal_connect((GObject*)inspector, "inspect-web-view", G_CALLBACK(embed_inspector), NULL);
+
+    scroll_h = (GtkScrollbar*)gtk_hscrollbar_new(NULL);
+    scroll_v = (GtkScrollbar*)gtk_vscrollbar_new(NULL);
+    adjust_h = gtk_range_get_adjustment((GtkRange*)scroll_h);
+    adjust_v = gtk_range_get_adjustment((GtkRange*)scroll_v);
+    gtk_widget_set_scroll_adjustments((GtkWidget*)web_view, adjust_h, adjust_v);
 
     gtk_widget_grab_focus((GtkWidget*)web_view);
     gtk_widget_show_all(main_window);
