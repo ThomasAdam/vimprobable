@@ -514,7 +514,10 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
         } else
             return (gboolean)FALSE;
     } else {
-        if(event->keyval >= GDK_0 && event->keyval <= GDK_9) {
+        if(event->keyval == GDK_0 && count == 0) {
+            gtk_adjustment_set_value(adjust_h, gtk_adjustment_get_lower(adjust_h));
+            modkey = '\0';
+        } else if(event->keyval >= GDK_0 && event->keyval <= GDK_9) {
             count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
             modkey = '\0';
         } else if(event->state == GDK_CONTROL_MASK) {
@@ -555,6 +558,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             modkey = '\0';
         } else if(event->state == 0 || event->state == GDK_SHIFT_MASK) {
             switch(event->keyval) {
+                case GDK_dollar:
+                    gtk_adjustment_set_value(adjust_h, gtk_adjustment_get_upper(adjust_h));
+                    break;
                 /* web search */
                 case GDK_q: /* scroogle */
                     setup_websearch(WEBSEARCH_SCROOGLE);
