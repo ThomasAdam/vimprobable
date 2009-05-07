@@ -529,6 +529,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     pagesize = gtk_adjustment_get_page_size(adjust_v);
                     gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) - ((pagesize - (pagesize > PAGING_KEEP ? PAGING_KEEP : 0)) * (count ? count : 1)));
                     break;
+                case GDK_d: /* downwards buffer */
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + (count ? SCROLL_STEP * count : gtk_adjustment_get_page_size(adjust_v) / 2));
+                    break;
                 case GDK_e: /* exactly like j */
                     gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + SCROLL_STEP * (count ? count : 1));
                     break;
@@ -544,6 +547,9 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     break;
                 case GDK_o: /* fwd */
                     webkit_web_view_go_back_or_forward(web_view, (gint)(count ? count : 1));
+                    break;
+                case GDK_u: /* upwards the buffer */
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) - (count ? SCROLL_STEP * count : gtk_adjustment_get_page_size(adjust_v) / 2));
                     break;
                 case GDK_y: /* exactly like k */
                     gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) - SCROLL_STEP * (count ? count : 1));
