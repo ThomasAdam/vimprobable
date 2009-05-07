@@ -35,7 +35,6 @@
 #include <gdk/gdkkeysyms.h>
 
 #if ! ((GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 16) || GTK_MAJOR_VERSION > 2)
-#define GTK_ENTRY_ICON_PRIMARY 0
 #define NO_FANCY_FUNCTIONS
 #endif
 
