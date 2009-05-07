@@ -524,7 +524,7 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     break;
                 case GDK_b: /* like shift-space */
                     pagesize = gtk_adjustment_get_page_size(adjust_v);
-                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + ((pagesize + (pagesize > PAGING_KEEP ? PAGING_KEEP : 0)) * (count ? count : 1) * -1));
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) - ((pagesize - (pagesize > PAGING_KEEP ? PAGING_KEEP : 0)) * (count ? count : 1)));
                     break;
                 case GDK_e: /* exactly like j */
                     gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + SCROLL_STEP * (count ? count : 1));
@@ -617,9 +617,8 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     pagesize = gtk_adjustment_get_page_size(adjust_v);
                     gtk_adjustment_set_value(adjust_v,
                         gtk_adjustment_get_value(adjust_v) + (
-                                (pagesize + (pagesize > PAGING_KEEP ? PAGING_KEEP : 0) * (event->state == GDK_SHIFT_MASK ? 1 : -1))
-                                * (count ? count : 1) * (event->state == GDK_SHIFT_MASK ? -1 : 1)
-                            )
+                            (pagesize - (pagesize > PAGING_KEEP ? PAGING_KEEP : 0)) * (count ? count : 1) * (event->state == GDK_SHIFT_MASK ? -1 : 1)
+                        )
                     );
                     break;
                 case GDK_r:
