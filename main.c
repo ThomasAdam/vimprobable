@@ -141,8 +141,9 @@ function show_hints() { \
 #define WEBSEARCH_SCROOGLE  "https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s"
 #define WEBSEARCH_WIKIPEDIA "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go"
 
-/* magic number from Apple(tm) */
+/* magic numbers from Apple(tm) */
 #define SCROLL_STEP 40
+#define PAGING_KEEP 40
 
 enum { MODE_NORMAL, MODE_INSERT, MODE_SEARCH, MODE_WEBSEARCH, MODE_HINTS };
 enum { TARGET_CURRENT, TARGET_NEW };
@@ -485,6 +486,7 @@ static gboolean
 key_press_cb (WebKitWebView* page, GdkEventKey* event)
 {
     const gchar* txt;
+    int pagesize;
 /*
     Vimperator modes
 
@@ -521,13 +523,15 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     uri_last_number(count, 1);
                     break;
                 case GDK_b: /* like shift-space */
-                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + (gtk_adjustment_get_page_size(adjust_v) * (count ? count : 1) * -1));
+                    pagesize = gtk_adjustment_get_page_size(adjust_v);
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + ((pagesize + (pagesize > PAGING_KEEP ? PAGING_KEEP : 0)) * (count ? count : 1) * -1));
                     break;
                 case GDK_e: /* exactly like j */
                     gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + SCROLL_STEP * (count ? count : 1));
                     break;
                 case GDK_f: /* like space */
-                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + (gtk_adjustment_get_page_size(adjust_v) * (count ? count : 1)));
+                    pagesize = gtk_adjustment_get_page_size(adjust_v);
+                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + ((pagesize - (pagesize > PAGING_KEEP ? PAGING_KEEP : 0)) * (count ? count : 1)));
                     break;
                 case GDK_c:
                     webkit_web_view_stop_loading(web_view);
@@ -610,7 +614,13 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
                     webkit_web_view_go_back_or_forward(web_view, (gint)(count ? count : 1));
                     break;
                 case GDK_space:
-                    gtk_adjustment_set_value(adjust_v, gtk_adjustment_get_value(adjust_v) + (gtk_adjustment_get_page_size(adjust_v) * (count ? count : 1) * (event->state == GDK_SHIFT_MASK ? -1 : 1)));
+                    pagesize = gtk_adjustment_get_page_size(adjust_v);
+                    gtk_adjustment_set_value(adjust_v,
+                        gtk_adjustment_get_value(adjust_v) + (
+                                (pagesize + (pagesize > PAGING_KEEP ? PAGING_KEEP : 0) * (event->state == GDK_SHIFT_MASK ? 1 : -1))
+                                * (count ? count : 1) * (event->state == GDK_SHIFT_MASK ? -1 : 1)
+                            )
+                    );
                     break;
                 case GDK_r:
                     webkit_web_view_reload(web_view);
