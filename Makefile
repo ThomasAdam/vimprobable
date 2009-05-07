@@ -12,7 +12,7 @@ all:
 clean:
 	rm -f $(TARGET)
 
-install: uninstall
+install: all uninstall
 	cp $(TARGET) $(INSTALLDIR)
 
 uninstall:
