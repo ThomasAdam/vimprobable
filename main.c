@@ -31,6 +31,7 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
+#include <libsoup/soup.h>
 #include <gdk/gdkkeysyms.h>
 
 #if ! ((GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 16) || GTK_MAJOR_VERSION > 2)
@@ -138,7 +139,10 @@ function show_hints() { \
 #define SETTING_USER_CSS_FILE NULL
 #define DOWNLOADER "xterm -e screen wget"
 
-enum { MODE_NORMAL, MODE_INSERT, MODE_SEARCH, MODE_HINTS };
+#define WEBSEARCH_SCROOGLE  "https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s"
+#define WEBSEARCH_WIKIPEDIA "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go"
+
+enum { MODE_NORMAL, MODE_INSERT, MODE_SEARCH, MODE_WEBSEARCH, MODE_HINTS };
 enum { TARGET_CURRENT, TARGET_NEW };
 
 static GtkWidget* vbox;
@@ -155,6 +159,7 @@ static gfloat zoomstep;
 static GtkClipboard* xclipboard;
 static GtkClipboard* clipboard;
 static char* cmd;
+const char* search_engine;
 
 void exec(const char *param);
 
@@ -163,24 +168,41 @@ activate_uri_entry_cb (GtkWidget* entry, gpointer data)
 {
     guint c;
     const gchar* real_uri = NULL;
-    const gchar* uri = gtk_entry_get_text((GtkEntry*)entry);
-    g_assert(uri);
+    const gchar* input = gtk_entry_get_text((GtkEntry*)entry);
+    gchar* encoded;
+    GString* search_url = g_string_new("");
+    g_assert(input);
     if(mode == MODE_NORMAL) {
         if(target == TARGET_NEW)
             real_uri = webkit_web_view_get_uri(web_view);
-        webkit_web_view_load_uri(web_view, uri);
+        webkit_web_view_load_uri(web_view, input);
         if(real_uri)
             gtk_entry_set_text((GtkEntry*)entry, real_uri);
     } else if(mode == MODE_SEARCH) {
         /* unmark the old hits if any */
         webkit_web_view_unmark_text_matches(web_view);
         /* the new search */
-        c = webkit_web_view_mark_text_matches(web_view, uri, (gboolean)FALSE, 0);
+        c = webkit_web_view_mark_text_matches(web_view, input, (gboolean)FALSE, 0);
         webkit_web_view_set_highlight_text_matches(web_view, (gboolean)TRUE);
-        webkit_web_view_search_text(web_view, uri, (gboolean)FALSE, (gboolean)TRUE, (gboolean)TRUE);
+        webkit_web_view_search_text(web_view, input, (gboolean)FALSE, (gboolean)TRUE, (gboolean)TRUE);
+    } else if(mode == MODE_WEBSEARCH) {
+        encoded = soup_uri_encode(input, "&");
+        g_string_append_printf(search_url, search_engine, encoded);
+        g_free(encoded);
+        webkit_web_view_load_uri(web_view, search_url->str);
     }
+    g_string_free(search_url, TRUE);
     /* focus webview */
     gtk_widget_grab_focus((GtkWidget*)web_view);
+}
+
+static void
+setup_websearch(const char *url)
+{
+    mode = MODE_WEBSEARCH;
+    search_engine = url;
+    gtk_entry_set_text((GtkEntry*)uri_entry, "");
+    gtk_widget_grab_focus((GtkWidget*)uri_entry);
 }
 
 static void
@@ -529,6 +551,13 @@ key_press_cb (WebKitWebView* page, GdkEventKey* event)
             modkey = '\0';
         } else if(event->state == 0 || event->state == GDK_SHIFT_MASK) {
             switch(event->keyval) {
+                /* web search */
+                case GDK_q: /* scroogle */
+                    setup_websearch(WEBSEARCH_SCROOGLE);
+                    break;
+                case GDK_w: /* wikipedia */
+                    setup_websearch(WEBSEARCH_WIKIPEDIA);
+                    break;
                 case GDK_numbersign: /* # */
                     modkey = GDK_numbersign;
                     return (gboolean)TRUE;
