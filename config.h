@@ -12,3 +12,4 @@ static const char sslbgcolor[]          = "#b0ff00";    /* background color for 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
 static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
+#define             DISABLE_SCROLLBAR
