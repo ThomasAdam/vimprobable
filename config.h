@@ -4,10 +4,10 @@
 
 /* general settings */
 static const char startpage[]           = "https://projects.ring0.de/webkitbrowser/";
-static const char userstylesheet[]      = NULL;
+static const char userstylesheet[]      = "";
 
 /* appearance */
-static const char sslbgcolor            = "#b0ff00";    /* background color for SSL */
+static const char sslbgcolor[]          = "#b0ff00";    /* background color for SSL */
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
