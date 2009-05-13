@@ -22,6 +22,20 @@ static void webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* fr
 /* functions */
 static void setup_gui();
 static void setup_signals(GObject* window, GObject* webview);
+static void webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data);
+static void webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data);
+static void webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data);
+static void webview_load_finished_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data);
+static gboolean webview_navigation_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+                        WebKitWebPolicyDecision* decision, gpointer user_data);
+static gboolean webview_new_window_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+                        WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data);
+static gboolean webview_mimetype_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+                        char* mime_type, WebKitWebPolicyDecision* decision, gpointer user_data);
+static gboolean webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_data);
+static void webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event);
+static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data);
+static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
 
 /* variables */
 
@@ -50,6 +64,49 @@ webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_
 
 void
 webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data) {
+
+}
+
+void
+webview_load_finished_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data) {
+
+}
+
+gboolean
+webview_navigation_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+                        WebKitWebPolicyDecision* decision, gpointer user_data) {
+
+}
+
+gboolean
+webview_new_window_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+                        WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data) {
+
+}
+
+gboolean
+webview_mimetype_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+                        char* mime_type, WebKitWebPolicyDecision* decision, gpointer user_data) {
+
+}
+
+gboolean
+webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_data) {
+
+}
+
+void
+webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
+
+}
+
+void
+webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data) {
+
+}
+
+gboolean
+webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data) {
 
 }
 
@@ -92,6 +149,14 @@ setup_signals(GObject* window, GObject* webview) {
     g_signal_connect((GObject*)webview, "title-changed", (GCallback)webview_title_changed_cb, NULL);
     g_signal_connect((GObject*)webview, "load-progress-changed", (GCallback)webview_progress_changed_cb, NULL);
     g_signal_connect((GObject*)webview, "load-committed", (GCallback)webview_load_committed_cb, NULL);
+    g_signal_connect((GObject*)webview, "load-finished", (GCallback)webview_load_finished_cb, NULL);
+    g_signal_connect((GObject*)webview, "navigation-policy-decision-requested", (GCallback)webview_navigation_cb, NULL);
+    g_signal_connect((GObject*)webview, "new-window-policy-decision-requested", (GCallback)webview_new_window_cb, NULL);
+    g_signal_connect((GObject*)webview, "mime-type-policy-decision-requested", (GCallback)webview_mimetype_cb, NULL);
+    g_signal_connect((GObject*)webview, "download-requested", (GCallback)webview_download_cb, NULL);
+    g_signal_connect((GObject*)webview, "key-press-event", (GCallback)webview_keypress_cb, NULL);
+    g_signal_connect((GObject*)webview, "hovering-over-link", (GCallback)webview_hoverlink_cb, NULL);
+    g_signal_connect((GObject*)webview, "console-message", (GCallback)webview_console_cb, NULL);
 }
 
 int
