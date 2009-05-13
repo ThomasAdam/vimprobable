@@ -9,19 +9,43 @@
 #include <webkit/webkit.h>
 #include <libsoup/soup.h>
 
-enum { ModeNormal, ModeInsert, ModeSearch, ModeWebsearch, ModeHints };  /* modes */
-enum { TargetCurrent, TargetNew };                                      /* target */
+/* macros */
+#define LENGTH(x)   (sizeof(x)/sizeof(x[0]))
+
+/* enums */
+enum { ModeNormal, ModeInsert, ModeSearch, ModeWebsearch, ModeHints };                  /* modes */
+enum { TargetCurrent, TargetNew };                                                      /* target */
+/* bitmask,
+    1 << 0:  0 = jumpTo,   1 = scroll
+    1 << 1:  0 = top/down, 1 = left/right
+    1 << 2:  0 = top/left, 1 = bottom/right
+*/
+enum { ScrollJumpTo, ScrollMove };
+enum { OrientationVert, OrientationHoriz = (1 << 1) };
+enum { DirectionTop,
+        DirectionBottom = (1 << 2),
+        DirectionLeft = OrientationHoriz,
+        DirectionRight = OrientationHoriz | (1 << 2) };
 
 /* structs here */
+typedef union {
+    int i;
+    void *v;
+} Arg;
+
+/* TODO: save numbers */
+/* TODO: modkey + parse modkeys at the beginning */
+typedef struct {
+    guint mask;
+    guint key;
+    gboolean (*func)(const Arg *arg);
+    const Arg arg;
+} Key;
 
 /* callbacks here */
 static void window_destroyed_cb(GtkWidget* window, gpointer func_data);
 static void webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data);
 static void webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data);
-
-/* functions */
-static void setup_gui();
-static void setup_signals(GObject* window, GObject* webview);
 static void webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data);
 static void webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data);
 static void webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data);
@@ -33,9 +57,15 @@ static gboolean webview_new_window_cb(WebKitWebView* webview, WebKitWebFrame* fr
 static gboolean webview_mimetype_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
                         char* mime_type, WebKitWebPolicyDecision* decision, gpointer user_data);
 static gboolean webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_data);
-static void webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event);
+static gboolean webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event);
 static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data);
 static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
+
+/* functions */
+static gboolean scroll(const Arg* arg);
+
+static void setup_gui();
+static void setup_signals(GObject* window, GObject* webview);
 
 /* variables */
 
@@ -43,6 +73,8 @@ static GtkAdjustment* adjust_h;
 static GtkAdjustment* adjust_v;
 static GtkWidget* input;
 static WebKitWebView* webview;
+
+static unsigned int mode = ModeNormal;
 
 #include "config.h"
 
@@ -95,9 +127,19 @@ webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_dat
 
 }
 
-void
+gboolean
 webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
+    unsigned int i;
 
+    switch (mode) {
+    case ModeNormal:
+        for(i = 0; i < LENGTH(keys); i++)
+            if(keys[i].mask == event->state && keys[i].key == event->keyval && keys[i].func)
+                if(keys[i].func(&keys[i].arg))
+                    return TRUE;
+        return FALSE;
+        break;
+    }
 }
 
 void
@@ -111,6 +153,16 @@ webview_console_cb(WebKitWebView* webview, char* message, int line, char* source
 }
 
 /* funcs here */
+gboolean
+scroll(const Arg* arg) {
+    GtkAdjustment* adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
+    if(arg->i & ScrollMove) {
+    
+    } else
+        gtk_adjustment_set_value(adjust,
+            ((arg->i & (1 << 2)) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
+    return TRUE;
+}
 
 void
 setup_gui() {
