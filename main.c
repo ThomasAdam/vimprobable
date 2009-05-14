@@ -16,9 +16,11 @@
 enum { ModeNormal, ModeInsert, ModeSearch, ModeWebsearch, ModeHints };                  /* modes */
 enum { TargetCurrent, TargetNew };                                                      /* target */
 /* bitmask,
-    1 << 0:  0 = jumpTo,   1 = scroll
-    1 << 1:  0 = top/down, 1 = left/right
-    1 << 2:  0 = top/left, 1 = bottom/right
+    1 << 0:  0 = jumpTo,            1 = scroll
+    1 << 1:  0 = top/down,          1 = left/right
+    1 << 2:  0 = top/left,          1 = bottom/right
+    1 << 3:  0 = paging/halfpage,   1 = line
+    1 << 4:  0 = paging,            1 = halfpage aka buffer
 */
 enum { ScrollJumpTo, ScrollMove };
 enum { OrientationVert, OrientationHoriz = (1 << 1) };
@@ -26,6 +28,9 @@ enum { DirectionTop,
         DirectionBottom = (1 << 2),
         DirectionLeft = OrientationHoriz,
         DirectionRight = OrientationHoriz | (1 << 2) };
+enum { UnitPage,
+        UnitLine = (1 << 3),
+        UnitBuffer = (1 << 4) };
 
 /* structs here */
 typedef union {
@@ -75,6 +80,7 @@ static GtkWidget* input;
 static WebKitWebView* webview;
 
 static unsigned int mode = ModeNormal;
+static unsigned int count = 0;
 
 #include "config.h"
 
@@ -133,6 +139,12 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
 
     switch (mode) {
     case ModeNormal:
+        /* numbers */ if(event->state == 0
+        && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+        ||  (event->keyval == GDK_0 && count)))
+            count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+        /* TODO: modykey handling */
+        /* keybindings */
         for(i = 0; i < LENGTH(keys); i++)
             if(keys[i].mask == event->state && keys[i].key == event->keyval && keys[i].func)
                 if(keys[i].func(&keys[i].arg))
@@ -156,9 +168,16 @@ webview_console_cb(WebKitWebView* webview, char* message, int line, char* source
 gboolean
 scroll(const Arg* arg) {
     GtkAdjustment* adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
-    if(arg->i & ScrollMove) {
-    
-    } else
+    count = count ? count : 1;
+
+    if(arg->i & ScrollMove)
+        gtk_adjustment_set_value(adjust, gtk_adjustment_get_value(adjust) +
+            (arg->i & (1 << 2) ? 1 : -1) *      /* direction */
+            ((arg->i & UnitLine || (arg->i & UnitBuffer && count)) ? (scrollstep * count) : (
+                arg->i & UnitBuffer ? gtk_adjustment_get_page_size(adjust) / 2 :
+                gtk_adjustment_get_page_size(adjust) -
+                    (gtk_adjustment_get_page_size(adjust) > pagingkeep ? pagingkeep : 0))));
+    else
         gtk_adjustment_set_value(adjust,
             ((arg->i & (1 << 2)) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
     return TRUE;

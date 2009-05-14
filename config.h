@@ -16,6 +16,10 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 
 /* key bindings for normal mode */
 static Key keys[] = {
-    { GDK_SHIFT_MASK,   GDK_dollar,     scroll,     {ScrollJumpTo | DirectionRight} },
-    { 0,                GDK_0,          scroll,     {ScrollJumpTo | DirectionLeft} },
+    { 0,                GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
+    { GDK_SHIFT_MASK,   GDK_dollar,     scroll,     {ScrollJumpTo   | DirectionRight} },
+    { 0,                GDK_h,          scroll,     {ScrollMove     | DirectionLeft     | UnitLine} },
+    { 0,                GDK_j,          scroll,     {ScrollMove     | DirectionBottom   | UnitLine} },
+    { 0,                GDK_k,          scroll,     {ScrollMove     | DirectionTop      | UnitLine} },
+    { 0,                GDK_l,          scroll,     {ScrollMove     | DirectionRight    | UnitLine} },
 };
