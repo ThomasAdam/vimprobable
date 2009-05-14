@@ -69,6 +69,7 @@ static gboolean webview_console_cb(WebKitWebView* webview, char* message, int li
 /* functions */
 static gboolean scroll(const Arg* arg);
 
+static void setup_modkeys();
 static void setup_gui();
 static void setup_signals(GObject* window, GObject* webview);
 
@@ -81,6 +82,7 @@ static WebKitWebView* webview;
 
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
+static char* modkeys;
 
 #include "config.h"
 
@@ -184,6 +186,18 @@ scroll(const Arg* arg) {
 }
 
 void
+setup_modkeys() {
+    unsigned int i;
+    modkeys = calloc(LENGTH(keys) + 1, sizeof(char));
+    char* ptr = modkeys;
+
+    for(i = 0; i < LENGTH(keys); i++)
+        if(keys[i].modkey && !strchr(modkeys, keys[i].modkey))
+            *(ptr++) = keys[i].modkey;
+    modkeys = realloc(modkeys, &ptr[0] - &modkeys[0] + 1);
+}
+
+void
 setup_gui() {
     GtkScrollbar* scroll_h = (GtkScrollbar*)gtk_hscrollbar_new(NULL);
     GtkScrollbar* scroll_v = (GtkScrollbar*)gtk_vscrollbar_new(NULL);
@@ -235,6 +249,7 @@ main(int argc, char* argv[]) {
     gtk_init(&argc, &argv);
     if(!g_thread_supported())
         g_thread_init(NULL);
+    setup_modkeys();
     setup_gui();
 
     return EXIT_SUCCESS;

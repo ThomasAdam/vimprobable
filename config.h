@@ -19,6 +19,7 @@ static Key keys[] = {
     /* modmask,         modkey,         key,            function,   argument */
     { 0,                0,              GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
     { GDK_SHIFT_MASK,   0,              GDK_dollar,     scroll,     {ScrollJumpTo   | DirectionRight} },
+    { 0,                GDK_g,          GDK_g,          scroll,     {ScrollJumpTo   | DirectionTop} },
     { GDK_SHIFT_MASK,   0,              GDK_G,          scroll,     {ScrollJumpTo   | DirectionBottom} },
     { 0,                0,              GDK_h,          scroll,     {ScrollMove     | DirectionLeft     | UnitLine} },
     { 0,                0,              GDK_j,          scroll,     {ScrollMove     | DirectionBottom   | UnitLine} },
