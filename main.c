@@ -183,8 +183,8 @@ scroll(const Arg* arg) {
             (arg->i & (1 << 2) ? 1 : -1) *      /* direction */
             ((arg->i & UnitLine || (arg->i & UnitBuffer && count)) ? (scrollstep * count) : (
                 arg->i & UnitBuffer ? gtk_adjustment_get_page_size(adjust) / 2 :
-                gtk_adjustment_get_page_size(adjust) -
-                    (gtk_adjustment_get_page_size(adjust) > pagingkeep ? pagingkeep : 0))));
+                count * (gtk_adjustment_get_page_size(adjust) -
+                    (gtk_adjustment_get_page_size(adjust) > pagingkeep ? pagingkeep : 0)))));
     else
         gtk_adjustment_set_value(adjust,
             ((arg->i & (1 << 2)) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
