@@ -25,4 +25,12 @@ static Key keys[] = {
     { 0,                0,              GDK_j,          scroll,     {ScrollMove     | DirectionBottom   | UnitLine} },
     { 0,                0,              GDK_k,          scroll,     {ScrollMove     | DirectionTop      | UnitLine} },
     { 0,                0,              GDK_l,          scroll,     {ScrollMove     | DirectionRight    | UnitLine} },
+    { 0,                0,              GDK_space,      scroll,     {ScrollMove     | DirectionBottom   | UnitPage} },
+    { GDK_SHIFT_MASK,   0,              GDK_space,      scroll,     {ScrollMove     | DirectionTop      | UnitPage} },
+    { GDK_CONTROL_MASK, 0,              GDK_b,          scroll,     {ScrollMove     | DirectionTop      | UnitPage} },
+    { GDK_CONTROL_MASK, 0,              GDK_f,          scroll,     {ScrollMove     | DirectionBottom   | UnitPage} },
+    { GDK_CONTROL_MASK, 0,              GDK_d,          scroll,     {ScrollMove     | DirectionBottom   | UnitBuffer} },
+    { GDK_CONTROL_MASK, 0,              GDK_u,          scroll,     {ScrollMove     | DirectionTop      | UnitBuffer} },
+    { GDK_CONTROL_MASK, 0,              GDK_e,          scroll,     {ScrollMove     | DirectionBottom   | UnitLine} },
+    { GDK_CONTROL_MASK, 0,              GDK_y,          scroll,     {ScrollMove     | DirectionTop      | UnitLine} },
 };

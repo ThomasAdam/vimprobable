@@ -176,14 +176,13 @@ webview_console_cb(WebKitWebView* webview, char* message, int line, char* source
 gboolean
 scroll(const Arg* arg) {
     GtkAdjustment* adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
-    count = count ? count : 1;
 
     if(arg->i & ScrollMove)
         gtk_adjustment_set_value(adjust, gtk_adjustment_get_value(adjust) +
             (arg->i & (1 << 2) ? 1 : -1) *      /* direction */
-            ((arg->i & UnitLine || (arg->i & UnitBuffer && count)) ? (scrollstep * count) : (
+            ((arg->i & UnitLine || (arg->i & UnitBuffer && count)) ? (scrollstep * (count ? count : 1)) : (
                 arg->i & UnitBuffer ? gtk_adjustment_get_page_size(adjust) / 2 :
-                count * (gtk_adjustment_get_page_size(adjust) -
+                (count ? count : 1) * (gtk_adjustment_get_page_size(adjust) -
                     (gtk_adjustment_get_page_size(adjust) > pagingkeep ? pagingkeep : 0)))));
     else
         gtk_adjustment_set_value(adjust,
