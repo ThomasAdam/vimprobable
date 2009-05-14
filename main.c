@@ -38,7 +38,6 @@ typedef union {
     void *v;
 } Arg;
 
-/* TODO: modkey + parse modkeys at the beginning */
 typedef struct {
     guint mask;
     guint modkey;
