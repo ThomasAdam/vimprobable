@@ -83,6 +83,7 @@ static WebKitWebView* webview;
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
 static char* modkeys;
+static char current_modkey;
 
 #include "config.h"
 
@@ -141,16 +142,22 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
 
     switch (mode) {
     case ModeNormal:
-        /* numbers */ if(event->state == 0
-        && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
-        ||  (event->keyval == GDK_0 && count)))
-            count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
-        /* TODO: modykey handling */
+        if(event->state == 0)
+            if((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+            ||  (event->keyval == GDK_0 && count)) {
+                count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+                return TRUE;
+            } else if(strchr(modkeys, event->keyval) && current_modkey != event->keyval) {
+                current_modkey = event->keyval;
+                return TRUE;
+            }
         /* keybindings */
         for(i = 0; i < LENGTH(keys); i++)
-            if(keys[i].mask == event->state && keys[i].key == event->keyval && keys[i].func)
-                if(keys[i].func(&keys[i].arg))
+            if(keys[i].mask == event->state && (!keys[i].modkey || keys[i].modkey == current_modkey) && keys[i].key == event->keyval && keys[i].func)
+                if(keys[i].func(&keys[i].arg)) {
+                    current_modkey = count = 0;
                     return TRUE;
+                }
         return FALSE;
         break;
     }
