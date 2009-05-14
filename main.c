@@ -38,10 +38,10 @@ typedef union {
     void *v;
 } Arg;
 
-/* TODO: save numbers */
 /* TODO: modkey + parse modkeys at the beginning */
 typedef struct {
     guint mask;
+    guint modkey;
     guint key;
     gboolean (*func)(const Arg *arg);
     const Arg arg;
