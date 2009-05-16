@@ -31,6 +31,20 @@ enum { DirectionTop,
 enum { UnitPage,
         UnitLine = (1 << 3),
         UnitBuffer = (1 << 4) };
+/* bitmask:
+    1 << 0:  0 = Reload/Cancel      1 = Forward/Back
+    Forward/Back:
+    1 << 1:  0 = Forward            1 = Back
+    Reload/Cancel:
+    1 << 1:  0 = Cancel             1 = Force/Normal Reload
+    1 << 2:  0 = Force Reload       1 = Reload
+*/
+enum { NavigationForwardBack = 1, NavigationReloadActions = (1 << 1) };
+enum { NavigationCancel,
+        NavigationBack = (NavigationForwardBack | 1 << 1),
+        NavigationForward = (NavigationForwardBack),
+        NavigationReload = (NavigationReloadActions | 1 << 2),
+        NavigationForceReload = NavigationReloadActions };
 
 /* structs here */
 typedef union {
@@ -66,6 +80,7 @@ static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link
 static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
 
 /* functions */
+static gboolean navigate(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 
 static void setup_modkeys();
@@ -173,6 +188,16 @@ webview_console_cb(WebKitWebView* webview, char* message, int line, char* source
 }
 
 /* funcs here */
+gboolean
+navigate(const Arg* arg) {
+    if(arg->i & NavigationForwardBack)
+        webkit_web_view_go_back_or_forward(webview, (arg->i == NavigationBack ? -1 : 1) * (count ? count : 1));
+    else if(arg->i & NavigationReloadActions)
+        (arg->i == NavigationReload ? webkit_web_view_reload : webkit_web_view_reload_bypass_cache)(webview);
+    else
+        webkit_web_view_stop_loading(webview);
+}
+
 gboolean
 scroll(const Arg* arg) {
     GtkAdjustment* adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
