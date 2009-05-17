@@ -211,7 +211,7 @@ scroll(const Arg* arg) {
                     (gtk_adjustment_get_page_size(adjust) > pagingkeep ? pagingkeep : 0)))));
     else
         gtk_adjustment_set_value(adjust,
-            ((arg->i & (1 << 2)) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
+            ((arg->i == (ScrollJumpTo | DirectionBottom)) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
     return TRUE;
 }
 
