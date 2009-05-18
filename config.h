@@ -4,7 +4,6 @@
 
 /* general settings */
 static const char startpage[]           = "https://projects.ring0.de/webkitbrowser/";
-static const char userstylesheet[]      = "";
 
 /* appearance */
 static const char sslbgcolor[]          = "#b0ff00";    /* background color for SSL */
@@ -13,6 +12,13 @@ static const char sslbgcolor[]          = "#b0ff00";    /* background color for 
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
 static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 #define             DISABLE_SCROLLBAR
+
+/* webkit settings */
+#define WEBKITSETTINGS \
+    "default-font-size",                12, \
+    "user-stylesheet-uri",              NULL, \
+    "enable-plugins",                   TRUE, \
+    "enable-scripts",                   TRUE
 
 /* key bindings for normal mode */
 static Key keys[] = {
@@ -42,3 +48,5 @@ static Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_R,          navigate,   {NavigationForceReload} },
     { GDK_CONTROL_MASK,     0,              GDK_c,          navigate,   {NavigationCancel} },
 };
+
+

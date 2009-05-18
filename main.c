@@ -85,6 +85,7 @@ static gboolean scroll(const Arg* arg);
 
 static void setup_modkeys();
 static void setup_gui();
+static void setup_settings();
 static void setup_signals(GObject* window, GObject* webview);
 
 /* variables */
@@ -238,9 +239,8 @@ setup_gui() {
     input = gtk_entry_new();
     GtkWidget* viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
     webview = (WebKitWebView*)webkit_web_view_new();
-    WebKitWebSettings* settings = (WebKitWebSettings*)webkit_web_settings_new();
 
-    // let config.h set up WebKitWebSettings
+    setup_settings();
     gtk_widget_set_name(window, "WebKitBrowser");
 #ifdef DISABLE_SCROLLBAR
     gtk_scrolled_window_set_policy((GtkScrolledWindow*)viewport, GTK_POLICY_NEVER, GTK_POLICY_NEVER);
@@ -254,6 +254,16 @@ setup_gui() {
     gtk_widget_show_all(window);
     webkit_web_view_load_uri(webview, startpage);
     gtk_main();
+}
+
+void
+setup_settings() {
+    WebKitWebSettings* settings = (WebKitWebSettings*)webkit_web_settings_new();
+
+#ifdef WEBKITSETTINGS
+    g_object_set((GObject*)settings, WEBKITSETTINGS, NULL);
+#endif
+    webkit_web_view_set_settings(webview, settings);
 }
 
 void
