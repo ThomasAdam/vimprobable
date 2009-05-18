@@ -197,6 +197,7 @@ navigate(const Arg* arg) {
         (arg->i == NavigationReload ? webkit_web_view_reload : webkit_web_view_reload_bypass_cache)(webview);
     else
         webkit_web_view_stop_loading(webview);
+    return TRUE;
 }
 
 gboolean
