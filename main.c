@@ -269,19 +269,23 @@ setup_settings() {
 void
 setup_signals(GObject* window, GObject* webview) {
     /* window */
-    g_signal_connect((GObject*)window,  "destroy", (GCallback)window_destroyed_cb, NULL);
+    g_object_connect((GObject*)window,
+        "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
+    NULL);
     /* webview */
-    g_signal_connect((GObject*)webview, "title-changed", (GCallback)webview_title_changed_cb, NULL);
-    g_signal_connect((GObject*)webview, "load-progress-changed", (GCallback)webview_progress_changed_cb, NULL);
-    g_signal_connect((GObject*)webview, "load-committed", (GCallback)webview_load_committed_cb, NULL);
-    g_signal_connect((GObject*)webview, "load-finished", (GCallback)webview_load_finished_cb, NULL);
-    g_signal_connect((GObject*)webview, "navigation-policy-decision-requested", (GCallback)webview_navigation_cb, NULL);
-    g_signal_connect((GObject*)webview, "new-window-policy-decision-requested", (GCallback)webview_new_window_cb, NULL);
-    g_signal_connect((GObject*)webview, "mime-type-policy-decision-requested", (GCallback)webview_mimetype_cb, NULL);
-    g_signal_connect((GObject*)webview, "download-requested", (GCallback)webview_download_cb, NULL);
-    g_signal_connect((GObject*)webview, "key-press-event", (GCallback)webview_keypress_cb, NULL);
-    g_signal_connect((GObject*)webview, "hovering-over-link", (GCallback)webview_hoverlink_cb, NULL);
-    g_signal_connect((GObject*)webview, "console-message", (GCallback)webview_console_cb, NULL);
+    g_object_connect((GObject*)webview,
+        "signal::title-changed",                        (GCallback)webview_title_changed_cb,        NULL,
+        "signal::load-progress-changed",                (GCallback)webview_progress_changed_cb,     NULL,
+        "signal::load-committed",                       (GCallback)webview_load_committed_cb,       NULL,
+        "signal::load-finished",                        (GCallback)webview_load_finished_cb,        NULL,
+        "signal::navigation-policy-decision-requested", (GCallback)webview_navigation_cb,           NULL,
+        "signal::new-window-policy-decision-requested", (GCallback)webview_new_window_cb,           NULL,
+        "signal::mime-type-policy-decision-requested",  (GCallback)webview_mimetype_cb,             NULL,
+        "signal::download-requested",                   (GCallback)webview_download_cb,             NULL,
+        "signal::key-press-event",                      (GCallback)webview_keypress_cb,             NULL,
+        "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
+        "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
+    NULL);
 }
 
 int
