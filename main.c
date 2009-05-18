@@ -45,6 +45,15 @@ enum { NavigationCancel,
         NavigationForward = (NavigationForwardBack),
         NavigationReload = (NavigationReloadActions | 1 << 2),
         NavigationForceReload = NavigationReloadActions };
+/* bitmask:
+    1 << 0:  0 = ZoomReset          1 = ZoomIn/Out
+    1 << 1:  0 = ZoomOut            1 = ZoomIn
+    1 << 2:  0 = TextZoom           1 = FullContentZoom
+*/
+enum { ZoomReset,
+        ZoomOut,
+        ZoomIn = ZoomOut | (1 << 1) };
+enum { ZoomText, ZoomFullContent = (1 << 2) };
 
 /* structs here */
 typedef union {
@@ -82,6 +91,7 @@ static gboolean webview_console_cb(WebKitWebView* webview, char* message, int li
 /* functions */
 static gboolean navigate(const Arg* arg);
 static gboolean scroll(const Arg* arg);
+static gboolean zoom(const Arg *arg);
 
 static void setup_modkeys();
 static void setup_gui();
@@ -97,6 +107,7 @@ static WebKitWebView* webview;
 
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
+static float zoomstep;
 static char* modkeys;
 static char current_modkey;
 
@@ -217,6 +228,16 @@ scroll(const Arg* arg) {
     return TRUE;
 }
 
+gboolean
+zoom(const Arg* arg) {
+    webkit_web_view_set_full_content_zoom(webview, (arg->i & ZoomFullContent) > 0);
+    webkit_web_view_set_zoom_level(webview, (arg->i & ZoomOut) ?
+        webkit_web_view_get_zoom_level(webview) +
+            (((float)(count ? count : 1)) * (arg->i & (1 << 1) ? 1.0 : -1.0) * zoomstep) :
+        (count ? (float)count / 100.0 : 1.0));
+    return TRUE;
+}
+
 void
 setup_modkeys() {
     unsigned int i;
@@ -264,6 +285,7 @@ setup_settings() {
 #ifdef WEBKITSETTINGS
     g_object_set((GObject*)settings, WEBKITSETTINGS, NULL);
 #endif
+    g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
 }
 

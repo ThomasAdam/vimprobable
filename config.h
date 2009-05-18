@@ -47,6 +47,15 @@ static Key keys[] = {
     { 0,                    0,              GDK_r,          navigate,   {NavigationReload} },
     { GDK_SHIFT_MASK,       0,              GDK_R,          navigate,   {NavigationForceReload} },
     { GDK_CONTROL_MASK,     0,              GDK_c,          navigate,   {NavigationCancel} },
+
+    { 0,                    0,              GDK_plus,       zoom,       {ZoomIn         | ZoomText} },
+    { 0,                    0,              GDK_minus,      zoom,       {ZoomOut        | ZoomText} },
+    { 0,                    GDK_z,          GDK_i,          zoom,       {ZoomIn         | ZoomText} },
+    { 0,                    GDK_z,          GDK_o,          zoom,       {ZoomOut        | ZoomText} },
+    { 0,                    GDK_z,          GDK_z,          zoom,       {ZoomReset      | ZoomText} },
+    { GDK_SHIFT_MASK,       GDK_z,          GDK_I,          zoom,       {ZoomIn         | ZoomFullContent} },
+    { GDK_SHIFT_MASK,       GDK_z,          GDK_O,          zoom,       {ZoomOut        | ZoomFullContent} },
+    { GDK_SHIFT_MASK,       GDK_z,          GDK_Z,          zoom,       {ZoomReset      | ZoomFullContent} },
 };
 
 
