@@ -92,7 +92,7 @@ static gboolean webview_console_cb(WebKitWebView* webview, char* message, int li
 static gboolean navigate(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean zoom(const Arg *arg);
-
+static void update_url();
 static void setup_modkeys();
 static void setup_gui();
 static void setup_settings();
@@ -103,6 +103,9 @@ static void setup_signals(GObject* window, GObject* webview);
 static GtkAdjustment* adjust_h;
 static GtkAdjustment* adjust_v;
 static GtkWidget* input;
+static GtkWidget* eventbox;
+static GtkWidget* status_url;
+static GtkWidget* status_state;
 static WebKitWebView* webview;
 
 static unsigned int mode = ModeNormal;
@@ -131,7 +134,9 @@ webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_
 
 void
 webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data) {
+    const char* uri = webkit_web_view_get_uri(webview);
 
+    update_url(uri);
 }
 
 void
@@ -191,7 +196,14 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
 
 void
 webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data) {
+    const char* uri = webkit_web_view_get_uri(webview);
 
+    if(link)
+        gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
+            "<span color=\"%s\" font=\"%s\">Link: %s</span>", g_str_has_prefix(uri, "https://") ?
+            sslcolor : statuscolor, statusfont, link));
+    else
+        update_url(uri);
 }
 
 gboolean
@@ -239,6 +251,31 @@ zoom(const Arg* arg) {
 }
 
 void
+update_url(const char* uri) {
+    gboolean ssl = g_str_has_prefix(uri, "https://");
+    GdkColor color;
+#ifdef ENABLE_HISTORY_INDICATOR
+    char before[] = " [";
+    char after[] = "]";
+    gboolean back = webkit_web_view_can_go_back(webview);
+    gboolean fwd = webkit_web_view_can_go_forward(webview);
+
+    if(!back && !fwd)
+        before[0] = after[0] = '\0';
+#endif
+    gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
+#ifdef ENABLE_HISTORY_INDICATOR
+        "<span color=\"%s\" font=\"%s\">%s%s%s%s%s</span>", ssl ? sslcolor : statuscolor, statusfont, uri,
+        before, back ? "+" : "", fwd ? "-" : "", after
+#else
+        "<span color=\"%s\" font=\"%s\">%s</span>", ssl ? sslcolor : statuscolor, statusfont, uri
+#endif
+    ));
+    gdk_color_parse(ssl ? sslbgcolor : statusbgcolor, &color);
+    gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
+}
+
+void
 setup_modkeys() {
     unsigned int i;
     modkeys = calloc(LENGTH(keys) + 1, sizeof(char));
@@ -261,16 +298,37 @@ setup_gui() {
     input = gtk_entry_new();
     GtkWidget* viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
     webview = (WebKitWebView*)webkit_web_view_new();
+    GtkBox* statusbar = (GtkBox*)gtk_hbox_new(FALSE, 0);
+    eventbox = gtk_event_box_new();
+    status_url = gtk_label_new(NULL);
+    status_state = gtk_label_new(NULL);
+    GdkColor bg;
+    PangoFontDescription* font;
 
     setup_settings();
+    gdk_color_parse(statusbgcolor, &bg);
+    gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
     gtk_widget_set_name(window, "WebKitBrowser");
 #ifdef DISABLE_SCROLLBAR
     gtk_scrolled_window_set_policy((GtkScrolledWindow*)viewport, GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 #endif
     setup_signals((GObject*)window, (GObject*)webview);
     gtk_container_add((GtkContainer*)viewport, (GtkWidget*)webview);
-    gtk_box_pack_start(box, input, FALSE, FALSE, 0);
+    font = pango_font_description_from_string(urlboxfont);
+    gtk_widget_modify_font((GtkWidget*)input, font);
+    pango_font_description_free(font);
+    gtk_entry_set_inner_border((GtkEntry*)input, NULL);
+    gtk_misc_set_alignment((GtkMisc*)status_url, 0.0, 0.0);
+    // stub for scroll position indicator
+    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span color=\"%s\">Top</span>", statuscolor));
+    gtk_misc_set_alignment((GtkMisc*)status_state, 1.0, 0.0);
+    gtk_box_pack_start(statusbar, status_url, TRUE, TRUE, 2);
+    gtk_box_pack_start(statusbar, status_state, FALSE, FALSE, 2);
+    gtk_container_add((GtkContainer*)eventbox, (GtkWidget*)statusbar);
     gtk_box_pack_start(box, viewport, TRUE, TRUE, 0);
+    gtk_box_pack_start(box, eventbox, FALSE, FALSE, 0);
+    gtk_entry_set_has_frame((GtkEntry*)input, FALSE);
+    gtk_box_pack_start(box, input, FALSE, FALSE, 0);
     gtk_container_add((GtkContainer*)window, (GtkWidget*)box);
     gtk_widget_grab_focus((GtkWidget*)webview);
     gtk_widget_show_all(window);

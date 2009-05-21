@@ -6,7 +6,13 @@
 static const char startpage[]           = "https://projects.ring0.de/webkitbrowser/";
 
 /* appearance */
-static const char sslbgcolor[]          = "#b0ff00";    /* background color for SSL */
+static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
+static const char statuscolor[]         = "#ffffff";            /* color for status bar */
+static const char sslbgcolor[]          = "#b0ff00";            /* background color for status bar with SSL url */
+static const char sslcolor[]            = "#000000";            /* color for status bar with SSL url */
+static const char urlboxfont[]          = "monospace bold 8";   /* font for url input box */
+static const char statusfont[]          = "monospace bold 8";   /* font for status bar */
+#define             ENABLE_HISTORY_INDICATOR
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
