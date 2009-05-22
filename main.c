@@ -139,6 +139,7 @@ webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointe
     const char* uri = webkit_web_view_get_uri(webview);
 
     update_url(uri);
+    update_state();
 }
 
 void
@@ -201,9 +202,7 @@ webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer d
     const char* uri = webkit_web_view_get_uri(webview);
 
     if(link)
-        gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
-            "<span color=\"%s\" font=\"%s\">Link: %s</span>", g_str_has_prefix(uri, "https://") ?
-            sslcolor : statuscolor, statusfont, link));
+        gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
     else
         update_url(uri);
 }
@@ -272,20 +271,21 @@ update_url(const char* uri) {
 #endif
     gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
 #ifdef ENABLE_HISTORY_INDICATOR
-        "<span color=\"%s\" font=\"%s\">%s%s%s%s%s</span>", ssl ? sslcolor : statuscolor, statusfont, uri,
+        "<span font=\"%s\">%s%s%s%s%s</span>", statusfont, uri,
         before, back ? "+" : "", fwd ? "-" : "", after
 #else
-        "<span color=\"%s\" font=\"%s\">%s</span>", ssl ? sslcolor : statuscolor, statusfont, uri
+        "<span font=\"%s\">%s</span>", statusfont, uri
 #endif
     ));
     gdk_color_parse(ssl ? sslbgcolor : statusbgcolor, &color);
-    update_state();
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
+    gdk_color_parse(ssl ? sslcolor : statuscolor, &color);
+    gtk_widget_modify_fg((GtkWidget*)status_url, GTK_STATE_NORMAL, &color);
+    gtk_widget_modify_fg((GtkWidget*)status_state, GTK_STATE_NORMAL, &color);
 }
 
 void
 update_state() {
-    const char* uri = webkit_web_view_get_uri(webview);
     int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
     int val = (int)(gtk_adjustment_get_value(adjust_v) /
         (max ? max : 1) * 100);
@@ -297,9 +297,7 @@ update_state() {
         sprintf(&scroll_state[0], "Bot");
     else
         sprintf(&scroll_state[0], "%d%%", val);
-    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span color=\"%s\" font=\"%s\">%s</span>",
-        g_str_has_prefix(uri, "https://") ? sslcolor : statuscolor, statusfont,
-        scroll_state ));
+    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span font=\"%s\">%s</span>", statusfont, scroll_state));
 }
 
 void
@@ -346,8 +344,6 @@ setup_gui() {
     pango_font_description_free(font);
     gtk_entry_set_inner_border((GtkEntry*)input, NULL);
     gtk_misc_set_alignment((GtkMisc*)status_url, 0.0, 0.0);
-    // stub for scroll position indicator
-    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span color=\"%s\">Top</span>", statuscolor));
     gtk_misc_set_alignment((GtkMisc*)status_state, 1.0, 0.0);
     gtk_box_pack_start(statusbar, status_url, TRUE, TRUE, 2);
     gtk_box_pack_start(statusbar, status_state, FALSE, FALSE, 2);
