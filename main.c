@@ -133,15 +133,10 @@ webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* ti
 
 void
 webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data) {
-#ifdef ENABLE_WGET_PROGRESS_BAR
-    char progressbar[progressbartick + 1];
-    ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
-    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span font=\"%s\">%c%s%c %s</span>",
-        statusfont, progressborderleft, progressbar, progressborderright,  scroll_state));
-#endif
 #ifdef ENABLE_GTK_PROGRESS_BAR
     gtk_entry_set_progress_fraction((GtkEntry*)input, progress == 100 ? 0 : (double)progress/100);
 #endif
+    update_state();
 }
 
 #ifdef ENABLE_WGET_PROGRESS_BAR
@@ -203,6 +198,7 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
                 return TRUE;
             } else if(strchr(modkeys, event->keyval) && current_modkey != event->keyval) {
                 current_modkey = event->keyval;
+                update_state();
                 return TRUE;
             }
         /* keybindings */
@@ -210,6 +206,7 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
             if(keys[i].mask == event->state && (!keys[i].modkey || keys[i].modkey == current_modkey) && keys[i].key == event->keyval && keys[i].func)
                 if(keys[i].func(&keys[i].arg)) {
                     current_modkey = count = 0;
+                    update_state();
                     return TRUE;
                 }
         return FALSE;
@@ -308,6 +305,13 @@ void
 update_state() {
     int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
     int val = (int)(gtk_adjustment_get_value(adjust_v) / max * 100);
+    char* markup;
+#ifdef ENABLE_WGET_PROGRESS_BAR
+    double progress;
+    char progressbar[progressbartick + 1];
+
+    g_object_get((GObject*)webview, "progress", &progress, NULL);
+#endif
 
     if(max == 0)
         sprintf(&scroll_state[0], "All");
@@ -317,7 +321,15 @@ update_state() {
         sprintf(&scroll_state[0], "Bot");
     else
         sprintf(&scroll_state[0], "%d%%", val);
-    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span font=\"%s\">%s</span>", statusfont, scroll_state));
+#ifdef ENABLE_WGET_PROGRESS_BAR
+    if(webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED) {
+        ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
+        markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%c %c%s%c %s</span>",
+            statusfont, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
+    } else
+#endif
+    markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%c %s</span>", statusfont, current_modkey, scroll_state);
+    gtk_label_set_markup((GtkLabel*)status_state, markup);
 }
 
 void
