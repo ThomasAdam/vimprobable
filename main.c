@@ -87,12 +87,14 @@ static gboolean webview_download_cb(WebKitWebView* webview, GObject* download, g
 static gboolean webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event);
 static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data);
 static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
+static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data);
 
 /* functions */
 static gboolean navigate(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean zoom(const Arg *arg);
 static void update_url();
+static void update_state();
 static void setup_modkeys();
 static void setup_gui();
 static void setup_settings();
@@ -211,6 +213,10 @@ webview_console_cb(WebKitWebView* webview, char* message, int line, char* source
 
 }
 
+static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data) {
+    update_state();
+}
+
 /* funcs here */
 gboolean
 navigate(const Arg* arg) {
@@ -237,6 +243,7 @@ scroll(const Arg* arg) {
     else
         gtk_adjustment_set_value(adjust,
             ((arg->i & (1 << 2)) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
+    update_state();
     return TRUE;
 }
 
@@ -272,7 +279,26 @@ update_url(const char* uri) {
 #endif
     ));
     gdk_color_parse(ssl ? sslbgcolor : statusbgcolor, &color);
+    update_state();
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
+}
+
+void
+update_state() {
+    const char* uri = webkit_web_view_get_uri(webview);
+    int val = (int)(gtk_adjustment_get_value(adjust_v) /
+        (gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v)) *100);
+    char scroll_state[4];
+
+    if(val <= 0)
+        sprintf(&scroll_state[0], "Top");
+    else if(val == 100)
+        sprintf(&scroll_state[0], "Bot");
+    else
+        sprintf(&scroll_state[0], "%d%%", val);
+    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span color=\"%s\" font=\"%s\">%s</span>",
+        g_str_has_prefix(uri, "https://") ? sslcolor : statuscolor, statusfont,
+        scroll_state ));
 }
 
 void
@@ -366,6 +392,7 @@ setup_signals(GObject* window, GObject* webview) {
         "signal::key-press-event",                      (GCallback)webview_keypress_cb,             NULL,
         "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
         "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
+        "signal-after::move-cursor",                    (GCallback)webview_scroll_cb,               NULL,
     NULL);
 }
 
