@@ -99,6 +99,7 @@ static void setup_modkeys();
 static void setup_gui();
 static void setup_settings();
 static void setup_signals(GObject* window, GObject* webview);
+static void ascii_bar(int total, int state, char* string);
 
 /* variables */
 
@@ -113,6 +114,7 @@ static WebKitWebView* webview;
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
 static float zoomstep;
+static char scroll_state[4] = "\0";
 static char* modkeys;
 static char current_modkey;
 
@@ -131,10 +133,27 @@ webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* ti
 
 void
 webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data) {
+#ifdef ENABLE_WGET_PROGRESS_BAR
+    char progressbar[progressbartick + 1];
+    ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
+    gtk_label_set_markup((GtkLabel*)status_state, g_markup_printf_escaped("<span font=\"%s\">%c%s%c %s</span>",
+        statusfont, progressborderleft, progressbar, progressborderright,  scroll_state));
+#endif
 #ifdef ENABLE_GTK_PROGRESS_BAR
     gtk_entry_set_progress_fraction((GtkEntry*)input, progress == 100 ? 0 : (double)progress/100);
 #endif
 }
+
+#ifdef ENABLE_WGET_PROGRESS_BAR
+void
+ascii_bar(int total, int state, char* string) {
+    int i;
+
+    for(i = 0; i < total; i++)
+        string[i] = i < state ? progressbartickchar : (i > state ? progressbarspacer : progressbarcurrent);
+    string[i] = '\0';
+}
+#endif
 
 void
 webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data) {
@@ -288,9 +307,7 @@ update_url(const char* uri) {
 void
 update_state() {
     int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
-    int val = (int)(gtk_adjustment_get_value(adjust_v) /
-        max * 100);
-    char scroll_state[4];
+    int val = (int)(gtk_adjustment_get_value(adjust_v) / max * 100);
 
     if(max == 0)
         sprintf(&scroll_state[0], "All");
