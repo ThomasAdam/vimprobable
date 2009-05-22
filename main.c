@@ -139,12 +139,11 @@ webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointe
     const char* uri = webkit_web_view_get_uri(webview);
 
     update_url(uri);
-    update_state();
 }
 
 void
 webview_load_finished_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data) {
-
+    update_state();
 }
 
 gboolean
@@ -288,10 +287,12 @@ void
 update_state() {
     int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
     int val = (int)(gtk_adjustment_get_value(adjust_v) /
-        (max ? max : 1) * 100);
+        max * 100);
     char scroll_state[4];
 
-    if(val == 0)
+    if(max == 0)
+        sprintf(&scroll_state[0], "All");
+    else if(val == 0)
         sprintf(&scroll_state[0], "Top");
     else if(val == 100)
         sprintf(&scroll_state[0], "Bot");
