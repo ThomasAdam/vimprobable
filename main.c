@@ -131,7 +131,9 @@ webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* ti
 
 void
 webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data) {
-
+#ifdef ENABLE_GTK_PROGRESS_BAR
+    gtk_entry_set_progress_fraction((GtkEntry*)input, progress == 100 ? 0 : (double)progress/100);
+#endif
 }
 
 void

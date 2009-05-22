@@ -13,6 +13,7 @@ static const char sslcolor[]            = "#000000";            /* color for sta
 static const char urlboxfont[]          = "monospace bold 8";   /* font for url input box */
 static const char statusfont[]          = "monospace bold 8";   /* font for status bar */
 #define             ENABLE_HISTORY_INDICATOR
+#define             ENABLE_GTK_PROGRESS_BAR
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
