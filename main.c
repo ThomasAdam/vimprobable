@@ -286,11 +286,12 @@ update_url(const char* uri) {
 void
 update_state() {
     const char* uri = webkit_web_view_get_uri(webview);
+    int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
     int val = (int)(gtk_adjustment_get_value(adjust_v) /
-        (gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v)) *100);
+        (max ? max : 1) * 100);
     char scroll_state[4];
 
-    if(val <= 0)
+    if(val == 0)
         sprintf(&scroll_state[0], "Top");
     else if(val == 100)
         sprintf(&scroll_state[0], "Bot");
