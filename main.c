@@ -144,8 +144,11 @@ void
 ascii_bar(int total, int state, char* string) {
     int i;
 
-    for(i = 0; i < total; i++)
-        string[i] = i < state ? progressbartickchar : (i > state ? progressbarspacer : progressbarcurrent);
+    for(i = 0; i < state; i++)
+        string[i] = progressbartickchar;
+    string[i++] = progressbarcurrent;
+    for(; i < total; i++)
+        string[i] = progressbarspacer;
     string[i] = '\0';
 }
 #endif
