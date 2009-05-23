@@ -46,6 +46,13 @@ enum { NavigationCancel,
         NavigationReload = (NavigationReloadActions | 1 << 2),
         NavigationForceReload = NavigationReloadActions };
 /* bitmask:
+    1 << 0:  ClipboardPrimary (X11)
+    1 << 1:  ClipboardGTK
+    1 << 2:  0 = SourceSelection    1 = SourceURL
+*/
+enum { ClipboardPrimary = 1, ClipboardGTK };
+enum { SourceSelection, SourceURL = 1 << 2 };
+/* bitmask:
     1 << 0:  0 = ZoomReset          1 = ZoomIn/Out
     1 << 1:  0 = ZoomOut            1 = ZoomIn
     1 << 2:  0 = TextZoom           1 = FullContentZoom
@@ -92,6 +99,7 @@ static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, 
 /* functions */
 static gboolean navigate(const Arg* arg);
 static gboolean scroll(const Arg* arg);
+static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
 static void update_url();
 static void update_state();
@@ -110,6 +118,7 @@ static GtkWidget* eventbox;
 static GtkWidget* status_url;
 static GtkWidget* status_state;
 static WebKitWebView* webview;
+static GtkClipboard* clipboards[2];
 
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
@@ -250,6 +259,21 @@ navigate(const Arg* arg) {
 }
 
 gboolean
+yank(const Arg *arg) {
+    const char* url;
+
+    if(arg->i & SourceURL) {
+        url = webkit_web_view_get_uri(webview);
+        if(arg->i & ClipboardPrimary)
+            gtk_clipboard_set_text(clipboards[0], url, -1);
+        if(arg->i & ClipboardGTK)
+            gtk_clipboard_set_text(clipboards[1], url, -1);
+    } else
+        webkit_web_view_copy_clipboard(webview);
+    return TRUE;
+}
+
+gboolean
 scroll(const Arg* arg) {
     GtkAdjustment* adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
 
@@ -366,6 +390,8 @@ setup_gui() {
     GdkColor bg;
     PangoFontDescription* font;
 
+    clipboards[0] = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
+    clipboards[1] = gtk_clipboard_get(GDK_NONE);
     setup_settings();
     gdk_color_parse(statusbgcolor, &bg);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
