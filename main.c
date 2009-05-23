@@ -195,6 +195,7 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
             if((event->keyval >= GDK_1 && event->keyval <= GDK_9)
             ||  (event->keyval == GDK_0 && count)) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+                update_state();
                 return TRUE;
             } else if(strchr(modkeys, event->keyval) && current_modkey != event->keyval) {
                 current_modkey = event->keyval;
@@ -324,11 +325,11 @@ update_state() {
 #ifdef ENABLE_WGET_PROGRESS_BAR
     if(webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED) {
         ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
-        markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%c %c%s%c %s</span>",
-            statusfont, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
+        markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %c%s%c %s</span>",
+            statusfont, count, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
     } else
 #endif
-    markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%c %s</span>", statusfont, current_modkey, scroll_state);
+    markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);
     gtk_label_set_markup((GtkLabel*)status_state, markup);
 }
 
