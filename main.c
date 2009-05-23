@@ -102,7 +102,7 @@ static void setup_signals(GObject* window, GObject* webview);
 static void ascii_bar(int total, int state, char* string);
 
 /* variables */
-
+static GtkWidget* window;
 static GtkAdjustment* adjust_h;
 static GtkAdjustment* adjust_v;
 static GtkWidget* input;
@@ -128,7 +128,7 @@ window_destroyed_cb(GtkWidget* window, gpointer func_data) {
 
 void
 webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data) {
-
+    gtk_window_set_title((GtkWindow*)window, title);
 }
 
 void
@@ -351,7 +351,7 @@ setup_gui() {
     GtkScrollbar* scroll_v = (GtkScrollbar*)gtk_vscrollbar_new(NULL);
     adjust_h = gtk_range_get_adjustment((GtkRange*)scroll_h);
     adjust_v = gtk_range_get_adjustment((GtkRange*)scroll_v);
-    GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkBox* box = (GtkBox*)gtk_vbox_new(FALSE, 0);
     input = gtk_entry_new();
     GtkWidget* viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
