@@ -177,24 +177,24 @@ webview_load_finished_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer
 gboolean
 webview_navigation_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
                         WebKitWebPolicyDecision* decision, gpointer user_data) {
-
+    return FALSE;
 }
 
 gboolean
 webview_new_window_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data) {
-
+    return FALSE;
 }
 
 gboolean
 webview_mimetype_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
                         char* mime_type, WebKitWebPolicyDecision* decision, gpointer user_data) {
-
+    return FALSE;
 }
 
 gboolean
 webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_data) {
-
+    return FALSE;
 }
 
 gboolean
@@ -203,7 +203,7 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
 
     switch (mode) {
     case ModeNormal:
-        if(event->state == 0)
+        if(event->state == 0) {
             if((event->keyval >= GDK_1 && event->keyval <= GDK_9)
             ||  (event->keyval == GDK_0 && count)) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
@@ -214,6 +214,7 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
                 update_state();
                 return TRUE;
             }
+        }
         /* keybindings */
         for(i = 0; i < LENGTH(keys); i++)
             if(keys[i].mask == event->state && (!keys[i].modkey || keys[i].modkey == current_modkey) && keys[i].key == event->keyval && keys[i].func)
@@ -222,9 +223,9 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
                     update_state();
                     return TRUE;
                 }
-        return FALSE;
         break;
     }
+    return FALSE;
 }
 
 void
@@ -239,11 +240,13 @@ webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer d
 
 gboolean
 webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data) {
-
+    return FALSE;
 }
 
-static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data) {
+static
+gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data) {
     update_state();
+    return TRUE;
 }
 
 /* funcs here */
