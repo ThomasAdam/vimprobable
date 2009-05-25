@@ -62,6 +62,8 @@ enum { ZoomReset,
         ZoomIn = ZoomOut | (1 << 1) };
 enum { ZoomText, ZoomFullContent = (1 << 2) };
 
+enum { NthSubdir, Rootdir };
+
 /* structs here */
 typedef union {
     int i;
@@ -97,6 +99,7 @@ static gboolean webview_console_cb(WebKitWebView* webview, char* message, int li
 static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data);
 
 /* functions */
+static gboolean descend(const Arg* arg);
 static gboolean navigate(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean yank(const Arg *arg);
@@ -250,6 +253,51 @@ gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int cou
 }
 
 /* funcs here */
+gboolean
+descend(const Arg* arg) {
+    const char *src = webkit_web_view_get_uri(webview), *p = &src[0];
+    char *uri, *d, *l;
+    count = count ? count : 1;
+
+    uri = malloc((strlen(src)  + 1) * sizeof(char));
+    d =& uri[0];
+    while(*p != '\0') { /* copy protocol-handler /(.*\/\/)/ */
+        *d = *p;
+        if(*p == '/' && *(++p) == '/') {
+            *(++d) = '/';
+            break;
+        }
+        ++d; ++p;
+    }
+    l = d; /* set pointer for lower limit */
+    ++p;
+    if(arg->i == Rootdir) {
+        ++d;
+        while(*p != '/' && *p != '\0') /* copy till last slash or NUL */
+            *(d++) = *(p++);
+        *d = '\0';
+    } else {
+        while(*p != '\0') { /* copy string but replace /\/+/ with '/' */
+            if(*p != '/' || *d != '/')
+                *(++d) = *p;
+            ++p;
+        }
+        if(*d != '/') /* if last char is '/' ignore it */
+            ++d;
+        ++count;
+        while(--count && --d) /* walk backwards the level */
+            while(*d != '/')
+                if(--d <= l) { /* if lower limit is reached abort */
+                    free(uri);
+                    return TRUE;
+                }
+        *(++d) = '\0';
+    }
+    webkit_web_view_load_uri(webview, uri);
+    free(uri);
+    return TRUE;
+}
+
 gboolean
 navigate(const Arg* arg) {
     if(arg->i & NavigationForwardBack)

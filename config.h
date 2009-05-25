@@ -73,6 +73,9 @@ static Key keys[] = {
 
     { 0,                    0,              GDK_y,          yank,       {SourceURL      | ClipboardPrimary  | ClipboardGTK} },
     { GDK_SHIFT_MASK,       0,              GDK_Y,          yank,       {SourceSelection} },
+
+    { 0,                    GDK_g,          GDK_u,          descend,    {NthSubdir} },
+    { GDK_SHIFT_MASK,       GDK_g,          GDK_U,          descend,    {Rootdir} },
 };
 
 
