@@ -76,6 +76,9 @@ static Key keys[] = {
 
     { 0,                    GDK_g,          GDK_u,          descend,    {NthSubdir} },
     { GDK_SHIFT_MASK,       GDK_g,          GDK_U,          descend,    {Rootdir} },
+
+    { GDK_CONTROL_MASK,     0,              GDK_a,          number,     {Increment} },
+    { GDK_CONTROL_MASK,     0,              GDK_x,          number,     {Decrement} },
 };
 
 

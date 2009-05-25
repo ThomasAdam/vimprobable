@@ -64,6 +64,8 @@ enum { ZoomText, ZoomFullContent = (1 << 2) };
 
 enum { NthSubdir, Rootdir };
 
+enum { Increment, Decrement };
+
 /* structs here */
 typedef union {
     int i;
@@ -101,6 +103,7 @@ static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, 
 /* functions */
 static gboolean descend(const Arg* arg);
 static gboolean navigate(const Arg* arg);
+static gboolean number(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
@@ -306,6 +309,32 @@ navigate(const Arg* arg) {
         (arg->i == NavigationReload ? webkit_web_view_reload : webkit_web_view_reload_bypass_cache)(webview);
     else
         webkit_web_view_stop_loading(webview);
+    return TRUE;
+}
+
+gboolean
+number(const Arg* arg) {
+    const char* source = webkit_web_view_get_uri(webview);
+    char *uri, *p, *new;
+    int number, diff = (count ? count : 1) * (arg->i == Increment ? 1 : -1);
+
+    uri = strdup(source); /* copy string */
+    p =& uri[0];
+    while(*p != '\0') /* goto the end of the string */
+        ++p;
+    --p;
+    while(*p >= '0' && *p <= '9') /* go back until non number char is reached */
+        --p;
+    if(*(++p) == '\0') { /* if no numbers were found abort */
+        free(uri);
+        return TRUE;
+    }
+    number = atoi(p) + diff; /* apply diff on number */
+    *p = '\0';
+    new = g_strdup_printf("%s%d", uri, number); /* create new uri */
+    webkit_web_view_load_uri(webview, new);
+    g_free(new);
+    free(uri);
     return TRUE;
 }
 
