@@ -273,7 +273,7 @@ descend(const Arg* arg) {
     ++p;
     if(arg->i == Rootdir) {
         ++d;
-        while(*p != '/' && *p != '\0') /* copy till last slash or NUL */
+        while(*p != '/' && *p != '\0') /* copy till first slash or NUL */
             *(d++) = *(p++);
         *d = '\0';
     } else {
