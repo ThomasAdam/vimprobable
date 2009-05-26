@@ -10,7 +10,8 @@
 #include <libsoup/soup.h>
 
 /* macros */
-#define LENGTH(x)   (sizeof(x)/sizeof(x[0]))
+#define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
+#define ISCOMMAND(str, cmd, len)    (g_str_has_prefix(str, cmd) && len > sizeof(cmd) + 1)
 
 /* enums */
 enum { ModeNormal, ModeInsert, ModeSearch, ModeWebsearch, ModeHints };                  /* modes */
@@ -99,6 +100,7 @@ static gboolean webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event);
 static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data);
 static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
 static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data);
+static void inputbox_activate_cb(GtkEntry* entry, gpointer user_data);
 
 /* functions */
 static gboolean descend(const Arg* arg);
@@ -115,7 +117,7 @@ static void update_state();
 static void setup_modkeys();
 static void setup_gui();
 static void setup_settings();
-static void setup_signals(GObject* window, GObject* webview);
+static void setup_signals();
 static void ascii_bar(int total, int state, char* string);
 
 /* variables */
@@ -260,6 +262,30 @@ static
 gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data) {
     update_state();
     return TRUE;
+}
+
+void
+inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
+    char* text;
+    guint16 length = gtk_entry_get_text_length(entry);
+    Arg a;
+
+    if(length < 2)
+        return;
+    text = (char*)gtk_entry_get_text(entry);
+    if(text[0] == ':') {
+        if(ISCOMMAND(&text[1], "open", length)) {
+            a.s =& text[6];
+            a.i = TargetCurrent;
+            open(&a);
+        } else
+            return;
+    } else if(text[0] == '/') {
+        // STUB call search func here
+    } else
+        return;
+    gtk_entry_set_text(entry, "");
+    gtk_widget_grab_focus((GtkWidget*)webview);
 }
 
 /* funcs here */
@@ -518,7 +544,7 @@ setup_gui() {
 #ifdef DISABLE_SCROLLBAR
     gtk_scrolled_window_set_policy((GtkScrolledWindow*)viewport, GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 #endif
-    setup_signals((GObject*)window, (GObject*)webview);
+    setup_signals();
     gtk_container_add((GtkContainer*)viewport, (GtkWidget*)webview);
     font = pango_font_description_from_string(urlboxfont);
     gtk_widget_modify_font((GtkWidget*)inputbox, font);
@@ -550,7 +576,7 @@ setup_settings() {
 }
 
 void
-setup_signals(GObject* window, GObject* webview) {
+setup_signals() {
     /* window */
     g_object_connect((GObject*)window,
         "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
@@ -569,6 +595,10 @@ setup_signals(GObject* window, GObject* webview) {
         "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
         "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
         "signal-after::move-cursor",                    (GCallback)webview_scroll_cb,               NULL,
+    NULL);
+    /* inputbox */
+    g_object_connect((GObject*)inputbox,
+        "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
     NULL);
 }
 
