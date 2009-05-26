@@ -258,8 +258,8 @@ webview_console_cb(WebKitWebView* webview, char* message, int line, char* source
     return FALSE;
 }
 
-static
-gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data) {
+gboolean
+webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data) {
     update_state();
     return TRUE;
 }
