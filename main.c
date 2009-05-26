@@ -67,9 +67,9 @@ enum { NthSubdir, Rootdir };
 enum { Increment, Decrement };
 
 /* structs here */
-typedef union {
+typedef struct {
     int i;
-    void *v;
+    char *s;
 } Arg;
 
 typedef struct {
@@ -104,6 +104,7 @@ static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, 
 static gboolean descend(const Arg* arg);
 static gboolean navigate(const Arg* arg);
 static gboolean number(const Arg* arg);
+static gboolean open(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
@@ -126,6 +127,7 @@ static GtkWidget* status_state;
 static WebKitWebView* webview;
 static GtkClipboard* clipboards[2];
 
+static char **args;
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
 static float zoomstep;
@@ -339,6 +341,17 @@ number(const Arg* arg) {
 }
 
 gboolean
+open(const Arg* arg) {
+    char *argv[] = { *args, arg->s, NULL };
+
+    if(arg->i == TargetCurrent)
+        webkit_web_view_load_uri(webview, arg->s);
+    else
+        g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
+    return TRUE;
+}
+
+gboolean
 yank(const Arg *arg) {
     const char* url;
 
@@ -497,8 +510,6 @@ setup_gui() {
     gtk_container_add((GtkContainer*)window, (GtkWidget*)box);
     gtk_widget_grab_focus((GtkWidget*)webview);
     gtk_widget_show_all(window);
-    webkit_web_view_load_uri(webview, startpage);
-    gtk_main();
 }
 
 void
@@ -537,11 +548,15 @@ setup_signals(GObject* window, GObject* webview) {
 
 int
 main(int argc, char* argv[]) {
+    args = argv;
+
     gtk_init(&argc, &argv);
     if(!g_thread_supported())
         g_thread_init(NULL);
     setup_modkeys();
     setup_gui();
+    webkit_web_view_load_uri(webview, argc > 1 ? argv[1] : startpage);
+    gtk_main();
 
     return EXIT_SUCCESS;
 }

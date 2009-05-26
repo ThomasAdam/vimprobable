@@ -3,7 +3,7 @@
 */
 
 /* general settings */
-static const char startpage[]           = "https://projects.ring0.de/webkitbrowser/";
+static char startpage[]                 = "https://projects.ring0.de/webkitbrowser/";
 
 /* appearance */
 static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
@@ -37,6 +37,9 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 /* key bindings for normal mode */
 static Key keys[] = {
     /* modmask,             modkey,         key,            function,   argument */
+    { 0,                    GDK_g,          GDK_h,          open,       {TargetCurrent, startpage} },
+    { GDK_SHIFT_MASK,       GDK_g,          GDK_H,          open,       {TargetNew,     startpage} },
+
     { 0,                    0,              GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
     { GDK_SHIFT_MASK,       0,              GDK_dollar,     scroll,     {ScrollJumpTo   | DirectionRight} },
     { 0,                    GDK_g,          GDK_g,          scroll,     {ScrollJumpTo   | DirectionTop} },
