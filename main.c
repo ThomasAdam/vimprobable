@@ -102,6 +102,7 @@ static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, 
 
 /* functions */
 static gboolean descend(const Arg* arg);
+static gboolean input(const Arg* arg);
 static gboolean navigate(const Arg* arg);
 static gboolean number(const Arg* arg);
 static gboolean open(const Arg* arg);
@@ -121,7 +122,7 @@ static void ascii_bar(int total, int state, char* string);
 static GtkWidget* window;
 static GtkAdjustment* adjust_h;
 static GtkAdjustment* adjust_v;
-static GtkWidget* input;
+static GtkWidget* inputbox;
 static GtkWidget* eventbox;
 static GtkWidget* status_url;
 static GtkWidget* status_state;
@@ -152,7 +153,7 @@ webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* ti
 void
 webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data) {
 #ifdef ENABLE_GTK_PROGRESS_BAR
-    gtk_entry_set_progress_fraction((GtkEntry*)input, progress == 100 ? 0 : (double)progress/100);
+    gtk_entry_set_progress_fraction((GtkEntry*)inputbox, progress == 100 ? 0 : (double)progress/100);
 #endif
     update_state();
 }
@@ -304,6 +305,14 @@ descend(const Arg* arg) {
     }
     webkit_web_view_load_uri(webview, uri);
     free(uri);
+    return TRUE;
+}
+
+gboolean
+input(const Arg* arg) {
+    gtk_entry_set_text((GtkEntry*)inputbox, arg->s);
+    gtk_widget_grab_focus(inputbox);
+    gtk_editable_set_position((GtkEditable*)inputbox, -1);
     return TRUE;
 }
 
@@ -490,7 +499,7 @@ setup_gui() {
     adjust_v = gtk_range_get_adjustment((GtkRange*)scroll_v);
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkBox* box = (GtkBox*)gtk_vbox_new(FALSE, 0);
-    input = gtk_entry_new();
+    inputbox = gtk_entry_new();
     GtkWidget* viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
     webview = (WebKitWebView*)webkit_web_view_new();
     GtkBox* statusbar = (GtkBox*)gtk_hbox_new(FALSE, 0);
@@ -512,9 +521,9 @@ setup_gui() {
     setup_signals((GObject*)window, (GObject*)webview);
     gtk_container_add((GtkContainer*)viewport, (GtkWidget*)webview);
     font = pango_font_description_from_string(urlboxfont);
-    gtk_widget_modify_font((GtkWidget*)input, font);
+    gtk_widget_modify_font((GtkWidget*)inputbox, font);
     pango_font_description_free(font);
-    gtk_entry_set_inner_border((GtkEntry*)input, NULL);
+    gtk_entry_set_inner_border((GtkEntry*)inputbox, NULL);
     gtk_misc_set_alignment((GtkMisc*)status_url, 0.0, 0.0);
     gtk_misc_set_alignment((GtkMisc*)status_state, 1.0, 0.0);
     gtk_box_pack_start(statusbar, status_url, TRUE, TRUE, 2);
@@ -522,8 +531,8 @@ setup_gui() {
     gtk_container_add((GtkContainer*)eventbox, (GtkWidget*)statusbar);
     gtk_box_pack_start(box, viewport, TRUE, TRUE, 0);
     gtk_box_pack_start(box, eventbox, FALSE, FALSE, 0);
-    gtk_entry_set_has_frame((GtkEntry*)input, FALSE);
-    gtk_box_pack_start(box, input, FALSE, FALSE, 0);
+    gtk_entry_set_has_frame((GtkEntry*)inputbox, FALSE);
+    gtk_box_pack_start(box, inputbox, FALSE, FALSE, 0);
     gtk_container_add((GtkContainer*)window, (GtkWidget*)box);
     gtk_widget_grab_focus((GtkWidget*)webview);
     gtk_widget_show_all(window);
