@@ -275,8 +275,12 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
     text = (char*)gtk_entry_get_text(entry);
     if(text[0] == ':') {
         if(ISCOMMAND(&text[1], "open", length)) {
-            a.s =& text[6];
+            a.s =& text[sizeof("open") + 1];
             a.i = TargetCurrent;
+            open(&a);
+        } else if(ISCOMMAND(&text[1], "tabopen", length)) {
+            a.s =& text[sizeof("tabopen") + 1];
+            a.i = TargetNew;
             open(&a);
         } else
             return;
@@ -604,6 +608,7 @@ setup_signals() {
 
 int
 main(int argc, char* argv[]) {
+    Arg a;
     args = argv;
 
     gtk_init(&argc, &argv);
@@ -611,7 +616,9 @@ main(int argc, char* argv[]) {
         g_thread_init(NULL);
     setup_modkeys();
     setup_gui();
-    webkit_web_view_load_uri(webview, argc > 1 ? argv[1] : startpage);
+    a.i = TargetCurrent;
+    a.s = argc > 1 ? argv[1] : startpage;
+    open(&a);
     gtk_main();
 
     return EXIT_SUCCESS;

@@ -87,6 +87,7 @@ static Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_x,          number,     {Decrement} },
 
     { 0,                    0,              GDK_o,          input,      {.s = ":open "} },
+    { 0,                    0,              GDK_t,          input,      {.s = ":tabopen "} },
 };
 
 
