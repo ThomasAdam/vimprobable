@@ -80,6 +80,9 @@ static Key keys[] = {
     { 0,                    GDK_g,          GDK_h,          open,       {TargetCurrent, startpage} },
     { GDK_SHIFT_MASK,       GDK_g,          GDK_H,          open,       {TargetNew,     startpage} },
 
+    { 0,                    0,              GDK_p,          paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK} },
+    { GDK_SHIFT_MASK,       0,              GDK_P,          paste,      {TargetNew      | ClipboardPrimary  | ClipboardGTK} },
+
     { GDK_CONTROL_MASK,     0,              GDK_a,          number,     {Increment} },
     { GDK_CONTROL_MASK,     0,              GDK_x,          number,     {Decrement} },
 };

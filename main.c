@@ -46,12 +46,12 @@ enum { NavigationCancel,
         NavigationReload = (NavigationReloadActions | 1 << 2),
         NavigationForceReload = NavigationReloadActions };
 /* bitmask:
-    1 << 0:  ClipboardPrimary (X11)
-    1 << 1:  ClipboardGTK
-    1 << 2:  0 = SourceSelection    1 = SourceURL
+    1 << 1:  ClipboardPrimary (X11)
+    1 << 2:  ClipboardGTK
+    1 << 3:  0 = SourceSelection    1 = SourceURL
 */
-enum { ClipboardPrimary = 1, ClipboardGTK };
-enum { SourceSelection, SourceURL = 1 << 2 };
+enum { ClipboardPrimary = 1 << 1, ClipboardGTK = 1 << 2 };
+enum { SourceSelection, SourceURL = 1 << 3 };
 /* bitmask:
     1 << 0:  0 = ZoomReset          1 = ZoomIn/Out
     1 << 1:  0 = ZoomOut            1 = ZoomIn
@@ -105,6 +105,7 @@ static gboolean descend(const Arg* arg);
 static gboolean navigate(const Arg* arg);
 static gboolean number(const Arg* arg);
 static gboolean open(const Arg* arg);
+static gboolean paste(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
@@ -366,6 +367,19 @@ yank(const Arg *arg) {
             gtk_clipboard_set_text(clipboards[1], url, -1);
     } else
         webkit_web_view_copy_clipboard(webview);
+    return TRUE;
+}
+
+gboolean
+paste(const Arg* arg) {
+    Arg a = { .i = arg->i & TargetNew, .s = NULL };
+
+    if(arg->i & ClipboardPrimary)
+        a.s = gtk_clipboard_wait_for_text(clipboards[0]);
+    if(!a.s && arg->i & ClipboardGTK)
+        a.s = gtk_clipboard_wait_for_text(clipboards[1]);
+    if(a.s)
+        open(&a);
     return TRUE;
 }
 
