@@ -61,9 +61,8 @@ enum { ZoomReset,
         ZoomOut,
         ZoomIn = ZoomOut | (1 << 1) };
 enum { ZoomText, ZoomFullContent = (1 << 2) };
-
 enum { NthSubdir, Rootdir };
-
+enum { InsertCurrentURL = 1 };
 enum { Increment, Decrement };
 /* bitmask:
     1 << 0:  0 = DirectionForward   1 = DirectionBackwards
@@ -374,9 +373,13 @@ focus(const Arg* arg) {
 
 gboolean
 input(const Arg* arg) {
+    int pos = 0;
     count = 0;
+
     update_state();
-    gtk_entry_set_text((GtkEntry*)inputbox, arg->s);
+    gtk_editable_insert_text((GtkEditable*)inputbox, arg->s, -1, &pos);
+    if(arg->i & InsertCurrentURL)
+        gtk_editable_insert_text((GtkEditable*)inputbox, webkit_web_view_get_uri(webview), -1, &pos);
     gtk_widget_grab_focus(inputbox);
     gtk_editable_set_position((GtkEditable*)inputbox, -1);
     return TRUE;

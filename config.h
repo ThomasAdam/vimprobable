@@ -104,7 +104,9 @@ static Key keys[] = {
 
     { GDK_SHIFT_MASK,       0,              GDK_colon,      input,      {.s = ":" } },
     { 0,                    0,              GDK_o,          input,      {.s = ":open "} },
+    { GDK_SHIFT_MASK,       0,              GDK_O,          input,      {.s = ":open ", .i = InsertCurrentURL} },
     { 0,                    0,              GDK_t,          input,      {.s = ":tabopen "} },
+    { GDK_SHIFT_MASK,       0,              GDK_T,          input,      {.s = ":tabopen ", .i = InsertCurrentURL} },
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
 
     { 0,                    0,              GDK_Escape,     focus,      {0} },
