@@ -296,9 +296,9 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
     if(text[0] == ':') {
         for(i = 0; i < LENGTH(commands); i++) {
             len = strlen(commands[i].cmd);
-            if(length >= len && !strncmp(&text[1], commands[i].cmd, len - 1)) {
+            if(length >= len && !strncmp(&text[1], commands[i].cmd, len)) {
                 a.i = commands[i].arg.i;
-                a.s = length + 1 > len ? &text[len + 2] : commands[i].arg.s;
+                a.s = length > len ? &text[len + 2] : commands[i].arg.s;
                 if(commands[i].func(&a))
                     break;
             }
