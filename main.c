@@ -94,6 +94,11 @@ typedef struct {
     const Arg arg;
 } Command;
 
+typedef struct {
+    char* handle;
+    char* uri;
+} Searchengine;
+
 /* callbacks here */
 static void window_destroyed_cb(GtkWidget* window, gpointer func_data);
 static void webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data);
@@ -417,13 +422,45 @@ number(const Arg* arg) {
 gboolean
 open(const Arg* arg) {
     char *argv[] = { *args, arg->s, NULL };
+    char *s = arg->s, *p, *new;
     Arg a = { .i = NavigationReload };
+    int len, i;
 
     if(!arg->s)
         navigate(&a);
-    else if(arg->i == TargetCurrent)
-        webkit_web_view_load_uri(webview, arg->s);
-    else
+    else if(arg->i == TargetCurrent) {
+        len = strlen(arg->s);
+        new = NULL, p = strchr(arg->s, ' ');
+        if(p)                                                           /* check for search engines */
+            for(i = 0; i < LENGTH(searchengines); i++)
+                if(!strncmp(arg->s, searchengines[i].handle, p - arg->s)) {
+                    p = soup_uri_encode(++p, "&");
+                    new = g_strdup_printf(searchengines[i].uri, p);
+                    g_free(p);
+                    break;
+                }
+        if(!new) {
+            if(len > 3 && strstr(arg->s, "://")) {                      /* valid url? */
+                p = new = malloc(len + 1);
+                while(*s != '\0') {                                     /* strip whitespaces */
+                    if(*s != ' ')
+                        *(p++) = *s;
+                    ++s;
+                }
+                *p = '\0';
+            } else if(p || !strchr(arg->s, '.')) {                      /* whitespaces or no dot? */
+                p = soup_uri_encode(arg->s, "&");
+                new = g_strdup_printf(defsearch->uri, p);
+                g_free(p);
+            } else {                                                    /* prepend "http://" */
+                new = malloc(sizeof("http://") + len);
+                strcpy(new, "http://");
+                memcpy(&new[sizeof("http://") - 1], arg->s, len + 1);
+            }
+        }
+        webkit_web_view_load_uri(webview, new);
+        free(new);
+    } else
         g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
     return TRUE;
 }

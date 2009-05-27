@@ -31,6 +31,15 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 #define             ENABLE_MATCH_HIGHLITING
 static const int searchoptions          = DirectionForward | CaseInsensitive | Wrapping;
 
+/* search engines */
+static Searchengine searchengines[] = {
+    { "s",          "https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s" },
+    { "m",          "http://www.google.de/maps?q=%s" },
+    { "g",          "http://www.google.de/search?q=%s" },
+    { "w",          "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
+};
+static Searchengine *defsearch = &searchengines[0];
+
 /* webkit settings */
 #define WEBKITSETTINGS \
     "default-font-size",                12, \
