@@ -322,32 +322,32 @@ static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
 /* funcs here */
 gboolean
 descend(const Arg* arg) {
-    char *source = (char*)webkit_web_view_get_uri(webview), *e = &source[0], *p = &source[0], *new;
+    char *source = (char*)webkit_web_view_get_uri(webview), *p = &source[0], *new;
     int i, len;
     count = count ? count : 1;
 
     if(arg->i == Rootdir) {
-        for(i = 0; i < 3; i++)
-            if(!(e = strchr(&(++e)[0], '/')))
-                return TRUE;
+        for(i = 0; i < 3; i++)                  /* get to the third slash */
+            if(!(p = strchr(++p, '/')))
+                return TRUE;                    /* if we cannot find it quit */
     } else {
-        if((e = &source[0] + strlen(source)) == p)
+        len = strlen(source);
+        if(!len)                                /* if string is empty quit */
             return TRUE;
-        if(*(e - 1) == '/')
+        p = source + len;                       /* start at the end */
+        if(*(p - 1) == '/')                     /* /\/$/ is not an additional level */
             ++count;
         for(i = 0; i < count; i++)
-            while(*(e--) != '/' || *e == '/')
-                if(e == p)
+            while(*(p--) != '/' || *p == '/')   /* count /\/+/ as one slash */
+                if(p == source)                 /* if we reach the first char pointer quit */
                     return TRUE;
-        ++e;
+        ++p;                                    /* since we do p-- in the while, we are pointing at
+                                                   the char before the slash, so +1  */
     }
-    len =  &e[0] - &source[0];
-    new = malloc(++len);
-    e =& new[0];
-    p =& source[0];
-    while(--len)
-        *(e++) = *(p++);
-    *e = '\0';
+    len =  p - source + 1;                      /* new length = end - start + 1 */
+    new = malloc(len);
+    memcpy(new, source, len);
+    new[len] = '\0';
     webkit_web_view_load_uri(webview, new);
     free(new);
     return TRUE;
