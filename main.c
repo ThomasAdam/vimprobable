@@ -322,46 +322,34 @@ static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
 /* funcs here */
 gboolean
 descend(const Arg* arg) {
-    const char *src = webkit_web_view_get_uri(webview), *p = &src[0];
-    char *uri, *d, *l;
+    char *source = (char*)webkit_web_view_get_uri(webview), *e = &source[0], *p = &source[0], *new;
+    int i, len;
     count = count ? count : 1;
 
-    uri = malloc((strlen(src)  + 1) * sizeof(char));
-    d =& uri[0];
-    while(*p != '\0') { /* copy protocol-handler /(.*\/\/)/ */
-        *d = *p;
-        if(*p == '/' && *(++p) == '/') {
-            *(++d) = '/';
-            break;
-        }
-        ++d; ++p;
-    }
-    l = d; /* set pointer for lower limit */
-    ++p;
     if(arg->i == Rootdir) {
-        ++d;
-        while(*p != '/' && *p != '\0') /* copy till first slash or NUL */
-            *(d++) = *(p++);
-        *d = '\0';
+        for(i = 0; i < 3; i++)
+            if(!(e = strchr(&(++e)[0], '/')))
+                return TRUE;
     } else {
-        while(*p != '\0') { /* copy string but replace /\/+/ with '/' */
-            if(*p != '/' || *d != '/')
-                *(++d) = *p;
-            ++p;
-        }
-        if(*d != '/') /* if last char is '/' ignore it */
-            ++d;
-        ++count;
-        while(--count && --d) /* walk backwards the level */
-            while(*d != '/')
-                if(--d <= l) { /* if lower limit is reached abort */
-                    free(uri);
+        if((e = &source[0] + strlen(source)) == p)
+            return TRUE;
+        if(*(e - 1) == '/')
+            ++count;
+        for(i = 0; i < count; i++)
+            while(*(e--) != '/' || *e == '/')
+                if(e == p)
                     return TRUE;
-                }
-        *(++d) = '\0';
+        ++e;
     }
-    webkit_web_view_load_uri(webview, uri);
-    free(uri);
+    len =  &e[0] - &source[0];
+    new = malloc(++len);
+    e =& new[0];
+    p =& source[0];
+    while(--len)
+        *(e++) = *(p++);
+    *e = '\0';
+    webkit_web_view_load_uri(webview, new);
+    free(new);
     return TRUE;
 }
 
