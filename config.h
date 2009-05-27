@@ -98,6 +98,8 @@ static Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
 
     { 0,                    0,              GDK_Escape,     focus,      {0} },
+
+    { 0,                    0,              GDK_d,          quit,       {0} },
 };
 
 

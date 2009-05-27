@@ -119,6 +119,7 @@ static gboolean navigate(const Arg* arg);
 static gboolean number(const Arg* arg);
 static gboolean open(const Arg* arg);
 static gboolean paste(const Arg* arg);
+static gboolean quit(const Arg* arg);
 static gboolean search(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean yank(const Arg *arg);
@@ -156,7 +157,7 @@ static char* search_handle;
 /* callbacks */
 void
 window_destroyed_cb(GtkWidget* window, gpointer func_data) {
-    gtk_main_quit();
+    quit(NULL);
 }
 
 void
@@ -453,6 +454,12 @@ paste(const Arg* arg) {
         a.s = gtk_clipboard_wait_for_text(clipboards[1]);
     if(a.s)
         open(&a);
+    return TRUE;
+}
+
+gboolean
+quit(const Arg* arg) {
+    gtk_main_quit();
     return TRUE;
 }
 
