@@ -27,6 +27,10 @@ static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
 static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 #define             DISABLE_SCROLLBAR
 
+/* searching */
+#define             ENABLE_MATCH_HIGHLITING
+static const int searchoptions          = DirectionForward | CaseInsensitive | Wrapping;
+
 /* webkit settings */
 #define WEBKITSETTINGS \
     "default-font-size",                12, \
@@ -86,8 +90,14 @@ static Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_a,          number,     {Increment} },
     { GDK_CONTROL_MASK,     0,              GDK_x,          number,     {Decrement} },
 
+    { 0,                    0,              GDK_n,          search,     {DirectionForward   | CaseInsensitive   | Wrapping} },
+    { GDK_SHIFT_MASK,       0,              GDK_N,          search,     {DirectionBackwards | CaseInsensitive   | Wrapping} },
+
     { 0,                    0,              GDK_o,          input,      {.s = ":open "} },
     { 0,                    0,              GDK_t,          input,      {.s = ":tabopen "} },
+    { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
+
+    { 0,                    0,              GDK_Escape,     focus,      {0} },
 };
 
 

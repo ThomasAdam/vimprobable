@@ -66,6 +66,14 @@ enum { ZoomText, ZoomFullContent = (1 << 2) };
 enum { NthSubdir, Rootdir };
 
 enum { Increment, Decrement };
+/* bitmask:
+    1 << 0:  0 = DirectionForward   1 = DirectionBackwards
+    1 << 1:  0 = CaseInsensitive    1 = CaseSensitive
+    1 << 2:  0 = No Wrapping        1 = Wrapping
+*/
+enum { DirectionBackwards, DirectionForward };
+enum { CaseInsensitive, CaseSensitive = 1 << 1 };
+enum { Wrapping = 1 << 2 };
 
 /* structs here */
 typedef struct {
@@ -101,14 +109,17 @@ static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link
 static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
 static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data);
 static void inputbox_activate_cb(GtkEntry* entry, gpointer user_data);
+static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event);
 
 /* functions */
 static gboolean descend(const Arg* arg);
+static gboolean focus(const Arg* arg);
 static gboolean input(const Arg* arg);
 static gboolean navigate(const Arg* arg);
 static gboolean number(const Arg* arg);
 static gboolean open(const Arg* arg);
 static gboolean paste(const Arg* arg);
+static gboolean search(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
@@ -138,6 +149,7 @@ static float zoomstep;
 static char scroll_state[4] = "\0";
 static char* modkeys;
 static char current_modkey;
+static char* search_handle;
 
 #include "config.h"
 
@@ -285,11 +297,25 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
         } else
             return;
     } else if(text[0] == '/') {
-        // STUB call search func here
+        webkit_web_view_unmark_text_matches(webview);
+#ifdef ENABLE_MATCH_HIGHLITING
+        webkit_web_view_mark_text_matches(webview, &text[1], FALSE, 0);
+        webkit_web_view_set_highlight_text_matches(webview, TRUE);
+#endif
+        count = 0;
+        a.s =& text[1];
+        a.i = searchoptions;
+        search(&a);
     } else
         return;
     gtk_entry_set_text(entry, "");
     gtk_widget_grab_focus((GtkWidget*)webview);
+}
+
+static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
+    if(event->type == GDK_KEY_PRESS && event->keyval == GDK_Escape)
+        return focus(NULL);
+    return FALSE;
 }
 
 /* funcs here */
@@ -335,6 +361,14 @@ descend(const Arg* arg) {
     }
     webkit_web_view_load_uri(webview, uri);
     free(uri);
+    return TRUE;
+}
+
+gboolean
+focus(const Arg* arg) {
+    webkit_web_view_unmark_text_matches(webview);
+    gtk_entry_set_text((GtkEntry*)inputbox, "");
+    gtk_widget_grab_focus((GtkWidget*)webview);
     return TRUE;
 }
 
@@ -419,6 +453,21 @@ paste(const Arg* arg) {
         a.s = gtk_clipboard_wait_for_text(clipboards[1]);
     if(a.s)
         open(&a);
+    return TRUE;
+}
+
+gboolean
+search(const Arg* arg) {
+    count = count ? count : 1;
+
+    if(arg->s) {
+        free(search_handle);
+        search_handle = strdup(arg->s);
+    }
+    if(!search_handle)
+        return TRUE;
+    do webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, arg->i & Wrapping);
+    while(--count);
     return TRUE;
 }
 
@@ -603,6 +652,7 @@ setup_signals() {
     /* inputbox */
     g_object_connect((GObject*)inputbox,
         "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
+        "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
     NULL);
 }
 
