@@ -11,7 +11,6 @@
 
 /* macros */
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
-#define ISCOMMAND(str, cmd, len)    (g_str_has_prefix(str, cmd) && len > sizeof(cmd) + 1)
 
 /* enums */
 enum { ModeNormal, ModeInsert, ModeSearch, ModeWebsearch, ModeHints };                  /* modes */
@@ -88,6 +87,12 @@ typedef struct {
     gboolean (*func)(const Arg *arg);
     const Arg arg;
 } Key;
+
+typedef struct {
+    char *cmd;
+    gboolean (*func)(const Arg *arg);
+    const Arg arg;
+} Command;
 
 /* callbacks here */
 static void window_destroyed_cb(GtkWidget* window, gpointer func_data);
@@ -282,21 +287,22 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
     char* text;
     guint16 length = gtk_entry_get_text_length(entry);
     Arg a;
+    int i;
+    size_t len;
 
     if(length < 2)
         return;
     text = (char*)gtk_entry_get_text(entry);
     if(text[0] == ':') {
-        if(ISCOMMAND(&text[1], "open", length)) {
-            a.s =& text[sizeof("open") + 1];
-            a.i = TargetCurrent;
-            open(&a);
-        } else if(ISCOMMAND(&text[1], "tabopen", length)) {
-            a.s =& text[sizeof("tabopen") + 1];
-            a.i = TargetNew;
-            open(&a);
-        } else
-            return;
+        for(i = 0; i < LENGTH(commands); i++) {
+            len = strlen(commands[i].cmd);
+            if(length >= len && !strncmp(&text[1], commands[i].cmd, len - 1)) {
+                a.i = commands[i].arg.i;
+                a.s = length + 1 > len ? &text[len + 2] : commands[i].arg.s;
+                if(commands[i].func(&a))
+                    break;
+            }
+        }
     } else if(text[0] == '/') {
         webkit_web_view_unmark_text_matches(webview);
 #ifdef ENABLE_MATCH_HIGHLITING
@@ -363,6 +369,8 @@ focus(const Arg* arg) {
 
 gboolean
 input(const Arg* arg) {
+    count = 0;
+    update_state();
     gtk_entry_set_text((GtkEntry*)inputbox, arg->s);
     gtk_widget_grab_focus(inputbox);
     gtk_editable_set_position((GtkEditable*)inputbox, -1);

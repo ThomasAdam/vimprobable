@@ -93,6 +93,7 @@ static Key keys[] = {
     { 0,                    0,              GDK_n,          search,     {DirectionForward   | CaseInsensitive   | Wrapping} },
     { GDK_SHIFT_MASK,       0,              GDK_N,          search,     {DirectionBackwards | CaseInsensitive   | Wrapping} },
 
+    { GDK_SHIFT_MASK,       0,              GDK_colon,      input,      {.s = ":" } },
     { 0,                    0,              GDK_o,          input,      {.s = ":open "} },
     { 0,                    0,              GDK_t,          input,      {.s = ":tabopen "} },
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
@@ -102,4 +103,15 @@ static Key keys[] = {
     { 0,                    0,              GDK_d,          quit,       {0} },
 };
 
-
+/* command mapping */
+static Command commands[] = {
+    /* command,                                             function,   argument */
+    { "open",                                               open,       {TargetCurrent} },
+    { "tabopen",                                            open,       {TargetNew} },
+    { "back",                                               navigate,   {NavigationBack} },
+    { "forward",                                            navigate,   {NavigationForward} },
+    { "reload!",                                            navigate,   {NavigationForceReload} },
+    { "reload",                                             navigate,   {NavigationReload} },
+    { "stop",                                               navigate,   {NavigationCancel} },
+    { "quit",                                               quit,       {0} },
+};
