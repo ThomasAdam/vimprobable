@@ -417,8 +417,11 @@ number(const Arg* arg) {
 gboolean
 open(const Arg* arg) {
     char *argv[] = { *args, arg->s, NULL };
+    Arg a = { .i = NavigationReload };
 
-    if(arg->i == TargetCurrent)
+    if(!arg->s)
+        navigate(&a);
+    else if(arg->i == TargetCurrent)
         webkit_web_view_load_uri(webview, arg->s);
     else
         g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
