@@ -106,12 +106,21 @@ static Key keys[] = {
 /* command mapping */
 static Command commands[] = {
     /* command,                                             function,   argument */
+    { "o",                                                  open,       {TargetCurrent} },
     { "open",                                               open,       {TargetCurrent} },
+    { "t",                                                  open,       {TargetNew} },
     { "tabopen",                                            open,       {TargetNew} },
+    { "ba",                                                 navigate,   {NavigationBack} },
     { "back",                                               navigate,   {NavigationBack} },
+    { "fw",                                                 navigate,   {NavigationForward} },
+    { "fo",                                                 navigate,   {NavigationForward} },
     { "forward",                                            navigate,   {NavigationForward} },
-    { "reload!",                                            navigate,   {NavigationForceReload} },
+    { "re",                                                 navigate,   {NavigationReload} },
+    { "re!",                                                navigate,   {NavigationForceReload} },
     { "reload",                                             navigate,   {NavigationReload} },
+    { "reload!",                                            navigate,   {NavigationForceReload} },
+    { "st",                                                 navigate,   {NavigationCancel} },
     { "stop",                                               navigate,   {NavigationCancel} },
+    { "q",                                                  quit,       {0} },
     { "quit",                                               quit,       {0} },
 };
