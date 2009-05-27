@@ -593,7 +593,7 @@ setup_gui() {
     setup_settings();
     gdk_color_parse(statusbgcolor, &bg);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
-    gtk_widget_set_name(window, "WebKitBrowser");
+    gtk_widget_set_name(window, "Vimpression");
 #ifdef DISABLE_SCROLLBAR
     gtk_scrolled_window_set_policy((GtkScrolledWindow*)viewport, GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 #endif
