@@ -13,7 +13,7 @@
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
 
 /* enums */
-enum { ModeNormal, ModeInsert, ModeSearch, ModeWebsearch, ModeHints };                  /* modes */
+enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };               /* modes */
 enum { TargetCurrent, TargetNew };                                                      /* target */
 /* bitmask,
     1 << 0:  0 = jumpTo,            1 = scroll
@@ -129,7 +129,6 @@ static gboolean notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer use
 /* functions */
 static gboolean descend(const Arg* arg);
 static gboolean echo(const Arg* arg);
-static gboolean focus(const Arg* arg);
 static gboolean input(const Arg* arg);
 static gboolean navigate(const Arg* arg);
 static gboolean number(const Arg* arg);
@@ -137,6 +136,7 @@ static gboolean open(const Arg* arg);
 static gboolean paste(const Arg* arg);
 static gboolean quit(const Arg* arg);
 static gboolean search(const Arg* arg);
+static gboolean set(const Arg* arg);
 static gboolean scroll(const Arg* arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
@@ -242,6 +242,7 @@ webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_dat
 gboolean
 webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
     unsigned int i;
+    Arg a = { .i = ModeNormal, .s = NULL };
 
     switch (mode) {
     case ModeNormal:
@@ -268,6 +269,17 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
                     update_state();
                     return TRUE;
                 }
+        break;
+    case ModePassThrough:
+        if(event->state == 0 && event->keyval == GDK_Escape) {
+            echo(&a);
+            set(&a);
+            return TRUE;
+        }
+        break;
+    case ModeSendKey:
+        echo(&a);
+        set(&a);
         break;
     }
     return FALSE;
@@ -341,8 +353,10 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
 
 gboolean
 inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
+    Arg a = { .i = ModeNormal };
+
     if(event->type == GDK_KEY_PRESS && event->keyval == GDK_Escape)
-        return focus(NULL);
+        return set(&a);
     return FALSE;
 }
 
@@ -393,6 +407,7 @@ gboolean
 echo(const Arg* arg) {
     PangoFontDescription* font;
     GdkColor color;
+    gulong handler;
     int index = !arg->s ? 0 : arg->i & (~NoAutoHide);
 
     if(index < Info || index > Error)
@@ -411,18 +426,8 @@ echo(const Arg* arg) {
         g_object_connect((GObject*)webview,
             "signal::event",        (GCallback*)notify_event_cb,    NULL,
         NULL);
-    else
-        g_object_disconnect((GObject*)webview,
-            "any-signal::event",    (GCallback*)notify_event_cb,    NULL,
-        NULL);
-    return TRUE;
-}
-
-gboolean
-focus(const Arg* arg) {
-    webkit_web_view_unmark_text_matches(webview);
-    gtk_entry_set_text((GtkEntry*)inputbox, "");
-    gtk_widget_grab_focus((GtkWidget*)webview);
+    else if((handler = g_signal_handler_find((GObject*)webview, G_SIGNAL_MATCH_FUNC, 0, 0, NULL, (GCallback*)notify_event_cb, NULL)))
+        g_signal_handler_disconnect((GObject*)webview, handler);
     return TRUE;
 }
 
@@ -581,6 +586,34 @@ search(const Arg* arg) {
         echo(&a);
         g_free(a.s);
     }
+    return TRUE;
+}
+
+gboolean
+set(const Arg* arg) {
+    Arg a = { .i = Info | NoAutoHide };
+
+    switch (arg->i) {
+    case ModeNormal:
+        if(search_handle) {
+            search_handle = NULL;
+            webkit_web_view_unmark_text_matches(webview);
+        }
+        gtk_entry_set_text((GtkEntry*)inputbox, "");
+        gtk_widget_grab_focus((GtkWidget*)webview);
+        break;
+    case ModePassThrough:
+        a.s = "-- PASS THROUGH --";
+        echo(&a);
+        break;
+    case ModeSendKey:
+        a.s = "-- PASS TROUGH (next) --";
+        echo(&a);
+        break;
+    default:
+        return TRUE;
+    }
+    mode = arg->i;
     return TRUE;
 }
 
