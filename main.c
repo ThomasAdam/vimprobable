@@ -264,7 +264,9 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
         /* keybindings */
         for(i = 0; i < LENGTH(keys); i++)
             if(keys[i].mask == event->state
-            && (keys[i].modkey == current_modkey || (!keys[i].modkey && !current_modkey))
+            && (keys[i].modkey == current_modkey
+                || (!keys[i].modkey && !current_modkey)
+                || keys[i].modkey == GDK_VoidSymbol)    /* wildcard */
             && keys[i].key == event->keyval
             && keys[i].func)
                 if(keys[i].func(&keys[i].arg)) {

@@ -53,7 +53,9 @@ static Searchengine *defsearch = &searchengines[0];
     "enable-plugins",                   TRUE, \
     "enable-scripts",                   TRUE
 
-/* key bindings for normal mode */
+/* key bindings for normal mode
+    Note: GDK_VoidSymbol is a wildcard so it matches on every modkey
+*/
 static Key keys[] = {
     /* modmask,             modkey,         key,            function,   argument */
     { 0,                    0,              GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
@@ -115,7 +117,7 @@ static Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_T,          input,      {.s = ":tabopen ", .i = InsertCurrentURL} },
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
 
-    { 0,                    0,              GDK_Escape,     set,        {ModeNormal} },
+    { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
 
