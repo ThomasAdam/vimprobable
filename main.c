@@ -121,7 +121,7 @@ static gboolean webview_download_cb(WebKitWebView* webview, GObject* download, g
 static gboolean webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event);
 static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data);
 static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
-static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data);
+static void webview_scroll_cb(GtkAdjustment* adjustment, gpointer user_data);
 static void inputbox_activate_cb(GtkEntry* entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event);
 #ifdef ENABLE_INCREMENTAL_SEARCH
@@ -305,10 +305,9 @@ webview_console_cb(WebKitWebView* webview, char* message, int line, char* source
     return FALSE;
 }
 
-gboolean
-webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data) {
+void
+webview_scroll_cb(GtkAdjustment* adjustment, gpointer user_data) {
     update_state();
-    return TRUE;
 }
 
 void
@@ -828,7 +827,10 @@ setup_signals() {
         "signal::key-press-event",                      (GCallback)webview_keypress_cb,             NULL,
         "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
         "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
-        "signal-after::move-cursor",                    (GCallback)webview_scroll_cb,               NULL,
+    NULL);
+    /* webview adjustment */
+    g_object_connect((GObject*)adjust_v,
+        "signal::value-changed",                        (GCallback)webview_scroll_cb,               NULL,
     NULL);
     /* inputbox */
     g_object_connect((GObject*)inputbox,
