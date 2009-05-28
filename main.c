@@ -395,7 +395,7 @@ echo(const Arg* arg) {
     GdkColor color;
     int index = !arg->s ? 0 : arg->i & (~NoAutoHide);
 
-    if(arg->i < Info || arg->i > Error)
+    if(index < Info || index > Error)
         return TRUE;
     font = pango_font_description_from_string(urlboxfont[index]);
     gtk_widget_modify_font(inputbox, font);
