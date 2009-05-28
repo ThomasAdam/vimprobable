@@ -61,6 +61,11 @@ enum { ZoomReset,
         ZoomOut,
         ZoomIn = ZoomOut | (1 << 1) };
 enum { ZoomText, ZoomFullContent = (1 << 2) };
+/* bitmask:
+    0 = Info, 1 = Warning, 2 = Error
+    1 << 2:  0 = AutoHide           1 = NoAutoHide
+*/
+enum { Info, Warning, Error, NoAutoHide = 1 << 2 };
 enum { NthSubdir, Rootdir };
 enum { InsertCurrentURL = 1 };
 enum { Increment, Decrement };
@@ -119,9 +124,11 @@ static gboolean webview_console_cb(WebKitWebView* webview, char* message, int li
 static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data);
 static void inputbox_activate_cb(GtkEntry* entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event);
+static gboolean notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data);
 
 /* functions */
 static gboolean descend(const Arg* arg);
+static gboolean echo(const Arg* arg);
 static gboolean focus(const Arg* arg);
 static gboolean input(const Arg* arg);
 static gboolean navigate(const Arg* arg);
@@ -160,6 +167,7 @@ static char scroll_state[4] = "\0";
 static char* modkeys;
 static char current_modkey;
 static char* search_handle;
+static gboolean echo_active = FALSE;
 
 #include "config.h"
 
@@ -293,6 +301,7 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
     Arg a;
     int i;
     size_t len;
+    gboolean success = FALSE;
 
     if(length < 2)
         return;
@@ -303,9 +312,15 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
             if(length >= len && !strncmp(&text[1], commands[i].cmd, len) && (text[len + 1] == ' ' || !text[len + 1])) {
                 a.i = commands[i].arg.i;
                 a.s = length > len + 2 ? &text[len + 2] : commands[i].arg.s;
-                if(commands[i].func(&a))
+                if((success = commands[i].func(&a)))
                     break;
             }
+        }
+        if(!success) {
+            a.i = Error;
+            a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
+            echo(&a);
+            g_free(a.s);
         }
     } else if(text[0] == '/') {
         webkit_web_view_unmark_text_matches(webview);
@@ -319,13 +334,24 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
         search(&a);
     } else
         return;
-    gtk_entry_set_text(entry, "");
+    if(!echo_active)
+        gtk_entry_set_text(entry, "");
     gtk_widget_grab_focus((GtkWidget*)webview);
 }
 
-static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
+gboolean
+inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
     if(event->type == GDK_KEY_PRESS && event->keyval == GDK_Escape)
         return focus(NULL);
+    return FALSE;
+}
+
+gboolean
+notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
+    Arg a = { .s = NULL };
+
+    if(event->type == GDK_BUTTON_PRESS || event->type == GDK_KEY_PRESS || event->type == GDK_SCROLL || event->type == GDK_PROPERTY_NOTIFY)
+        echo(&a);
     return FALSE;
 }
 
@@ -360,6 +386,33 @@ descend(const Arg* arg) {
     new[len] = '\0';
     webkit_web_view_load_uri(webview, new);
     free(new);
+    return TRUE;
+}
+
+gboolean
+echo(const Arg* arg) {
+    PangoFontDescription* font;
+    GdkColor color;
+    int index = !arg->s ? 0 : arg->i & (~NoAutoHide);
+
+    font = pango_font_description_from_string(urlboxfont[index]);
+    gtk_widget_modify_font(inputbox, font);
+    pango_font_description_free(font);
+    if(urlboxcolor[index])
+        gdk_color_parse(urlboxcolor[index], &color);
+    gtk_widget_modify_text(inputbox, GTK_STATE_NORMAL, urlboxcolor[index] ? &color : NULL);
+    if(urlboxbgcolor[index])
+        gdk_color_parse(urlboxbgcolor[index], &color);
+    gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &color : NULL);
+    gtk_entry_set_text((GtkEntry*)inputbox, !arg->s ? "" : arg->s);
+    if((echo_active = arg->s != NULL) && !(arg->i & NoAutoHide))
+        g_object_connect((GObject*)webview,
+            "signal::event",        (GCallback*)notify_event_cb,    NULL,
+        NULL);
+    else
+        g_object_disconnect((GObject*)webview,
+            "any-signal::event",    (GCallback*)notify_event_cb,    NULL,
+        NULL);
     return TRUE;
 }
 
@@ -471,9 +524,13 @@ open(const Arg* arg) {
 gboolean
 yank(const Arg *arg) {
     const char* url;
+    Arg a;
 
     if(arg->i & SourceURL) {
         url = webkit_web_view_get_uri(webview);
+        a.s = g_strdup_printf("Yanked %s", url);
+        echo(&a);
+        g_free(a.s);
         if(arg->i & ClipboardPrimary)
             gtk_clipboard_set_text(clipboards[0], url, -1);
         if(arg->i & ClipboardGTK)
@@ -505,6 +562,8 @@ quit(const Arg* arg) {
 gboolean
 search(const Arg* arg) {
     count = count ? count : 1;
+    gboolean success;
+    Arg a;
 
     if(arg->s) {
         free(search_handle);
@@ -512,8 +571,14 @@ search(const Arg* arg) {
     }
     if(!search_handle)
         return TRUE;
-    do webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, arg->i & Wrapping);
+    do success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, arg->i & Wrapping);
     while(--count);
+    if(!success) {
+        a.i = Error;
+        a.s = g_strdup_printf("Pattern not found: %s", search_handle);
+        echo(&a);
+        g_free(a.s);
+    }
     return TRUE;
 }
 
@@ -645,7 +710,7 @@ setup_gui() {
 #endif
     setup_signals();
     gtk_container_add((GtkContainer*)viewport, (GtkWidget*)webview);
-    font = pango_font_description_from_string(urlboxfont);
+    font = pango_font_description_from_string(urlboxfont[0]);
     gtk_widget_modify_font((GtkWidget*)inputbox, font);
     pango_font_description_free(font);
     gtk_entry_set_inner_border((GtkEntry*)inputbox, NULL);

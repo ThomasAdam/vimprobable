@@ -10,7 +10,12 @@ static const char statusbgcolor[]       = "#000000";            /* background co
 static const char statuscolor[]         = "#ffffff";            /* color for status bar */
 static const char sslbgcolor[]          = "#b0ff00";            /* background color for status bar with SSL url */
 static const char sslcolor[]            = "#000000";            /* color for status bar with SSL url */
-static const char urlboxfont[]          = "monospace normal 8"; /* font for url input box */
+
+                                        /*  normal,                 warning,                error       */
+static const char *urlboxfont[]         = { "monospace normal 8",   "monospace normal 8",   "monospace bold 8"};
+static const char *urlboxcolor[]        = { NULL,                   "#ff0000",              "#ffffff" };
+static const char *urlboxbgcolor[]      = { NULL,                   NULL,                   "#ff0000" };
+
 static const char statusfont[]          = "monospace bold 8";   /* font for status bar */
 #define             ENABLE_HISTORY_INDICATOR
 #define             ENABLE_GTK_PROGRESS_BAR
@@ -117,21 +122,25 @@ static Key keys[] = {
 /* command mapping */
 static Command commands[] = {
     /* command,                                             function,   argument */
-    { "o",                                                  open,       {TargetCurrent} },
-    { "open",                                               open,       {TargetCurrent} },
-    { "t",                                                  open,       {TargetNew} },
-    { "tabopen",                                            open,       {TargetNew} },
     { "ba",                                                 navigate,   {NavigationBack} },
     { "back",                                               navigate,   {NavigationBack} },
+    { "ec",                                                 echo,       {Info} },
+    { "echo",                                               echo,       {Info} },
+    { "echoe",                                              echo,       {Error} },
+    { "echoerr",                                            echo,       {Error} },
     { "fw",                                                 navigate,   {NavigationForward} },
     { "fo",                                                 navigate,   {NavigationForward} },
     { "forward",                                            navigate,   {NavigationForward} },
+    { "o",                                                  open,       {TargetCurrent} },
+    { "open",                                               open,       {TargetCurrent} },
+    { "q",                                                  quit,       {0} },
+    { "quit",                                               quit,       {0} },
     { "re",                                                 navigate,   {NavigationReload} },
     { "re!",                                                navigate,   {NavigationForceReload} },
     { "reload",                                             navigate,   {NavigationReload} },
     { "reload!",                                            navigate,   {NavigationForceReload} },
     { "st",                                                 navigate,   {NavigationCancel} },
     { "stop",                                               navigate,   {NavigationCancel} },
-    { "q",                                                  quit,       {0} },
-    { "quit",                                               quit,       {0} },
+    { "t",                                                  open,       {TargetNew} },
+    { "tabopen",                                            open,       {TargetNew} },
 };
