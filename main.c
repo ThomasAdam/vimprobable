@@ -124,6 +124,9 @@ static gboolean webview_console_cb(WebKitWebView* webview, char* message, int li
 static gboolean webview_scroll_cb(WebKitWebView* webview, GtkMovementStep step, int count, gpointer user_data);
 static void inputbox_activate_cb(GtkEntry* entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event);
+#ifdef ENABLE_INCREMENTAL_SEARCH
+static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event);
+#endif
 static gboolean notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data);
 
 /* functions */
@@ -368,6 +371,20 @@ notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
         echo(&a);
     return FALSE;
 }
+
+#ifdef ENABLE_INCREMENTAL_SEARCH
+static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event) {
+    guint16 length = gtk_entry_get_text_length(entry);
+    char* text = (char*)gtk_entry_get_text(entry);
+
+    if(length > 1 && text[0] == '/') {
+        webkit_web_view_unmark_text_matches(webview);
+        webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive,
+                    searchoptions & DirectionForward, searchoptions & Wrapping);
+    }
+    return FALSE;
+}
+#endif
 
 /* funcs here */
 gboolean
@@ -799,6 +816,9 @@ setup_signals() {
     g_object_connect((GObject*)inputbox,
         "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
         "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
+#ifdef ENABLE_INCREMENTAL_SEARCH
+        "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
+#endif
     NULL);
 }
 
