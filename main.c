@@ -524,7 +524,7 @@ open(const Arg* arg) {
 gboolean
 yank(const Arg *arg) {
     const char* url;
-    Arg a;
+    Arg a = { .i = Info };
 
     if(arg->i & SourceURL) {
         url = webkit_web_view_get_uri(webview);
