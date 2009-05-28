@@ -595,8 +595,24 @@ search(const Arg* arg) {
     }
     if(!search_handle)
         return TRUE;
-    do success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, arg->i & Wrapping);
-    while(--count);
+    do {
+        success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, FALSE);
+        if(!success) {
+            if(arg->i & Wrapping) {
+                success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, TRUE);
+                if(success) {
+                    a.i = Warning;
+                    a.s = g_strdup_printf("search hit %s, continuing at %s",
+                            arg->i & DirectionForward ? "BOTTOM" : "TOP",
+                            arg->i & DirectionForward ? "TOP" : "BOTTOM");
+                    echo(&a);
+                    g_free(a.s);
+                } else
+                    break;
+            } else
+                break;
+        }
+    } while(--count);
     if(!success) {
         a.i = Error;
         a.s = g_strdup_printf("Pattern not found: %s", search_handle);
