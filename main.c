@@ -522,7 +522,7 @@ open(const Arg* arg) {
                 }
         if(!new) {
             if(len > 3 && strstr(arg->s, "://")) {                      /* valid url? */
-                p = new = malloc(len + 1);
+                p = new = g_malloc(len + 1);
                 while(*s != '\0') {                                     /* strip whitespaces */
                     if(*s != ' ')
                         *(p++) = *s;
@@ -534,13 +534,13 @@ open(const Arg* arg) {
                 new = g_strdup_printf(defsearch->uri, p);
                 g_free(p);
             } else {                                                    /* prepend "http://" */
-                new = malloc(sizeof("http://") + len);
+                new = g_malloc(sizeof("http://") + len);
                 strcpy(new, "http://");
                 memcpy(&new[sizeof("http://") - 1], arg->s, len + 1);
             }
         }
         webkit_web_view_load_uri(webview, new);
-        free(new);
+        g_free(new);
     } else
         g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
     return TRUE;
