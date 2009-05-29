@@ -6,7 +6,9 @@ SOURCE = main.c
 TARGET = vimpression
 INSTALLDIR = /usr/local/bin
 
-all:
+all: $(TARGET)
+
+$(TARGET): main.c config.h
 	$(GCC) $(FLAGS) -Wall -o $(TARGET) $(SOURCE)
 
 clean:
