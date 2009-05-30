@@ -1,6 +1,7 @@
 GCC    = gcc
 LIBS   = gtk+-2.0
 LIBS  += webkit-1.0
+LIBS  += libsoup-2.4
 FLAGS  = `pkg-config --cflags --libs $(LIBS)`
 SOURCE = main.c
 TARGET = vimpression
