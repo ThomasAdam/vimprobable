@@ -28,6 +28,11 @@ static const char progressbarcurrent    = '>';
 static const char progressbarspacer     = ' ';
 static const char progressborderright   = ']';
 
+/* cookies */
+#define             ENABLE_COOKIE_SUPPORT
+#define             COOKIES_STORAGE_FILENAME    "%s/cookies.txt", getenv("HOME")
+#define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
+
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
 static unsigned int pagingkeep          = 40;   /* pixels kept when paging */

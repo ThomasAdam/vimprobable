@@ -160,6 +160,7 @@ static GtkWidget* eventbox;
 static GtkWidget* status_url;
 static GtkWidget* status_state;
 static WebKitWebView* webview;
+static SoupSession* session;
 static GtkClipboard* clipboards[2];
 
 static char **args;
@@ -800,12 +801,23 @@ setup_gui() {
 void
 setup_settings() {
     WebKitWebSettings* settings = (WebKitWebSettings*)webkit_web_settings_new();
+#ifdef ENABLE_COOKIE_SUPPORT
+    SoupCookieJar* cookiejar;
+    char* filename;
+#endif
+    session = webkit_get_default_session();
 
 #ifdef WEBKITSETTINGS
     g_object_set((GObject*)settings, WEBKITSETTINGS, NULL);
 #endif
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
+#ifdef ENABLE_COOKIE_SUPPORT
+    filename = g_strdup_printf(COOKIES_STORAGE_FILENAME);
+    cookiejar = soup_cookie_jar_text_new(filename, COOKIES_STORAGE_READONLY);
+    g_free(filename);
+    soup_session_add_feature(session, (SoupSessionFeature*)cookiejar);
+#endif
 }
 
 void
