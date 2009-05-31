@@ -70,13 +70,19 @@ enum { NthSubdir, Rootdir };
 enum { InsertCurrentURL = 1 };
 enum { Increment, Decrement };
 /* bitmask:
-    1 << 0:  0 = DirectionForward   1 = DirectionBackwards
-    1 << 1:  0 = CaseInsensitive    1 = CaseSensitive
-    1 << 2:  0 = No Wrapping        1 = Wrapping
+    1 << 0:  0 = DirectionNext      1 = DirectionPrev       (Relative)
+    1 << 0:  0 = DirectionBackwards 1 = DirectionForward    (Absolute)
+
+    1 << 1:  0 = DirectionRelative  1 = DirectionAbsolute
+
+    1 << 2:  0 = CaseInsensitive    1 = CaseSensitive
+    1 << 3:  0 = No Wrapping        1 = Wrapping
 */
-enum { DirectionBackwards, DirectionForward };
-enum { CaseInsensitive, CaseSensitive = 1 << 1 };
-enum { Wrapping = 1 << 2 };
+enum { DirectionRelative, DirectionAbsolute = 1 << 1 };
+enum { DirectionNext, DirectionPrev };
+enum { DirectionBackwards = DirectionAbsolute, DirectionForward = (1 << 0) | DirectionAbsolute };
+enum { CaseInsensitive, CaseSensitive = 1 << 2 };
+enum { Wrapping = 1 << 3 };
 
 /* structs here */
 typedef struct {
@@ -171,6 +177,7 @@ static char scroll_state[4] = "\0";
 static char* modkeys;
 static char current_modkey;
 static char* search_handle;
+static gboolean search_direction;
 static gboolean echo_active = FALSE;
 
 #include "config.h"
@@ -318,7 +325,7 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
     Arg a;
     int i;
     size_t len;
-    gboolean success = FALSE;
+    gboolean success = FALSE, forward = FALSE;
 
     if(length < 2)
         return;
@@ -339,7 +346,7 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
             echo(&a);
             g_free(a.s);
         }
-    } else if(text[0] == '/') {
+    } else if((forward = text[0] == '/') || text[0] == '?') {
         webkit_web_view_unmark_text_matches(webview);
 #ifdef ENABLE_MATCH_HIGHLITING
         webkit_web_view_mark_text_matches(webview, &text[1], FALSE, 0);
@@ -347,7 +354,7 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
 #endif
         count = 0;
         a.s =& text[1];
-        a.i = searchoptions;
+        a.i = searchoptions | (forward ? DirectionForward : DirectionBackwards);
         search(&a);
     } else
         return;
@@ -378,11 +385,11 @@ notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
 static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event) {
     guint16 length = gtk_entry_get_text_length(entry);
     char* text = (char*)gtk_entry_get_text(entry);
+    gboolean forward = FALSE;
 
-    if(length > 1 && text[0] == '/') {
+    if(length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
         webkit_web_view_unmark_text_matches(webview);
-        webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive,
-                    searchoptions & DirectionForward, searchoptions & Wrapping);
+        webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
     }
     return FALSE;
 }
@@ -588,7 +595,7 @@ quit(const Arg* arg) {
 gboolean
 search(const Arg* arg) {
     count = count ? count : 1;
-    gboolean success;
+    gboolean success, direction = arg->i & DirectionPrev;
     Arg a;
 
     if(arg->s) {
@@ -597,16 +604,20 @@ search(const Arg* arg) {
     }
     if(!search_handle)
         return TRUE;
+    if(arg->i & DirectionAbsolute)
+        search_direction = direction;
+    else
+        direction ^= search_direction;
     do {
-        success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, FALSE);
+        success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, direction, FALSE);
         if(!success) {
             if(arg->i & Wrapping) {
-                success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, arg->i & DirectionForward, TRUE);
+                success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, direction, TRUE);
                 if(success) {
                     a.i = Warning;
                     a.s = g_strdup_printf("search hit %s, continuing at %s",
-                            arg->i & DirectionForward ? "BOTTOM" : "TOP",
-                            arg->i & DirectionForward ? "TOP" : "BOTTOM");
+                            direction ? "BOTTOM" : "TOP",
+                            direction ? "TOP" : "BOTTOM");
                     echo(&a);
                     g_free(a.s);
                 } else

@@ -40,7 +40,7 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 
 /* searching */
 #define             ENABLE_MATCH_HIGHLITING
-static const int searchoptions          = DirectionForward | CaseInsensitive | Wrapping;
+static const int searchoptions          = CaseInsensitive | Wrapping;
 
 /* search engines */
 static Searchengine searchengines[] = {
@@ -112,8 +112,8 @@ static Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_a,          number,     {Increment} },
     { GDK_CONTROL_MASK,     0,              GDK_x,          number,     {Decrement} },
 
-    { 0,                    0,              GDK_n,          search,     {DirectionForward   | CaseInsensitive   | Wrapping} },
-    { GDK_SHIFT_MASK,       0,              GDK_N,          search,     {DirectionBackwards | CaseInsensitive   | Wrapping} },
+    { 0,                    0,              GDK_n,          search,     {DirectionNext      | CaseInsensitive   | Wrapping} },
+    { GDK_SHIFT_MASK,       0,              GDK_N,          search,     {DirectionPrev      | CaseInsensitive   | Wrapping} },
 
     { GDK_SHIFT_MASK,       0,              GDK_colon,      input,      {.s = ":" } },
     { 0,                    0,              GDK_o,          input,      {.s = ":open "} },
@@ -121,6 +121,7 @@ static Key keys[] = {
     { 0,                    0,              GDK_t,          input,      {.s = ":tabopen "} },
     { GDK_SHIFT_MASK,       0,              GDK_T,          input,      {.s = ":tabopen ", .i = InsertCurrentURL} },
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
+    { GDK_SHIFT_MASK,       0,              GDK_question,   input,      {.s = "?"} },
 
     { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
