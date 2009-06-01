@@ -16,6 +16,16 @@ static const char *urlboxfont[]         = { "monospace normal 8",   "monospace n
 static const char *urlboxcolor[]        = { NULL,                   "#ff0000",              "#ffffff" };
 static const char *urlboxbgcolor[]      = { NULL,                   NULL,                   "#ff0000" };
 
+                                        /*  normal,                 error               */
+static const char *completionfont[]     = { "monospace normal 8",   "monospace bold 8" };
+                                                                                        /* topborder color */
+static const char *completioncolor[]    = { "#000000",              "#ff00ff",              "#000000" };
+                                                                                        /* current row background */
+static const char *completionbgcolor[]  = { "#ffffff",              "#ffffff",              "#fff000" };
+/* pango markup for prefix highliting:      opening,                closing             */
+#define             COMPLETION_TAG_OPEN     "<b>"
+#define             COMPLETION_TAG_CLOSE    "</b>"
+
 static const char statusfont[]          = "monospace bold 8";   /* font for status bar */
 #define             ENABLE_HISTORY_INDICATOR
 #define             ENABLE_INCREMENTAL_SEARCH

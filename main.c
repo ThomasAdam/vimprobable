@@ -11,6 +11,7 @@
 
 /* macros */
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
+#define EQUAL(a, b)                 (strlen(a) == strlen(b) && !strcmp(a, b))
 
 /* enums */
 enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };               /* modes */
@@ -79,7 +80,7 @@ enum { Increment, Decrement };
     1 << 3:  0 = No Wrapping        1 = Wrapping
 */
 enum { DirectionRelative, DirectionAbsolute = 1 << 1 };
-enum { DirectionNext, DirectionPrev };
+enum { DirectionNext, DirectionPrev, HideCompletion };
 enum { DirectionBackwards = DirectionAbsolute, DirectionForward = (1 << 0) | DirectionAbsolute };
 enum { CaseInsensitive, CaseSensitive = 1 << 2 };
 enum { Wrapping = 1 << 3 };
@@ -136,6 +137,7 @@ static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event);
 static gboolean notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data);
 
 /* functions */
+static gboolean complete(const Arg* arg);
 static gboolean descend(const Arg* arg);
 static gboolean echo(const Arg* arg);
 static gboolean input(const Arg* arg);
@@ -159,6 +161,7 @@ static void ascii_bar(int total, int state, char* string);
 
 /* variables */
 static GtkWidget* window;
+static GtkBox* box;
 static GtkAdjustment* adjust_h;
 static GtkAdjustment* adjust_v;
 static GtkWidget* inputbox;
@@ -327,6 +330,8 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
     size_t len;
     gboolean success = FALSE, forward = FALSE;
 
+    a.i = HideCompletion;
+    complete(&a);
     if(length < 2)
         return;
     text = (char*)gtk_entry_get_text(entry);
@@ -365,10 +370,23 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
 
 gboolean
 inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
-    Arg a = { .i = ModeNormal };
+    Arg a;
 
-    if(event->type == GDK_KEY_PRESS && event->keyval == GDK_Escape)
-        return set(&a);
+    if(event->type == GDK_KEY_PRESS) {
+        if(event->keyval == GDK_Escape) {
+            a.i = HideCompletion;
+            complete(&a);
+            a.i = ModeNormal;
+            return set(&a);
+        } else if(event->keyval == GDK_Tab) {
+            a.i = DirectionNext;
+            return complete(&a);
+        } else if(event->keyval == GDK_ISO_Left_Tab) {
+            a.i = DirectionPrev;
+            return complete(&a);
+        } else
+            return FALSE;
+    }
     return FALSE;
 }
 
@@ -396,6 +414,121 @@ static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event) {
 #endif
 
 /* funcs here */
+gboolean
+complete(const Arg* arg) {
+    char *str, *s, *p, *markup;
+    size_t listlen, len, cmdlen;
+    int i;
+    gboolean highlight = FALSE;
+    GtkBox *row;
+    GtkWidget *row_eventbox, *el;
+    GtkBox* _table;
+    GdkColor color;
+    static GtkWidget *table, **widgets, *top_border;
+    static char **suggestions, *prefix;
+    static int n = 0, current = -1;
+
+    str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
+    len = strlen(str);
+    if(len == 0 || str[0] != ':')
+        return TRUE;
+    if(prefix) {
+        if(arg->i != HideCompletion && widgets && current != -1 && EQUAL(&str[1], suggestions[current])) {
+            gdk_color_parse(completionbgcolor[0], &color);
+            gtk_widget_modify_bg(widgets[current], GTK_STATE_NORMAL, &color);
+            current = (n + current + (arg->i == DirectionPrev ? -1 : 1)) % n;
+            if((arg->i == DirectionNext && current == 0)
+            || (arg->i == DirectionPrev && current == n - 1))
+                current = -1;
+        } else {
+            free(widgets);
+            free(suggestions);
+            free(prefix);
+            gtk_widget_destroy((GtkWidget*)table);
+            gtk_widget_destroy((GtkWidget*)top_border);
+            table = NULL;
+            widgets = NULL;
+            suggestions = NULL;
+            prefix = NULL;
+            n = 0;
+            current = -1;
+            if(arg->i == HideCompletion)
+                return TRUE;
+        }
+    } else if(arg->i == HideCompletion)
+        return TRUE;
+    if(!widgets) {
+        prefix = strdup(str);
+        listlen = LENGTH(commands);
+        widgets = malloc(sizeof(GtkWidget*) * listlen);
+        suggestions = malloc(sizeof(char*) * listlen);
+        top_border = gtk_event_box_new();
+        gtk_widget_set_size_request(GTK_WIDGET(top_border), 0, 1);
+        gdk_color_parse(completioncolor[2], &color);
+        gtk_widget_modify_bg(top_border, GTK_STATE_NORMAL, &color);
+        table = gtk_event_box_new();
+        gdk_color_parse(completionbgcolor[0], &color);
+        _table = (GtkBox*)gtk_vbox_new(FALSE, 0);
+        highlight = len > 1;
+        for(i = 0; i < listlen; i++) {
+            cmdlen = strlen(commands[i].cmd);
+            if(!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
+                p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
+                if(highlight) {
+                    memcpy(p, COMPLETION_TAG_OPEN, sizeof(COMPLETION_TAG_OPEN) - 1);
+                    memcpy((p += sizeof(COMPLETION_TAG_OPEN) - 1), &str[1], len - 1);
+                    memcpy((p += len - 1), COMPLETION_TAG_CLOSE, sizeof(COMPLETION_TAG_CLOSE) - 1);
+                    p += sizeof(COMPLETION_TAG_CLOSE) - 1;
+                }
+                memcpy(p, &commands[i].cmd[len - 1], cmdlen - len + 2);
+                row = (GtkBox*)gtk_hbox_new(FALSE, 0);
+                row_eventbox = gtk_event_box_new();
+                gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+                el = gtk_label_new(NULL);
+                markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", s, "</span>", NULL);
+                free(s);
+                gtk_label_set_markup(GTK_LABEL(el), markup);
+                g_free(markup);
+                gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+                gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+                gtk_container_add((GtkContainer*)row_eventbox, (GtkWidget*)row);
+                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                suggestions[n] = commands[i].cmd;
+                widgets[n++] = row_eventbox;
+            }
+        }
+        widgets = realloc(widgets, sizeof(GtkWidget*) * n);
+        suggestions = realloc(suggestions, sizeof(char*) * n);
+        if(!n) {
+            gdk_color_parse(completionbgcolor[1], &color);
+            gtk_widget_modify_bg(table, GTK_STATE_NORMAL, &color);
+            el = gtk_label_new(NULL);
+            gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+            markup = g_strconcat("<span font=\"", completionfont[1], "\" color=\"", completioncolor[1], "\">No Completions</span>", NULL);
+            gtk_label_set_markup(GTK_LABEL(el), markup);
+            g_free(markup);
+            gtk_box_pack_start(_table, GTK_WIDGET(el), FALSE, FALSE, 0);
+        }
+        gtk_box_pack_start(box, GTK_WIDGET(top_border), FALSE, FALSE, 0);
+        gtk_container_add((GtkContainer*)table, GTK_WIDGET(_table));
+        gtk_box_pack_start(box, GTK_WIDGET(table), FALSE, FALSE, 0);
+        gtk_widget_show_all(window);
+        if(!n)
+            return TRUE;
+        current = arg->i == DirectionPrev ? n - 1 : 0;
+    }
+    if(current != -1) {
+        gdk_color_parse(completionbgcolor[2], &color);
+        gtk_widget_modify_bg(GTK_WIDGET(widgets[current]), GTK_STATE_NORMAL, &color);
+        s = g_strconcat(":", suggestions[current], NULL);
+        gtk_entry_set_text(GTK_ENTRY(inputbox), s);
+        g_free(s);
+    } else
+        gtk_entry_set_text(GTK_ENTRY(inputbox), prefix);
+    gtk_editable_set_position((GtkEditable*)inputbox, -1);
+    return TRUE;
+}
+
 gboolean
 descend(const Arg* arg) {
     char *source = (char*)webkit_web_view_get_uri(webview), *p = &source[0], *new;
@@ -769,7 +902,7 @@ setup_gui() {
     adjust_h = gtk_range_get_adjustment((GtkRange*)scroll_h);
     adjust_v = gtk_range_get_adjustment((GtkRange*)scroll_v);
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    GtkBox* box = (GtkBox*)gtk_vbox_new(FALSE, 0);
+    box = (GtkBox*)gtk_vbox_new(FALSE, 0);
     inputbox = gtk_entry_new();
     GtkWidget* viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
     webview = (WebKitWebView*)webkit_web_view_new();
@@ -803,7 +936,7 @@ setup_gui() {
     gtk_box_pack_start(box, viewport, TRUE, TRUE, 0);
     gtk_box_pack_start(box, eventbox, FALSE, FALSE, 0);
     gtk_entry_set_has_frame((GtkEntry*)inputbox, FALSE);
-    gtk_box_pack_start(box, inputbox, FALSE, FALSE, 0);
+    gtk_box_pack_end(box, inputbox, FALSE, FALSE, 0);
     gtk_container_add((GtkContainer*)window, (GtkWidget*)box);
     gtk_widget_grab_focus((GtkWidget*)webview);
     gtk_widget_show_all(window);
