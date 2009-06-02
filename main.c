@@ -131,9 +131,7 @@ static gboolean webview_console_cb(WebKitWebView* webview, char* message, int li
 static void webview_scroll_cb(GtkAdjustment* adjustment, gpointer user_data);
 static void inputbox_activate_cb(GtkEntry* entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event);
-#ifdef ENABLE_INCREMENTAL_SEARCH
 static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event);
-#endif
 static gboolean notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data);
 
 /* functions */
@@ -396,19 +394,27 @@ notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
     return FALSE;
 }
 
-#ifdef ENABLE_INCREMENTAL_SEARCH
 static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event) {
+    Arg a;
     guint16 length = gtk_entry_get_text_length(entry);
+#ifdef ENABLE_INCREMENTAL_SEARCH
     char* text = (char*)gtk_entry_get_text(entry);
     gboolean forward = FALSE;
-
-    if(length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
+#endif
+    if(!length) {
+        a.i = HideCompletion;
+        complete(&a);
+        a.i = ModeNormal;
+        return set(&a);
+    }
+#ifdef ENABLE_INCREMENTAL_SEARCH
+    else if(length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
         webkit_web_view_unmark_text_matches(webview);
         webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
     }
+#endif
     return FALSE;
 }
-#endif
 
 /* funcs here */
 gboolean
@@ -427,7 +433,7 @@ complete(const Arg* arg) {
 
     str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
     len = strlen(str);
-    if(len == 0 || str[0] != ':')
+    if((len == 0 || str[0] != ':') && arg->i != HideCompletion)
         return TRUE;
     if(prefix) {
         if(arg->i != HideCompletion && widgets && current != -1 && EQUAL(&str[1], suggestions[current])) {
@@ -989,9 +995,7 @@ setup_signals() {
     g_object_connect((GObject*)inputbox,
         "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
         "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
-#ifdef ENABLE_INCREMENTAL_SEARCH
         "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
-#endif
     NULL);
 }
 
