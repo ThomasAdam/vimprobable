@@ -106,47 +106,47 @@ typedef struct {
 } Command;
 
 typedef struct {
-    char* handle;
-    char* uri;
+    char *handle;
+    char *uri;
 } Searchengine;
 
 /* callbacks here */
-static void window_destroyed_cb(GtkWidget* window, gpointer func_data);
-static void webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data);
-static void webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data);
-static void webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data);
-static void webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data);
-static void webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data);
-static void webview_load_finished_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data);
-static gboolean webview_navigation_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
-                        WebKitWebPolicyDecision* decision, gpointer user_data);
-static gboolean webview_new_window_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
+static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
+static void webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
+static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
+static void webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data);
+static void webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
+static void webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
+static gboolean webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
+                        WebKitWebPolicyDecision *decision, gpointer user_data);
+static gboolean webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data);
-static gboolean webview_mimetype_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
-                        char* mime_type, WebKitWebPolicyDecision* decision, gpointer user_data);
-static gboolean webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_data);
-static gboolean webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event);
-static void webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data);
-static gboolean webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data);
-static void webview_scroll_cb(GtkAdjustment* adjustment, gpointer user_data);
-static void inputbox_activate_cb(GtkEntry* entry, gpointer user_data);
-static gboolean inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event);
-static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event);
-static gboolean notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data);
+static gboolean webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
+                        char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data);
+static gboolean webview_download_cb(WebKitWebView *webview, GObject *download, gpointer user_data);
+static gboolean webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event);
+static void webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data);
+static gboolean webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data);
+static void webview_scroll_cb(GtkAdjustment *adjustment, gpointer user_data);
+static void inputbox_activate_cb(GtkEntry *entry, gpointer user_data);
+static gboolean inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event);
+static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event);
+static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
 
 /* functions */
-static gboolean complete(const Arg* arg);
-static gboolean descend(const Arg* arg);
-static gboolean echo(const Arg* arg);
-static gboolean input(const Arg* arg);
-static gboolean navigate(const Arg* arg);
-static gboolean number(const Arg* arg);
-static gboolean open(const Arg* arg);
-static gboolean paste(const Arg* arg);
-static gboolean quit(const Arg* arg);
-static gboolean search(const Arg* arg);
-static gboolean set(const Arg* arg);
-static gboolean scroll(const Arg* arg);
+static gboolean complete(const Arg *arg);
+static gboolean descend(const Arg *arg);
+static gboolean echo(const Arg *arg);
+static gboolean input(const Arg *arg);
+static gboolean navigate(const Arg *arg);
+static gboolean number(const Arg *arg);
+static gboolean open(const Arg *arg);
+static gboolean paste(const Arg *arg);
+static gboolean quit(const Arg *arg);
+static gboolean search(const Arg *arg);
+static gboolean set(const Arg *arg);
+static gboolean scroll(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
 static void update_url();
@@ -155,29 +155,29 @@ static void setup_modkeys();
 static void setup_gui();
 static void setup_settings();
 static void setup_signals();
-static void ascii_bar(int total, int state, char* string);
+static void ascii_bar(int total, int state, char *string);
 
 /* variables */
-static GtkWidget* window;
-static GtkBox* box;
-static GtkAdjustment* adjust_h;
-static GtkAdjustment* adjust_v;
-static GtkWidget* inputbox;
-static GtkWidget* eventbox;
-static GtkWidget* status_url;
-static GtkWidget* status_state;
-static WebKitWebView* webview;
-static SoupSession* session;
-static GtkClipboard* clipboards[2];
+static GtkWidget *window;
+static GtkBox *box;
+static GtkAdjustment *adjust_h;
+static GtkAdjustment *adjust_v;
+static GtkWidget *inputbox;
+static GtkWidget *eventbox;
+static GtkWidget *status_url;
+static GtkWidget *status_state;
+static WebKitWebView *webview;
+static SoupSession *session;
+static GtkClipboard *clipboards[2];
 
 static char **args;
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
 static float zoomstep;
 static char scroll_state[4] = "\0";
-static char* modkeys;
+static char *modkeys;
 static char current_modkey;
-static char* search_handle;
+static char *search_handle;
 static gboolean search_direction;
 static gboolean echo_active = FALSE;
 
@@ -185,17 +185,17 @@ static gboolean echo_active = FALSE;
 
 /* callbacks */
 void
-window_destroyed_cb(GtkWidget* window, gpointer func_data) {
+window_destroyed_cb(GtkWidget *window, gpointer func_data) {
     quit(NULL);
 }
 
 void
-webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data) {
+webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data) {
     gtk_window_set_title(GTK_WINDOW(window), title);
 }
 
 void
-webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data) {
+webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data) {
 #ifdef ENABLE_GTK_PROGRESS_BAR
     gtk_entry_set_progress_fraction(GTK_ENTRY(inputbox), progress == 100 ? 0 : (double)progress/100);
 #endif
@@ -204,7 +204,7 @@ webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_
 
 #ifdef ENABLE_WGET_PROGRESS_BAR
 void
-ascii_bar(int total, int state, char* string) {
+ascii_bar(int total, int state, char *string) {
     int i;
 
     for(i = 0; i < state; i++)
@@ -217,42 +217,42 @@ ascii_bar(int total, int state, char* string) {
 #endif
 
 void
-webview_load_committed_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data) {
-    const char* uri = webkit_web_view_get_uri(webview);
+webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
+    const char *uri = webkit_web_view_get_uri(webview);
 
     update_url(uri);
 }
 
 void
-webview_load_finished_cb(WebKitWebView* webview, WebKitWebFrame* frame, gpointer user_data) {
+webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
     update_state();
 }
 
 gboolean
-webview_navigation_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
-                        WebKitWebPolicyDecision* decision, gpointer user_data) {
+webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
+                        WebKitWebPolicyDecision *decision, gpointer user_data) {
     return FALSE;
 }
 
 gboolean
-webview_new_window_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
+webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data) {
     return FALSE;
 }
 
 gboolean
-webview_mimetype_cb(WebKitWebView* webview, WebKitWebFrame* frame, WebKitNetworkRequest* request,
-                        char* mime_type, WebKitWebPolicyDecision* decision, gpointer user_data) {
+webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
+                        char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data) {
     return FALSE;
 }
 
 gboolean
-webview_download_cb(WebKitWebView* webview, GObject* download, gpointer user_data) {
+webview_download_cb(WebKitWebView *webview, GObject *download, gpointer user_data) {
     return FALSE;
 }
 
 gboolean
-webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
+webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     unsigned int i;
     Arg a = { .i = ModeNormal, .s = NULL };
 
@@ -300,8 +300,8 @@ webview_keypress_cb(WebKitWebView* webview, GdkEventKey* event) {
 }
 
 void
-webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer data) {
-    const char* uri = webkit_web_view_get_uri(webview);
+webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data) {
+    const char *uri = webkit_web_view_get_uri(webview);
 
     if(link)
         gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
@@ -310,18 +310,18 @@ webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer d
 }
 
 gboolean
-webview_console_cb(WebKitWebView* webview, char* message, int line, char* source, gpointer user_data) {
+webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data) {
     return FALSE;
 }
 
 void
-webview_scroll_cb(GtkAdjustment* adjustment, gpointer user_data) {
+webview_scroll_cb(GtkAdjustment *adjustment, gpointer user_data) {
     update_state();
 }
 
 void
-inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
-    char* text;
+inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
+    char *text;
     guint16 length = gtk_entry_get_text_length(entry);
     Arg a;
     int i;
@@ -367,7 +367,7 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
 }
 
 gboolean
-inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
+inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
 
     if(event->keyval == GDK_Escape) {
@@ -386,7 +386,7 @@ inputbox_keypress_cb(GtkEntry* entry, GdkEventKey* event) {
 }
 
 gboolean
-notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
+notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     Arg a = { .s = NULL };
 
     if(event->type == GDK_BUTTON_PRESS || event->type == GDK_KEY_PRESS || event->type == GDK_SCROLL || event->type == GDK_PROPERTY_NOTIFY)
@@ -394,11 +394,11 @@ notify_event_cb(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
     return FALSE;
 }
 
-static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event) {
+static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
     guint16 length = gtk_entry_get_text_length(entry);
 #ifdef ENABLE_INCREMENTAL_SEARCH
-    char* text = (char*)gtk_entry_get_text(entry);
+    char *text = (char*)gtk_entry_get_text(entry);
     gboolean forward = FALSE;
 #endif
     if(!length) {
@@ -418,14 +418,14 @@ static gboolean inputbox_keyrelease_cb(GtkEntry* entry, GdkEventKey* event) {
 
 /* funcs here */
 gboolean
-complete(const Arg* arg) {
+complete(const Arg *arg) {
     char *str, *s, *p, *markup;
     size_t listlen, len, cmdlen;
     int i;
     gboolean highlight = FALSE;
     GtkBox *row;
     GtkWidget *row_eventbox, *el;
-    GtkBox* _table;
+    GtkBox *_table;
     GdkColor color;
     static GtkWidget *table, **widgets, *top_border;
     static char **suggestions, *prefix;
@@ -533,7 +533,7 @@ complete(const Arg* arg) {
 }
 
 gboolean
-descend(const Arg* arg) {
+descend(const Arg *arg) {
     char *source = (char*)webkit_web_view_get_uri(webview), *p = &source[0], *new;
     int i, len;
     count = count ? count : 1;
@@ -566,8 +566,8 @@ descend(const Arg* arg) {
 }
 
 gboolean
-echo(const Arg* arg) {
-    PangoFontDescription* font;
+echo(const Arg *arg) {
+    PangoFontDescription *font;
     GdkColor color;
     gulong handler;
     int index = !arg->s ? 0 : arg->i & (~NoAutoHide);
@@ -594,7 +594,7 @@ echo(const Arg* arg) {
 }
 
 gboolean
-input(const Arg* arg) {
+input(const Arg *arg) {
     int pos = 0;
     count = 0;
 
@@ -608,7 +608,7 @@ input(const Arg* arg) {
 }
 
 gboolean
-navigate(const Arg* arg) {
+navigate(const Arg *arg) {
     if(arg->i & NavigationForwardBack)
         webkit_web_view_go_back_or_forward(webview, (arg->i == NavigationBack ? -1 : 1) * (count ? count : 1));
     else if(arg->i & NavigationReloadActions)
@@ -619,8 +619,8 @@ navigate(const Arg* arg) {
 }
 
 gboolean
-number(const Arg* arg) {
-    const char* source = webkit_web_view_get_uri(webview);
+number(const Arg *arg) {
+    const char *source = webkit_web_view_get_uri(webview);
     char *uri, *p, *new;
     int number, diff = (count ? count : 1) * (arg->i == Increment ? 1 : -1);
 
@@ -645,7 +645,7 @@ number(const Arg* arg) {
 }
 
 gboolean
-open(const Arg* arg) {
+open(const Arg *arg) {
     char *argv[] = { *args, arg->s, NULL };
     char *s = arg->s, *p, *new;
     Arg a = { .i = NavigationReload };
@@ -692,7 +692,7 @@ open(const Arg* arg) {
 
 gboolean
 yank(const Arg *arg) {
-    const char* url;
+    const char *url;
     Arg a = { .i = Info };
 
     if(arg->i & SourceURL) {
@@ -710,7 +710,7 @@ yank(const Arg *arg) {
 }
 
 gboolean
-paste(const Arg* arg) {
+paste(const Arg *arg) {
     Arg a = { .i = arg->i & TargetNew, .s = NULL };
 
     if(arg->i & ClipboardPrimary)
@@ -723,13 +723,13 @@ paste(const Arg* arg) {
 }
 
 gboolean
-quit(const Arg* arg) {
+quit(const Arg *arg) {
     gtk_main_quit();
     return TRUE;
 }
 
 gboolean
-search(const Arg* arg) {
+search(const Arg *arg) {
     count = count ? count : 1;
     gboolean success, direction = arg->i & DirectionPrev;
     Arg a;
@@ -772,7 +772,7 @@ search(const Arg* arg) {
 }
 
 gboolean
-set(const Arg* arg) {
+set(const Arg *arg) {
     Arg a = { .i = Info | NoAutoHide };
 
     switch (arg->i) {
@@ -800,8 +800,8 @@ set(const Arg* arg) {
 }
 
 gboolean
-scroll(const Arg* arg) {
-    GtkAdjustment* adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
+scroll(const Arg *arg) {
+    GtkAdjustment *adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
 
     if(arg->i & ScrollMove)
         gtk_adjustment_set_value(adjust, gtk_adjustment_get_value(adjust) +
@@ -818,7 +818,7 @@ scroll(const Arg* arg) {
 }
 
 gboolean
-zoom(const Arg* arg) {
+zoom(const Arg *arg) {
     webkit_web_view_set_full_content_zoom(webview, (arg->i & ZoomFullContent) > 0);
     webkit_web_view_set_zoom_level(webview, (arg->i & ZoomOut) ?
         webkit_web_view_get_zoom_level(webview) +
@@ -828,7 +828,7 @@ zoom(const Arg* arg) {
 }
 
 void
-update_url(const char* uri) {
+update_url(const char *uri) {
     gboolean ssl = g_str_has_prefix(uri, "https://");
     GdkColor color;
 #ifdef ENABLE_HISTORY_INDICATOR
@@ -859,7 +859,7 @@ void
 update_state() {
     int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
     int val = (int)(gtk_adjustment_get_value(adjust_v) / max * 100);
-    char* markup;
+    char *markup;
 #ifdef ENABLE_WGET_PROGRESS_BAR
     double progress;
     char progressbar[progressbartick + 1];
@@ -890,7 +890,7 @@ void
 setup_modkeys() {
     unsigned int i;
     modkeys = calloc(LENGTH(keys) + 1, sizeof(char));
-    char* ptr = modkeys;
+    char *ptr = modkeys;
 
     for(i = 0; i < LENGTH(keys); i++)
         if(keys[i].modkey && !strchr(modkeys, keys[i].modkey))
@@ -900,21 +900,21 @@ setup_modkeys() {
 
 void
 setup_gui() {
-    GtkScrollbar* scroll_h = GTK_SCROLLBAR(gtk_hscrollbar_new(NULL));
-    GtkScrollbar* scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
+    GtkScrollbar *scroll_h = GTK_SCROLLBAR(gtk_hscrollbar_new(NULL));
+    GtkScrollbar *scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
     adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
     adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
     inputbox = gtk_entry_new();
-    GtkWidget* viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
+    GtkWidget *viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
     webview = (WebKitWebView*)webkit_web_view_new();
-    GtkBox* statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
+    GtkBox *statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
     eventbox = gtk_event_box_new();
     status_url = gtk_label_new(NULL);
     status_state = gtk_label_new(NULL);
     GdkColor bg;
-    PangoFontDescription* font;
+    PangoFontDescription *font;
 
     clipboards[0] = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
     clipboards[1] = gtk_clipboard_get(GDK_NONE);
@@ -947,10 +947,10 @@ setup_gui() {
 
 void
 setup_settings() {
-    WebKitWebSettings* settings = (WebKitWebSettings*)webkit_web_settings_new();
+    WebKitWebSettings *settings = (WebKitWebSettings*)webkit_web_settings_new();
 #ifdef ENABLE_COOKIE_SUPPORT
-    SoupCookieJar* cookiejar;
-    char* filename;
+    SoupCookieJar *cookiejar;
+    char *filename;
 #endif
     session = webkit_get_default_session();
 
@@ -1000,7 +1000,7 @@ setup_signals() {
 }
 
 int
-main(int argc, char* argv[]) {
+main(int argc, char *argv[]) {
     Arg a;
     args = argv;
 
