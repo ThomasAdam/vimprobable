@@ -191,13 +191,13 @@ window_destroyed_cb(GtkWidget* window, gpointer func_data) {
 
 void
 webview_title_changed_cb(WebKitWebView* webview, WebKitWebFrame* frame, char* title, gpointer user_data) {
-    gtk_window_set_title((GtkWindow*)window, title);
+    gtk_window_set_title(GTK_WINDOW(window), title);
 }
 
 void
 webview_progress_changed_cb(WebKitWebView* webview, int progress, gpointer user_data) {
 #ifdef ENABLE_GTK_PROGRESS_BAR
-    gtk_entry_set_progress_fraction((GtkEntry*)inputbox, progress == 100 ? 0 : (double)progress/100);
+    gtk_entry_set_progress_fraction(GTK_ENTRY(inputbox), progress == 100 ? 0 : (double)progress/100);
 #endif
     update_state();
 }
@@ -304,7 +304,7 @@ webview_hoverlink_cb(WebKitWebView* webview, char* title, char* link, gpointer d
     const char* uri = webkit_web_view_get_uri(webview);
 
     if(link)
-        gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
+        gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
     else
         update_url(uri);
 }
@@ -363,7 +363,7 @@ inputbox_activate_cb(GtkEntry* entry, gpointer user_data) {
         return;
     if(!echo_active)
         gtk_entry_set_text(entry, "");
-    gtk_widget_grab_focus((GtkWidget*)webview);
+    gtk_widget_grab_focus(GTK_WIDGET(webview));
 }
 
 gboolean
@@ -447,8 +447,8 @@ complete(const Arg* arg) {
             free(widgets);
             free(suggestions);
             free(prefix);
-            gtk_widget_destroy((GtkWidget*)table);
-            gtk_widget_destroy((GtkWidget*)top_border);
+            gtk_widget_destroy(GTK_WIDGET(table));
+            gtk_widget_destroy(GTK_WIDGET(top_border));
             table = NULL;
             widgets = NULL;
             suggestions = NULL;
@@ -471,7 +471,7 @@ complete(const Arg* arg) {
         gtk_widget_modify_bg(top_border, GTK_STATE_NORMAL, &color);
         table = gtk_event_box_new();
         gdk_color_parse(completionbgcolor[0], &color);
-        _table = (GtkBox*)gtk_vbox_new(FALSE, 0);
+        _table = GTK_BOX(gtk_vbox_new(FALSE, 0));
         highlight = len > 1;
         for(i = 0; i < listlen; i++) {
             cmdlen = strlen(commands[i].cmd);
@@ -484,7 +484,7 @@ complete(const Arg* arg) {
                     p += sizeof(COMPLETION_TAG_CLOSE) - 1;
                 }
                 memcpy(p, &commands[i].cmd[len - 1], cmdlen - len + 2);
-                row = (GtkBox*)gtk_hbox_new(FALSE, 0);
+                row = GTK_BOX(gtk_hbox_new(FALSE, 0));
                 row_eventbox = gtk_event_box_new();
                 gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
                 el = gtk_label_new(NULL);
@@ -494,7 +494,7 @@ complete(const Arg* arg) {
                 g_free(markup);
                 gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
                 gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                gtk_container_add((GtkContainer*)row_eventbox, (GtkWidget*)row);
+                gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
                 gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
                 suggestions[n] = commands[i].cmd;
                 widgets[n++] = row_eventbox;
@@ -513,7 +513,7 @@ complete(const Arg* arg) {
             gtk_box_pack_start(_table, GTK_WIDGET(el), FALSE, FALSE, 0);
         }
         gtk_box_pack_start(box, GTK_WIDGET(top_border), FALSE, FALSE, 0);
-        gtk_container_add((GtkContainer*)table, GTK_WIDGET(_table));
+        gtk_container_add(GTK_CONTAINER(table), GTK_WIDGET(_table));
         gtk_box_pack_start(box, GTK_WIDGET(table), FALSE, FALSE, 0);
         gtk_widget_show_all(window);
         if(!n)
@@ -528,7 +528,7 @@ complete(const Arg* arg) {
         g_free(s);
     } else
         gtk_entry_set_text(GTK_ENTRY(inputbox), prefix);
-    gtk_editable_set_position((GtkEditable*)inputbox, -1);
+    gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
     return TRUE;
 }
 
@@ -583,7 +583,7 @@ echo(const Arg* arg) {
     if(urlboxbgcolor[index])
         gdk_color_parse(urlboxbgcolor[index], &color);
     gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &color : NULL);
-    gtk_entry_set_text((GtkEntry*)inputbox, !arg->s ? "" : arg->s);
+    gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
     if((echo_active = arg->s != NULL) && !(arg->i & NoAutoHide))
         g_object_connect((GObject*)webview,
             "signal::event",        (GCallback*)notify_event_cb,    NULL,
@@ -599,11 +599,11 @@ input(const Arg* arg) {
     count = 0;
 
     update_state();
-    gtk_editable_insert_text((GtkEditable*)inputbox, arg->s, -1, &pos);
+    gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
     if(arg->i & InsertCurrentURL)
-        gtk_editable_insert_text((GtkEditable*)inputbox, webkit_web_view_get_uri(webview), -1, &pos);
+        gtk_editable_insert_text(GTK_EDITABLE(inputbox), webkit_web_view_get_uri(webview), -1, &pos);
     gtk_widget_grab_focus(inputbox);
-    gtk_editable_set_position((GtkEditable*)inputbox, -1);
+    gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
     return TRUE;
 }
 
@@ -781,8 +781,8 @@ set(const Arg* arg) {
             search_handle = NULL;
             webkit_web_view_unmark_text_matches(webview);
         }
-        gtk_entry_set_text((GtkEntry*)inputbox, "");
-        gtk_widget_grab_focus((GtkWidget*)webview);
+        gtk_entry_set_text(GTK_ENTRY(inputbox), "");
+        gtk_widget_grab_focus(GTK_WIDGET(webview));
         break;
     case ModePassThrough:
         a.s = "-- PASS THROUGH --";
@@ -851,8 +851,8 @@ update_url(const char* uri) {
     gdk_color_parse(ssl ? sslbgcolor : statusbgcolor, &color);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
     gdk_color_parse(ssl ? sslcolor : statuscolor, &color);
-    gtk_widget_modify_fg((GtkWidget*)status_url, GTK_STATE_NORMAL, &color);
-    gtk_widget_modify_fg((GtkWidget*)status_state, GTK_STATE_NORMAL, &color);
+    gtk_widget_modify_fg(GTK_WIDGET(status_url), GTK_STATE_NORMAL, &color);
+    gtk_widget_modify_fg(GTK_WIDGET(status_state), GTK_STATE_NORMAL, &color);
 }
 
 void
@@ -883,7 +883,7 @@ update_state() {
     } else
 #endif
     markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);
-    gtk_label_set_markup((GtkLabel*)status_state, markup);
+    gtk_label_set_markup(GTK_LABEL(status_state), markup);
 }
 
 void
@@ -900,16 +900,16 @@ setup_modkeys() {
 
 void
 setup_gui() {
-    GtkScrollbar* scroll_h = (GtkScrollbar*)gtk_hscrollbar_new(NULL);
-    GtkScrollbar* scroll_v = (GtkScrollbar*)gtk_vscrollbar_new(NULL);
-    adjust_h = gtk_range_get_adjustment((GtkRange*)scroll_h);
-    adjust_v = gtk_range_get_adjustment((GtkRange*)scroll_v);
+    GtkScrollbar* scroll_h = GTK_SCROLLBAR(gtk_hscrollbar_new(NULL));
+    GtkScrollbar* scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
+    adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
+    adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    box = (GtkBox*)gtk_vbox_new(FALSE, 0);
+    box = GTK_BOX(gtk_vbox_new(FALSE, 0));
     inputbox = gtk_entry_new();
     GtkWidget* viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
     webview = (WebKitWebView*)webkit_web_view_new();
-    GtkBox* statusbar = (GtkBox*)gtk_hbox_new(FALSE, 0);
+    GtkBox* statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
     eventbox = gtk_event_box_new();
     status_url = gtk_label_new(NULL);
     status_state = gtk_label_new(NULL);
@@ -923,25 +923,25 @@ setup_gui() {
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
     gtk_widget_set_name(window, "Vimpression");
 #ifdef DISABLE_SCROLLBAR
-    gtk_scrolled_window_set_policy((GtkScrolledWindow*)viewport, GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 #endif
     setup_signals();
-    gtk_container_add((GtkContainer*)viewport, (GtkWidget*)webview);
+    gtk_container_add(GTK_CONTAINER(viewport), GTK_WIDGET(webview));
     font = pango_font_description_from_string(urlboxfont[0]);
-    gtk_widget_modify_font((GtkWidget*)inputbox, font);
+    gtk_widget_modify_font(GTK_WIDGET(inputbox), font);
     pango_font_description_free(font);
-    gtk_entry_set_inner_border((GtkEntry*)inputbox, NULL);
-    gtk_misc_set_alignment((GtkMisc*)status_url, 0.0, 0.0);
-    gtk_misc_set_alignment((GtkMisc*)status_state, 1.0, 0.0);
+    gtk_entry_set_inner_border(GTK_ENTRY(inputbox), NULL);
+    gtk_misc_set_alignment(GTK_MISC(status_url), 0.0, 0.0);
+    gtk_misc_set_alignment(GTK_MISC(status_state), 1.0, 0.0);
     gtk_box_pack_start(statusbar, status_url, TRUE, TRUE, 2);
     gtk_box_pack_start(statusbar, status_state, FALSE, FALSE, 2);
-    gtk_container_add((GtkContainer*)eventbox, (GtkWidget*)statusbar);
+    gtk_container_add(GTK_CONTAINER(eventbox), GTK_WIDGET(statusbar));
     gtk_box_pack_start(box, viewport, TRUE, TRUE, 0);
     gtk_box_pack_start(box, eventbox, FALSE, FALSE, 0);
-    gtk_entry_set_has_frame((GtkEntry*)inputbox, FALSE);
+    gtk_entry_set_has_frame(GTK_ENTRY(inputbox), FALSE);
     gtk_box_pack_end(box, inputbox, FALSE, FALSE, 0);
-    gtk_container_add((GtkContainer*)window, (GtkWidget*)box);
-    gtk_widget_grab_focus((GtkWidget*)webview);
+    gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(box));
+    gtk_widget_grab_focus(GTK_WIDGET(webview));
     gtk_widget_show_all(window);
 }
 
