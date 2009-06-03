@@ -574,6 +574,8 @@ descend(const Arg *arg) {
     int i, len;
     count = count ? count : 1;
 
+    if(!source)
+        return TRUE;
     if(arg->i == Rootdir) {
         for(i = 0; i < 3; i++)                  /* get to the third slash */
             if(!(p = strchr(++p, '/')))
@@ -633,11 +635,12 @@ gboolean
 input(const Arg *arg) {
     int pos = 0;
     count = 0;
+    const char *url;
 
     update_state();
     gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
-    if(arg->i & InsertCurrentURL)
-        gtk_editable_insert_text(GTK_EDITABLE(inputbox), webkit_web_view_get_uri(webview), -1, &pos);
+    if(arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(webview)))
+        gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
     gtk_widget_grab_focus(inputbox);
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
     return TRUE;
@@ -660,6 +663,8 @@ number(const Arg *arg) {
     char *uri, *p, *new;
     int number, diff = (count ? count : 1) * (arg->i == Increment ? 1 : -1);
 
+    if(!source)
+        return TRUE;
     uri = strdup(source); /* copy string */
     p =& uri[0];
     while(*p != '\0') /* goto the end of the string */
@@ -733,6 +738,8 @@ yank(const Arg *arg) {
 
     if(arg->i & SourceURL) {
         url = webkit_web_view_get_uri(webview);
+        if(!url)
+            return TRUE;
         a.s = g_strdup_printf("Yanked %s", url);
         echo(&a);
         g_free(a.s);
