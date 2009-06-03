@@ -12,7 +12,6 @@
 
 /* macros */
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
-#define EQUAL(a, b)                 (strlen(a) == strlen(b) && !strcmp(a, b))
 
 /* enums */
 enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };               /* modes */
@@ -442,7 +441,7 @@ complete(const Arg *arg) {
     if((len == 0 || str[0] != ':') && arg->i != HideCompletion)
         return TRUE;
     if(prefix) {
-        if(arg->i != HideCompletion && widgets && current != -1 && EQUAL(&str[1], suggestions[current])) {
+        if(arg->i != HideCompletion && widgets && current != -1 && !strcmp(&str[1], suggestions[current])) {
             gdk_color_parse(completionbgcolor[0], &color);
             gtk_widget_modify_bg(widgets[current], GTK_STATE_NORMAL, &color);
             current = (n + current + (arg->i == DirectionPrev ? -1 : 1)) % n;
