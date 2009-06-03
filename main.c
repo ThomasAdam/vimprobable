@@ -289,6 +289,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                     return TRUE;
                 }
         break;
+    case ModeInsert:
     case ModePassThrough:
         if(event->state == 0 && event->keyval == GDK_Escape) {
             echo(&a);
@@ -782,6 +783,7 @@ set(const Arg *arg) {
 
     switch (arg->i) {
     case ModeNormal:
+        // stub: if(mode == ModeInsert) also blur the focused element
         if(search_handle) {
             search_handle = NULL;
             webkit_web_view_unmark_text_matches(webview);
@@ -795,6 +797,10 @@ set(const Arg *arg) {
         break;
     case ModeSendKey:
         a.s = "-- PASS TROUGH (next) --";
+        echo(&a);
+        break;
+    case ModeInsert: /* should not be called manually but automatically */
+        a.s = "-- INSERT --";
         echo(&a);
         break;
     default:
