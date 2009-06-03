@@ -136,6 +136,7 @@ static Key keys[] = {
     { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
+    { 0,                    0,              GDK_f,          set,        {ModeHints} },
 
     { 0,                    0,              GDK_d,          quit,       {0} },
 };

@@ -12,6 +12,8 @@
 
 /* macros */
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
+/* inline js fill be filled by js-merge-helper.pl */
+#define JS_SETUP
 
 /* enums */
 enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };               /* modes */
@@ -230,7 +232,10 @@ webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointe
 
 void
 webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
+    Arg a = { .i = Silent, .s = JS_SETUP };
+
     update_state();
+    script(&a);
 }
 
 gboolean
@@ -290,6 +295,13 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 }
         break;
     case ModeInsert:
+        if(event->state == 0 && event->keyval == GDK_Escape) {
+            a.i = Silent;
+            a.s = "clearfocus()";
+            script(&a);
+            a.i = ModeNormal;
+            return set(&a);
+        }
     case ModePassThrough:
         if(event->state == 0 && event->keyval == GDK_Escape) {
             echo(&a);
@@ -300,6 +312,15 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeSendKey:
         echo(&a);
         set(&a);
+        break;
+    case ModeHints:
+        if(event->state == 0 && event->keyval == GDK_Escape) {
+            a.i = Silent;
+            a.s = "clear()";
+            script(&a);
+            a.i = ModeNormal;
+            return set(&a);
+        }
         break;
     }
     return FALSE;
@@ -317,6 +338,15 @@ webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer d
 
 gboolean
 webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data) {
+    Arg a;
+
+    if(!strcmp(message, "hintmode_off") || !strcmp(message, "insertmode_off")) {
+        a.i = ModeNormal;
+        return set(&a);
+    } else if(!strcmp(message, "insertmode_on")) {
+        a.i = ModeInsert;
+        return set(&a);
+    }
     return FALSE;
 }
 
@@ -783,7 +813,6 @@ set(const Arg *arg) {
 
     switch (arg->i) {
     case ModeNormal:
-        // stub: if(mode == ModeInsert) also blur the focused element
         if(search_handle) {
             search_handle = NULL;
             webkit_web_view_unmark_text_matches(webview);
@@ -802,6 +831,11 @@ set(const Arg *arg) {
     case ModeInsert: /* should not be called manually but automatically */
         a.s = "-- INSERT --";
         echo(&a);
+        break;
+    case ModeHints:
+        a.i = Silent;
+        a.s = "show_hints()";
+        script(&a);
         break;
     default:
         return TRUE;
