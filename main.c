@@ -8,6 +8,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <webkit/webkit.h>
 #include <libsoup/soup.h>
+#include <JavaScriptCore/JavaScript.h>
 
 /* macros */
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
@@ -65,8 +66,10 @@ enum { ZoomText, ZoomFullContent = (1 << 2) };
 /* bitmask:
     0 = Info, 1 = Warning, 2 = Error
     1 << 2:  0 = AutoHide           1 = NoAutoHide
+    relevant for script:
+    1 << 3:                         1 = Silent (no echo)
 */
-enum { Info, Warning, Error, NoAutoHide = 1 << 2 };
+enum { Info, Warning, Error, NoAutoHide = 1 << 2, Silent = 1 << 3 };
 enum { NthSubdir, Rootdir };
 enum { InsertCurrentURL = 1 };
 enum { Increment, Decrement };
@@ -146,6 +149,7 @@ static gboolean paste(const Arg *arg);
 static gboolean quit(const Arg *arg);
 static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
+static gboolean script(const Arg *arg);
 static gboolean scroll(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
@@ -156,6 +160,8 @@ static void setup_gui();
 static void setup_settings();
 static void setup_signals();
 static void ascii_bar(int total, int state, char *string);
+static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
+static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 
 /* variables */
 static GtkWidget *window;
@@ -796,6 +802,59 @@ set(const Arg *arg) {
         return TRUE;
     }
     mode = arg->i;
+    return TRUE;
+}
+
+gchar*
+jsapi_ref_to_string(JSContextRef context, JSValueRef ref) {
+    JSStringRef string_ref;
+    gchar *string;
+    size_t length;
+
+    string_ref = JSValueToStringCopy(context, ref, NULL);
+    length = JSStringGetMaximumUTF8CStringSize(string_ref);
+    string = g_new(gchar, length);
+    JSStringGetUTF8CString(string_ref, string, length);
+    JSStringRelease(string_ref);
+    return string;
+}
+
+void
+jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message) {
+    WebKitWebFrame *frame = webkit_web_view_get_main_frame(webview);
+    JSGlobalContextRef context = webkit_web_frame_get_global_context(frame);
+    JSStringRef str;
+    JSValueRef val, exception;
+
+    str = JSStringCreateWithUTF8CString(script);
+    val = JSEvaluateScript(context, str, JSContextGetGlobalObject(context), NULL, 0, &exception);
+    JSStringRelease(str);
+    if(!val)
+        *message = jsapi_ref_to_string(context, exception);
+    else
+        *value = jsapi_ref_to_string(context, val);
+}
+
+gboolean
+script(const Arg *arg) {
+    gchar *value = NULL, *message = NULL;
+    Arg a;
+
+    if(!arg->s)
+        return TRUE;
+    jsapi_evaluate_script(arg->s, &value, &message);
+    if(message) {
+        a.i = Error;
+        a.s = message;
+        echo(&a);
+        g_free(message);
+    }
+    if(arg->i != Silent && value) {
+        a.i = arg->i;
+        a.s = value;
+        echo(&a);
+    }
+    g_free(value);
     return TRUE;
 }
 
