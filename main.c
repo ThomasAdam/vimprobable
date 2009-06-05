@@ -247,7 +247,10 @@ webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetwo
 gboolean
 webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data) {
-    return FALSE;
+    Arg a = { .i = TargetNew, .s = (char*)webkit_network_request_get_uri(request) };
+    open(&a);
+    webkit_web_policy_decision_ignore(decision);
+    return TRUE;
 }
 
 gboolean
