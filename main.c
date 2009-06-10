@@ -1023,6 +1023,7 @@ setup_gui() {
     status_state = gtk_label_new(NULL);
     GdkColor bg;
     PangoFontDescription *font;
+    GdkGeometry hints = { 1, 1 };
 
     clipboards[0] = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
     clipboards[1] = gtk_clipboard_get(GDK_NONE);
@@ -1030,6 +1031,7 @@ setup_gui() {
     gdk_color_parse(statusbgcolor, &bg);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
     gtk_widget_set_name(window, "Vimpression");
+    gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &hints, GDK_HINT_MIN_SIZE);
 #ifdef DISABLE_SCROLLBAR
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 #endif
