@@ -1,5 +1,7 @@
 /*
-    (c) 2009 by Leon Winter, see LICENSE file
+    (c) 2009 by Leon Winter
+    (c) 2009 by Hannes Schueller
+    see LICENSE file
 */
 
 #include <stdlib.h>
@@ -13,6 +15,9 @@
 
 /* inline js fill be filled by js-merge-helper.pl */
 #define JS_SETUP
+
+/* remove numlock symbol from keymask */
+#define NUMLOCK(mask)         (mask & ~(GDK_MOD2_MASK))
 
 /* callbacks here */
 static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
@@ -185,7 +190,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         }
         /* keybindings */
         for(i = 0; i < LENGTH(keys); i++)
-            if(keys[i].mask == event->state
+            if(keys[i].mask == NUMLOCK(event->state)
             && (keys[i].modkey == current_modkey
                 || (!keys[i].modkey && !current_modkey)
                 || keys[i].modkey == GDK_VoidSymbol)    /* wildcard */
