@@ -72,6 +72,7 @@ static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **me
 static gboolean toggle_plugins();
 static gboolean toggle_images();
 static gboolean bookmark();
+static void history();
 
 /* variables */
 static GtkWidget *window;
@@ -147,6 +148,8 @@ void
 webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
     Arg a = { .i = Silent, .s = JS_SETUP };
 
+    if (HISTORY_MAX_ENTRIES > 0)
+        history();
     update_state();
     script(&a);
 }
@@ -960,6 +963,79 @@ bookmark() {
         return TRUE;
     } else {
        return FALSE;
+    }
+}
+
+void history() {
+    FILE *f;
+    const char *filename;
+    const char *uri = webkit_web_view_get_uri(webview);
+    const char *title = webkit_web_view_get_title(webview);
+    char *entry, buffer[512], *new;
+    int n, i = 0;
+    gboolean finished = FALSE;
+    if (entry != NULL) {
+        if (uri != NULL) {
+           if (title != NULL) {
+                entry = malloc((strlen(uri) + strlen(title) + 2) * sizeof(char));
+                memset(entry, 0, strlen(uri) + strlen(title) + 2);
+            } else {
+                entry = malloc((strlen(uri) + 1) * sizeof(char));
+                memset(entry, 0, strlen(uri) + 1);
+            }
+            strncpy(entry, uri, strlen(uri));
+            if (title != NULL) {
+                strncat(entry, " ", 1);
+                strncat(entry, title, strlen(title));
+            }
+            n = strlen(entry);
+            filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
+            f = fopen(filename, "r");
+            if (f != NULL) {
+                new = (char *)malloc(HISTORY_MAX_ENTRIES * 512 * sizeof(char) + 1);
+                if (new != NULL) {
+                    memset(new, 0, HISTORY_MAX_ENTRIES * 512 * sizeof(char) + 1);
+                    /* newest entries go on top */
+                    strncpy(new, entry, strlen(entry));
+                    strncat(new, "\n", 1);
+                    /* retain at most HISTORY_MAX_ENTIRES - 1 old entries */
+                    while (finished != TRUE) {
+                        if ((char *)NULL == fgets(buffer, 512, f)) {
+                            /* check if end of file was reached / error occured */
+                            if (!feof(f)) {
+                                break;
+                            }
+                            /* end of file reached */
+                            finished = TRUE;
+                            continue;
+                        }
+                        /* compare line (-1 because of newline character) */
+                        if (n != strlen(buffer) - 1 || strncmp(entry, buffer, n) != 0) {
+                            /* if the URI is already in history; we put it on top and skip it here */
+                            strncat(new, buffer, 512);
+                            i++;
+                        }
+                        if (i >= HISTORY_MAX_ENTRIES) {
+                            break;
+                        }
+                    }
+                    fclose(f);
+                }
+                f = fopen(filename, "w");
+                if (f != NULL) {
+                    fprintf(f, "%s", new);
+                    fclose(f);
+                }
+                if (new != NULL) {
+                    free(new);
+                    new = NULL;
+                }
+            }
+        }
+        if (entry != NULL) {
+            free(entry);
+            entry = NULL;
+        }
     }
 }
 

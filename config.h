@@ -49,6 +49,10 @@ static const char progressborderright   = ']';
 /* bookmarks */
 #define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimpression/bookmarks", getenv("HOME")
 
+/* history */
+#define             HISTORY_MAX_ENTRIES         1000
+#define             HISTORY_STORAGE_FILENAME    "%s/.config/vimpression/history", getenv("HOME")
+
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
 
