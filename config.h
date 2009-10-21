@@ -3,7 +3,7 @@
 */
 
 /* general settings */
-static char startpage[]                 = "https://projects.ring0.de/webkitbrowser/";
+static char startpage[]                 = "http://www.yllr.net/vimpression/";
 
 /* appearance */
 static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
