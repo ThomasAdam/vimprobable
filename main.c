@@ -70,6 +70,7 @@ static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 static gboolean toggle_plugins();
+static gboolean toggle_images();
 
 /* variables */
 static GtkWidget *window;
@@ -902,6 +903,18 @@ toggle_plugins() {
     plugins = !plugins;
     g_object_set((GObject*)settings, "enable-plugins", plugins, NULL);
     g_object_set((GObject*)settings, "enable-scripts", plugins, NULL);
+    webkit_web_view_set_settings(webview, settings);
+    webkit_web_view_reload(webview);
+    return TRUE;
+}
+
+gboolean
+toggle_images() {
+    static gboolean images;
+    WebKitWebSettings *settings;
+    settings = webkit_web_view_get_settings(webview);
+    images = !images;
+    g_object_set((GObject*)settings, "auto-load-images", images, NULL);
     webkit_web_view_set_settings(webview, settings);
     webkit_web_view_reload(webview);
     return TRUE;

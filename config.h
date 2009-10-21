@@ -153,6 +153,7 @@ static Key keys[] = {
     { 0,                    0,              GDK_d,          quit,       {0} },
 
     { 0,                    0,              GDK_w,          toggle_plugins,{0} },
+    { 0,                    0,              GDK_e,          toggle_images,{0} },
 };
 
 /* command mapping */
