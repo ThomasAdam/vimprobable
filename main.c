@@ -1002,15 +1002,18 @@ setup_gui() {
 void
 setup_settings() {
     WebKitWebSettings *settings = (WebKitWebSettings*)webkit_web_settings_new();
+    char *filename;
 #ifdef ENABLE_COOKIE_SUPPORT
     SoupCookieJar *cookiejar;
-    char *filename;
 #endif
     session = webkit_get_default_session();
-
-#ifdef WEBKITSETTINGS
-    g_object_set((GObject*)settings, WEBKITSETTINGS, NULL);
-#endif
+    g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
+    g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
+    g_object_set((GObject*)settings, "enable-plugins", enablePlugins, NULL);
+    filename = g_strdup_printf(USER_STYLES_FILENAME);
+    filename = g_strdup_printf("file://%s", filename);
+    g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);
+    g_object_set((GObject*)settings, "user-agent", USER_AGENT, NULL);
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
 #ifdef ENABLE_COOKIE_SUPPORT

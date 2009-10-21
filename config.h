@@ -1,9 +1,12 @@
 /*
-    (c) 2009 by Leon Winter, see LICENSE file
+    (c) 2009 by Leon Winter
+    (c) 2009 by Hannes Schueller
+    see LICENSE file
 */
 
 /* general settings */
 static char startpage[]                 = "http://www.yllr.net/vimpression/";
+static const gboolean enablePlugins     = FALSE; /* TRUE keeps plugins enabled */
 
 /* appearance */
 static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
@@ -40,8 +43,17 @@ static const char progressborderright   = ']';
 
 /* cookies */
 #define             ENABLE_COOKIE_SUPPORT
-#define             COOKIES_STORAGE_FILENAME    "%s/cookies.txt", getenv("HOME")
+#define             COOKIES_STORAGE_FILENAME    "%s/.config/vimpression/cookies", getenv("HOME")
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
+
+/* user styles */
+#define             USER_STYLES_FILENAME        "%s/.config/vimpression/style.css", getenv("HOME")
+
+/* font size */
+#define             DEFAULT_FONT_SIZE           12
+
+/* user agent */
+#define             USER_AGENT                  "Vimpression"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
