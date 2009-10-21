@@ -6,7 +6,7 @@
 
 /* general settings */
 static char startpage[]                 = "http://www.yllr.net/vimpression/";
-static const gboolean enablePlugins     = FALSE; /* TRUE keeps plugins enabled */
+static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
 static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
@@ -151,6 +151,8 @@ static Key keys[] = {
     { 0,                    0,              GDK_f,          set,        {ModeHints} },
 
     { 0,                    0,              GDK_d,          quit,       {0} },
+
+    { 0,                    0,              GDK_w,          toggle_plugins,{0} },
 };
 
 /* command mapping */

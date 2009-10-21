@@ -69,6 +69,7 @@ static void setup_signals();
 static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
+static gboolean toggle_plugins();
 
 /* variables */
 static GtkWidget *window;
@@ -890,6 +891,19 @@ zoom(const Arg *arg) {
         webkit_web_view_get_zoom_level(webview) +
             (((float)(count ? count : 1)) * (arg->i & (1 << 1) ? 1.0 : -1.0) * zoomstep) :
         (count ? (float)count / 100.0 : 1.0));
+    return TRUE;
+}
+
+gboolean
+toggle_plugins() {
+    static gboolean plugins;
+    WebKitWebSettings *settings;
+    settings = webkit_web_view_get_settings(webview);
+    plugins = !plugins;
+    g_object_set((GObject*)settings, "enable-plugins", plugins, NULL);
+    g_object_set((GObject*)settings, "enable-scripts", plugins, NULL);
+    webkit_web_view_set_settings(webview, settings);
+    webkit_web_view_reload(webview);
     return TRUE;
 }
 
