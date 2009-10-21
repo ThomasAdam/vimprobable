@@ -440,10 +440,12 @@ static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event) {
 /* funcs here */
 gboolean
 complete(const Arg *arg) {
-    char *str, *s, *p, *markup;
+    FILE *f;
+    const char *filename;
+    char *str, *s, *p, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", *url, **suggurls;
     size_t listlen, len, cmdlen;
-    int i;
-    gboolean highlight = FALSE;
+    int i, spacepos;
+    gboolean highlight = FALSE, finished = FALSE;
     GtkBox *row;
     GtkWidget *row_eventbox, *el;
     GtkBox *_table;
@@ -494,31 +496,141 @@ complete(const Arg *arg) {
         gdk_color_parse(completionbgcolor[0], &color);
         _table = GTK_BOX(gtk_vbox_new(FALSE, 0));
         highlight = len > 1;
-        for(i = 0; i < listlen; i++) {
-            cmdlen = strlen(commands[i].cmd);
-            if(!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
-                p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
-                if(highlight) {
-                    memcpy(p, COMPLETION_TAG_OPEN, sizeof(COMPLETION_TAG_OPEN) - 1);
-                    memcpy((p += sizeof(COMPLETION_TAG_OPEN) - 1), &str[1], len - 1);
-                    memcpy((p += len - 1), COMPLETION_TAG_CLOSE, sizeof(COMPLETION_TAG_CLOSE) - 1);
-                    p += sizeof(COMPLETION_TAG_CLOSE) - 1;
+        if (strchr(str, ' ') == NULL) {
+            for(i = 0; i < listlen; i++) {
+                cmdlen = strlen(commands[i].cmd);
+                if(!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
+                    p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
+                    if(highlight) {
+                        memcpy(p, COMPLETION_TAG_OPEN, sizeof(COMPLETION_TAG_OPEN) - 1);
+                        memcpy((p += sizeof(COMPLETION_TAG_OPEN) - 1), &str[1], len - 1);
+                        memcpy((p += len - 1), COMPLETION_TAG_CLOSE, sizeof(COMPLETION_TAG_CLOSE) - 1);
+                        p += sizeof(COMPLETION_TAG_CLOSE) - 1;
+                    }
+                    memcpy(p, &commands[i].cmd[len - 1], cmdlen - len + 2);
+                    row = GTK_BOX(gtk_hbox_new(FALSE, 0));
+                    row_eventbox = gtk_event_box_new();
+                    gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+                    el = gtk_label_new(NULL);
+                    markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", s, "</span>", NULL);
+                    free(s);
+                    gtk_label_set_markup(GTK_LABEL(el), markup);
+                    g_free(markup);
+                    gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+                    gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+                    gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                    gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                    suggestions[n] = commands[i].cmd;
+                    widgets[n++] = row_eventbox;
                 }
-                memcpy(p, &commands[i].cmd[len - 1], cmdlen - len + 2);
-                row = GTK_BOX(gtk_hbox_new(FALSE, 0));
-                row_eventbox = gtk_event_box_new();
-                gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
-                el = gtk_label_new(NULL);
-                markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", s, "</span>", NULL);
-                free(s);
-                gtk_label_set_markup(GTK_LABEL(el), markup);
-                g_free(markup);
-                gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
-                gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
-                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                suggestions[n] = commands[i].cmd;
-                widgets[n++] = row_eventbox;
+            }
+        } else {
+            /* URL completion using the current command */
+            entry = (char *)malloc(512 * sizeof(char));
+            if (entry != NULL) {
+                memset(entry, 0, 512);
+                suggurls = malloc(sizeof(char*) * listlen);
+                if (suggurls != NULL) {
+                    spacepos = strcspn(str, " ");
+                    searchfor = (str + spacepos + 1);
+                    strncpy(command, (str + 1), spacepos - 1);
+                    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+                    f = fopen(filename, "r");
+                    if (f != NULL) {
+                        while (finished != TRUE) {
+                            if ((char *)NULL == fgets(entry, 512, f)) {
+                                /* check if end of file was reached / error occured */
+                                if (!feof(f)) {
+                                    break;
+                                }
+                                /* end of file reached */
+                                finished = TRUE;
+                                continue;
+                            }
+                            if (strstr(entry, searchfor) != NULL) {
+                                /* found in bookmarks */
+                                memset(suggline, 0, 512);
+                                strncpy(suggline, command, 512);
+                                strncat(suggline, " ", 1);
+                                url = strtok(entry, " ");
+                                strncat(suggline, url, 512 - strlen(suggline) - 1);
+                                suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                                strncpy(suggurls[n], suggline, 512);                            
+                                suggestions[n] = suggurls[n];
+                                row = GTK_BOX(gtk_hbox_new(FALSE, 0));
+                                row_eventbox = gtk_event_box_new();
+                                gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+                                el = gtk_label_new(NULL);
+                                markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
+                                gtk_label_set_markup(GTK_LABEL(el), markup);
+                                g_free(markup);
+                                gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+                                gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+                                gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                                widgets[n++] = row_eventbox;
+                            }
+                            if (n >= listlen) {
+                                break;
+                            }
+                        }
+                        fclose(f);
+                        /* history */
+                        if (n < listlen) {
+                            filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
+                            f = fopen(filename, "r");
+                            if (f != NULL) {
+                            	finished = FALSE;
+                                while (finished != TRUE) {
+                                    if ((char *)NULL == fgets(entry, 512, f)) {
+                                        /* check if end of file was reached / error occured */
+                                        if (!feof(f)) {
+                                            break;
+                                        }
+                                        /* end of file reached */
+                                        finished = TRUE;
+                                        continue;
+                                    }
+                                    if (strstr(entry, searchfor) != NULL) {
+                                        /* found in history */
+                                        memset(suggline, 0, 512);
+                                        strncpy(suggline, command, 512);
+                                        strncat(suggline, " ", 1);
+                                        url = strtok(entry, " ");
+                                        strncat(suggline, url, 512 - strlen(suggline) - 1);
+                                        suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                                        strncpy(suggurls[n], suggline, 512);                            
+                                        suggestions[n] = suggurls[n];
+                                        row = GTK_BOX(gtk_hbox_new(FALSE, 0));
+                                        row_eventbox = gtk_event_box_new();
+                                        gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+                                        el = gtk_label_new(NULL);
+                                        markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
+                                        gtk_label_set_markup(GTK_LABEL(el), markup);
+                                        g_free(markup);
+                                        gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+                                        gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+                                        gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                                        gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                                        widgets[n++] = row_eventbox;
+                                    }
+                                    if (n >= listlen) {
+                                        break;
+                                    }
+                                }
+                                fclose(f);
+                            }
+                        }
+                    }
+                    if (suggurls != NULL) {
+                        free(suggurls);
+                        suggurls = NULL;
+                    }
+                }
+                if (entry != NULL) {
+                    free(entry);
+                    entry = NULL;
+                }
             }
         }
         widgets = realloc(widgets, sizeof(GtkWidget*) * n);
