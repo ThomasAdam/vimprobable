@@ -19,7 +19,7 @@ clean:
 	rm -f $(TARGET)
 
 install: all uninstall
-	cp $(TARGET) $(INSTALLDIR)
+	cp $(TARGET) $(INSTALLDIR) && chmod 755 $(INSTALLDIR)/$(TARGET)
 
 uninstall:
 	rm -f $(INSTALLDIR)/$(TARGET)
