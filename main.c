@@ -71,6 +71,7 @@ static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 static gboolean toggle_plugins();
 static gboolean toggle_images();
+static gboolean bookmark();
 
 /* variables */
 static GtkWidget *window;
@@ -938,6 +939,28 @@ toggle_images() {
     webkit_web_view_set_settings(webview, settings);
     webkit_web_view_reload(webview);
     return TRUE;
+}
+
+gboolean
+bookmark() {
+    FILE *f;
+    const char *filename;
+    const char *uri = webkit_web_view_get_uri(webview);
+    const char *title = webkit_web_view_get_title(webview);
+    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    f = fopen(filename, "a");
+    if (f != NULL && uri != NULL) {
+        fprintf(f, "%s", uri);
+        if (title != NULL) {
+            fprintf(f, "%s", " ");
+            fprintf(f, "%s", title);
+        }
+        fprintf(f, "%s", "\n");
+        fclose(f);
+        return TRUE;
+    } else {
+       return FALSE;
+    }
 }
 
 void

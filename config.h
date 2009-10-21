@@ -46,6 +46,9 @@ static const char progressborderright   = ']';
 #define             COOKIES_STORAGE_FILENAME    "%s/.config/vimpression/cookies", getenv("HOME")
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
 
+/* bookmarks */
+#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimpression/bookmarks", getenv("HOME")
+
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
 
@@ -184,4 +187,6 @@ static Command commands[] = {
     { "stop",                                               navigate,   {NavigationCancel} },
     { "t",                                                  open,       {TargetNew} },
     { "tabopen",                                            open,       {TargetNew} },
+    { "bma",                                                bookmark,   {0} },
+    { "bookmark",                                           bookmark,   {0} },
 };
