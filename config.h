@@ -63,7 +63,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimpression"
+#define             USER_AGENT                  "Vimpression 0.7.9"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -76,19 +76,12 @@ static const int searchoptions          = CaseInsensitive | Wrapping;
 
 /* search engines */
 static Searchengine searchengines[] = {
+    { "i",          "http://ixquick.com/do/metasearch.pl?query=%s" },
     { "s",          "https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s" },
-    { "m",          "http://www.google.de/maps?q=%s" },
-    { "g",          "http://www.google.de/search?q=%s" },
-    { "w",          "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
+    { "w",          "https://secure.wikimedia.org/wikipedia/en/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
+    { "wd",         "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
 };
 static Searchengine *defsearch = &searchengines[0];
-
-/* webkit settings */
-#define WEBKITSETTINGS \
-    "default-font-size",                12, \
-    "user-stylesheet-uri",              NULL, \
-    "enable-plugins",                   TRUE, \
-    "enable-scripts",                   TRUE
 
 /* key bindings for normal mode
     Note: GDK_VoidSymbol is a wildcard so it matches on every modkey
