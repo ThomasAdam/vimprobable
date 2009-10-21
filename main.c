@@ -29,6 +29,7 @@ static void webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *fr
 static void webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
 static gboolean webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebPolicyDecision *decision, gpointer user_data);
+static gboolean webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
 static gboolean webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data);
 static gboolean webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
@@ -93,6 +94,7 @@ static char *search_handle;
 static gboolean search_direction;
 static gboolean echo_active = FALSE;
 
+char rememberedURI[128] = "";
 char inputKey[2];
 char inputBuffer[5] = "";
 
@@ -149,6 +151,16 @@ webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer
 gboolean
 webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebPolicyDecision *decision, gpointer user_data) {
+    return FALSE;
+}
+
+static gboolean
+webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
+    Arg a = { .i = TargetNew, .s = (char*)webkit_web_view_get_uri(webview) };
+    if (strlen(rememberedURI) > 0) {
+        a.s = rememberedURI;
+    }
+    open(&a);
     return FALSE;
 }
 
@@ -275,9 +287,11 @@ void
 webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data) {
     const char *uri = webkit_web_view_get_uri(webview);
 
-    if(link)
+    memset(rememberedURI, 0, 128);
+    if(link) {
         gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
-    else
+        strncpy(rememberedURI, link, 128);
+    } else
         update_url(uri);
 }
 
@@ -1046,6 +1060,7 @@ setup_signals() {
         "signal::key-press-event",                      (GCallback)webview_keypress_cb,             NULL,
         "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
         "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
+        "signal::create-web-view",                      (GCallback)webview_open_in_new_window_cb,   NULL,
     NULL);
     /* webview adjustment */
     g_object_connect((GObject*)adjust_v,
