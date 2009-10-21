@@ -93,6 +93,9 @@ static char *search_handle;
 static gboolean search_direction;
 static gboolean echo_active = FALSE;
 
+char inputKey[2];
+char inputBuffer[5] = "";
+
 #include "config.h"
 
 /* callbacks */
@@ -176,7 +179,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
 
     switch (mode) {
     case ModeNormal:
-        if(event->state == 0) {
+        if(NUMLOCK(event->state) == 0) {
             if((event->keyval >= GDK_1 && event->keyval <= GDK_9)
             ||  (event->keyval == GDK_0 && count)) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
@@ -203,7 +206,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 }
         break;
     case ModeInsert:
-        if(event->state == 0 && event->keyval == GDK_Escape) {
+        if(NUMLOCK(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
             a.s = "clearfocus()";
             script(&a);
@@ -211,7 +214,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             return set(&a);
         }
     case ModePassThrough:
-        if(event->state == 0 && event->keyval == GDK_Escape) {
+        if(NUMLOCK(event->state) == 0 && event->keyval == GDK_Escape) {
             echo(&a);
             set(&a);
             return TRUE;
@@ -222,12 +225,46 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         set(&a);
         break;
     case ModeHints:
-        if(event->state == 0 && event->keyval == GDK_Escape) {
+        if(NUMLOCK(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
             a.s = "clear()";
             script(&a);
             a.i = ModeNormal;
+            count = 0;
             return set(&a);
+        } else if (NUMLOCK(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+                || (event->keyval == GDK_0 && count))) {
+            /* allow a zero as non-first number */
+            count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+            if (strlen(inputBuffer) <= 4) {
+                memset(inputKey, 0, 2);
+                sprintf(inputKey, "%d", (event->keyval - GDK_0));
+                strncat(inputBuffer, inputKey, 1);
+                a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
+                script(&a);
+                update_state();
+            } else {
+                /* overflow */
+                a.s = "clear()";
+                script(&a);
+                a.i =  ModeNormal;
+                count = 0;
+                return set(&a);
+            }
+        } else if (NUMLOCK(event->state) == 0 && event->keyval == GDK_Return) {
+            a.s = g_strconcat("fire(", inputBuffer, ")", NULL);
+            script(&a);
+            memset(inputBuffer, 0, 5);
+            count = 0;
+            return set(&a);
+        } else if (NUMLOCK(event->state) == 0 && event->keyval == GDK_BackSpace) {
+            if (strlen(inputBuffer) > 0) {
+                strncpy((inputBuffer + strlen(inputBuffer) - 1), "\0", 1);
+                a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
+                count = ((count >= 10) ? count/10 : 0);
+                script(&a);
+                update_state();
+            }
         }
         break;
     }

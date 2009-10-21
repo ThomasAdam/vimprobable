@@ -6,7 +6,7 @@ open(JSFILE, "input_hinting_mode.js") or die "Failed to open file: $!";
 $_ = do { local $/; <JSFILE> };
 close(JSFILE);
 s/\t|\r|\n/ /g;     # convert spacings to whitespaces
-s/\/\*.*?\*\///g;   # remove comments
+s/[^\/]\/\*.*?\*\///g;   # remove comments (careful: hinttags look like comment!)
 s/ {2,}/ /g;        # strip whitespaces
 s/(^|\(|\)|;|,|:|\}|\{|=|\+|\-|\*|\&|\||\<|\>|!) +/$1/g;
 s/ +($|\(|\)|;|,|:|\}|\{|=|\+|\-|\*|\&|\||\<|\>|!)/$1/g;

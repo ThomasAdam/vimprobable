@@ -1,5 +1,7 @@
 /*
-    (c) 2009 by Leon Winter, see LICENSE file
+    (c) 2009 by Leon Winter
+    (c) 2009 by Hannes Schueller
+    see LICENSE file
 */
 
 function clearfocus() {
@@ -38,16 +40,22 @@ function show_hints() {
     var width = window.innerWidth;
     var scrollX = document.defaultView.scrollX;
     var scrollY = document.defaultView.scrollY;
-    var hinttags = "//html:*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link'] | //html:input[not(@type='hidden')] | //html:a | //html:area | //html:iframe | //html:textarea | //html:button | //html:select";
+    /* prefixing html: will result in namespace error */
+    var hinttags = "//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select";
+
+    /* iterator type isn't suitable here, because: "DOMException NVALID_STATE_ERR: The document has been mutated since the result was returned." */
     var r = document.evaluate(hinttags, document,
         function(p) {
             return 'http://www.w3.org/1999/xhtml';
-        }, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+        }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
     div = document.createElement("div");
-    i = 1;
+    /* due to the different XPath result type, we will need two counter variables */
+    j = 1;
+    var i;
     a = [];
-    while(elem = r.iterateNext())
+    for (i = 0; i < r.snapshotLength; i++)
     {
+        var elem = r.snapshotItem(i);
         rect = elem.getBoundingClientRect();
         if (!rect || rect.top > height || rect.bottom < 0 || rect.left > width || rect.right < 0 || !(elem.getClientRects()[0]))
             continue;
@@ -57,44 +65,44 @@ function show_hints() {
         var leftpos = Math.max((rect.left + scrollX), scrollX);
         var toppos = Math.max((rect.top + scrollY), scrollY);
         a.push(elem);
-        div.innerHTML += '<span id="hint' + i + '" style="position: absolute; top: ' + toppos + 'px; left: ' + leftpos + 'px; background: red; color: #fff; font: bold 10px monospace; z-index: 99">' + (i++) + '</span>';
+        /* making this block DOM compliant */
+        var hint = document.createElement("span");
+        hint.setAttribute("class", "hinting_mode_hint");
+        hint.setAttribute("id", "vimpressionhint" + j);
+        hint.style.position = "absolute";
+        hint.style.left = leftpos + "px";
+        hint.style.top =  toppos + "px";
+        hint.style.background = "red";
+        hint.style.color = "#fff";
+        hint.style.font = "bold 10px monospace";
+        hint.style.zIndex = "99";
+        var text = document.createTextNode(j);
+        hint.appendChild(text);
+        div.appendChild(hint);
+        j++;
     }
-    for(e in a)
-        a[e].className += " hinting_mode_hint";
+    i = 0;
+    while (typeof(a[i]) != "undefined") {
+        a[i].className += " hinting_mode_hint";
+        i++;
+    }
     document.getElementsByTagName("body")[0].appendChild(div);
     clearfocus();
-    s = "";
     h = null;
-    window.onkeyup = function(e)
-    {
-        if(e.which == 13 && s != "") {
-            if(h) h.className = h.className.replace("_focus","");
-            fire(parseInt(s));
-        }
-        key = String.fromCharCode(e.which);
-        if (isNaN(parseInt(key)))
-            return;
-        s += key;
-        n = parseInt(s);
-        if(h != null)
-            h.className = h.className.replace("_focus","");
-        if (i - 1 < n * 10)
-            fire(n);
-        else
-            (h = a[n - 1]).className = a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-    };
 }
 function fire(n)
 {
-    el = a[n - 1];
-    tag = el.nodeName.toLowerCase();
-    clear();
-    if(tag == "iframe" || tag == "frame" || tag == "textarea" || (tag == "input" && el.type == "text"))
-        el.focus();
-    else {
-        var evObj = document.createEvent('MouseEvents');
-        evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
-        el.dispatchEvent(evObj);
+    if (typeof(a[n - 1]) != "undefined") {
+        el = a[n - 1];
+        tag = el.nodeName.toLowerCase();
+        clear();
+        if(tag == "iframe" || tag == "frame" || tag == "textarea" || (tag == "input" && el.type == "text"))
+            el.focus();
+        else {
+            var evObj = document.createEvent('MouseEvents');
+            evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
+            el.dispatchEvent(evObj);
+        }
     }
 }
 function cleanup()
@@ -109,3 +117,15 @@ function clear()
     cleanup();
     console.log("hintmode_off")
 }
+
+function update_hints(n) 
+{
+    if(h != null)
+        h.className = h.className.replace("_focus","");
+    if (j - 1 < n * 10 && typeof(a[n - 1]) != "undefined")
+        fire(n);
+    else
+        if (typeof(a[n - 1]) != "undefined")
+            (h = a[n - 1]).className = a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+}
+
