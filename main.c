@@ -1022,6 +1022,9 @@ setup_settings() {
     g_free(filename);
     soup_session_add_feature(session, (SoupSessionFeature*)cookiejar);
 #endif
+    /* proxy */
+    SoupURI *proxy_uri = soup_uri_new(g_getenv("http_proxy"));
+    g_object_set(session, "proxy-uri", proxy_uri, NULL);
 }
 
 void
