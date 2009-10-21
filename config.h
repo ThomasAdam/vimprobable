@@ -46,6 +46,9 @@ static const char progressborderright   = ']';
 #define             COOKIES_STORAGE_FILENAME    "%s/.config/vimpression/cookies", getenv("HOME")
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
 
+/* downloads directory */
+#define             DOWNLOADS_PATH              "%s", getenv("HOME")
+
 /* user styles */
 #define             USER_STYLES_FILENAME        "%s/.config/vimpression/style.css", getenv("HOME")
 

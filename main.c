@@ -34,7 +34,7 @@ static gboolean webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *fr
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data);
 static gboolean webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data);
-static gboolean webview_download_cb(WebKitWebView *webview, GObject *download, gpointer user_data);
+static gboolean webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data);
 static gboolean webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event);
 static void webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data);
 static gboolean webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data);
@@ -178,12 +178,32 @@ webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetwo
 gboolean
 webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data) {
-    return FALSE;
+    if (webkit_web_view_can_show_mime_type(webview, mime_type) == FALSE) {
+        webkit_web_policy_decision_download(decision);
+        WebKitDownload *download = webkit_download_new(request);
+        return webview_download_cb(webview, download, user_data);
+    } else {
+        return FALSE;
+    }
 }
 
 gboolean
-webview_download_cb(WebKitWebView *webview, GObject *download, gpointer user_data) {
-    return FALSE;
+webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data) {
+    const gchar *filename;
+    gchar *uri, *path, *html;
+    filename = webkit_download_get_suggested_filename(download);
+    if (filename == NULL || strlen(filename) == 0) {
+        filename = "vimpression_download";
+    }
+    path = g_build_filename(g_strdup_printf(DOWNLOADS_PATH), filename, NULL);
+    uri = g_strconcat("file://", path, NULL);
+    webkit_download_set_destination_uri(download, uri);
+    g_free(uri);
+    html = g_strdup_printf("Download <b>%s</b>...", filename);
+    webkit_web_view_load_html_string(webview, html, webkit_download_get_uri(download));
+    update_state();
+    g_free(html);
+    return TRUE;
 }
 
 gboolean
