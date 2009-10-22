@@ -122,9 +122,10 @@ function update_hints(n)
 {
     if(h != null)
         h.className = h.className.replace("_focus","");
-    if (j - 1 < n * 10 && typeof(a[n - 1]) != "undefined")
+    if (j - 1 < n * 10 && typeof(a[n - 1]) != "undefined") {
         fire(n);
-    else
+        return "fired";
+    } else
         if (typeof(a[n - 1]) != "undefined")
             (h = a[n - 1]).className = a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
 }

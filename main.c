@@ -280,26 +280,30 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 sprintf(inputKey, "%d", (event->keyval - GDK_0));
                 strncat(inputBuffer, inputKey, 1);
                 a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
+                a.i = Silent;
                 script(&a);
                 update_state();
             } else {
                 /* overflow */
                 a.s = "clear()";
+                a.i = Silent;
                 script(&a);
                 a.i =  ModeNormal;
                 count = 0;
-                return set(&a);
+                update_state();
             }
         } else if (NUMLOCK(event->state) == 0 && event->keyval == GDK_Return) {
             a.s = g_strconcat("fire(", inputBuffer, ")", NULL);
+            a.i = Silent;
             script(&a);
             memset(inputBuffer, 0, 5);
             count = 0;
-            return set(&a);
+            update_state();
         } else if (NUMLOCK(event->state) == 0 && event->keyval == GDK_BackSpace) {
             if (strlen(inputBuffer) > 0) {
                 strncpy((inputBuffer + strlen(inputBuffer) - 1), "\0", 1);
                 a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
+                a.i = Silent;
                 count = ((count >= 10) ? count/10 : 0);
                 script(&a);
                 update_state();
@@ -999,6 +1003,11 @@ script(const Arg *arg) {
         a.i = arg->i;
         a.s = value;
         echo(&a);
+    }
+    if (value) {
+        if (strlen(value) == 5 && strncmp(value, "fired", 5) == 0) {
+            count = 0;
+        }
     }
     g_free(value);
     return TRUE;
