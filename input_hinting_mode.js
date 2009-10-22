@@ -96,9 +96,11 @@ function fire(n)
         el = a[n - 1];
         tag = el.nodeName.toLowerCase();
         clear();
-        if(tag == "iframe" || tag == "frame" || tag == "textarea" || (tag == "input" && el.type == "text"))
+        if(tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input") {
             el.focus();
-        else {
+            if (tag == "textarea" || tag == "input")
+                console.log('insertmode_on');
+        } else {
             var evObj = document.createEvent('MouseEvents');
             evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
             el.dispatchEvent(evObj);
