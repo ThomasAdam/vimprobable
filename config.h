@@ -5,7 +5,7 @@
 */
 
 /* general settings */
-static char startpage[]                 = "http://www.yllr.net/vimpression/";
+static char startpage[]                 = "http://www.yllr.net/vimprobable/";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -43,27 +43,27 @@ static const char progressborderright   = ']';
 
 /* cookies */
 #define             ENABLE_COOKIE_SUPPORT
-#define             COOKIES_STORAGE_FILENAME    "%s/.config/vimpression/cookies", getenv("HOME")
+#define             COOKIES_STORAGE_FILENAME    "%s/.config/vimprobable/cookies", getenv("HOME")
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
 
 /* bookmarks */
-#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimpression/bookmarks", getenv("HOME")
+#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimprobable/bookmarks", getenv("HOME")
 
 /* history */
 #define             HISTORY_MAX_ENTRIES         1000
-#define             HISTORY_STORAGE_FILENAME    "%s/.config/vimpression/history", getenv("HOME")
+#define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
 
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
 
 /* user styles */
-#define             USER_STYLES_FILENAME        "%s/.config/vimpression/style.css", getenv("HOME")
+#define             USER_STYLES_FILENAME        "%s/.config/vimprobable/style.css", getenv("HOME")
 
 /* font size */
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimpression 0.7.9"
+#define             USER_AGENT                  "Vimprobable 0.7.9"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */

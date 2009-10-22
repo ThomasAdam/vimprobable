@@ -68,7 +68,7 @@ function show_hints() {
         /* making this block DOM compliant */
         var hint = document.createElement("span");
         hint.setAttribute("class", "hinting_mode_hint");
-        hint.setAttribute("id", "vimpressionhint" + j);
+        hint.setAttribute("id", "vimprobablehint" + j);
         hint.style.position = "absolute";
         hint.style.left = leftpos + "px";
         hint.style.top =  toppos + "px";
