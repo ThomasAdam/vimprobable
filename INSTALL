@@ -1,0 +1,6 @@
+1. Edit config.h and Makefile
+2. make
+   You need: libwebkit-1.0 >= 1.1.11
+             libgtk+-2.0
+             libsoup-2.4
+3. Optionally, make install
