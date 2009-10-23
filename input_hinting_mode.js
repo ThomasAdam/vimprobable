@@ -11,7 +11,7 @@ function clearfocus() {
 
 function v(e, y) {
     t = e.nodeName.toLowerCase();
-    if((t == 'input' && /^(text|password)$/.test(e.type))
+    if((t == 'input' && /^(text|password|checkbox|radio)$/.test(e.type))
     || /^(select|textarea)$/.test(t)
     || e.contentEditable == 'true')
         console.log('insertmode_'+(y=='focus'?'on':'off'));
@@ -96,7 +96,7 @@ function fire(n)
         el = a[n - 1];
         tag = el.nodeName.toLowerCase();
         clear();
-        if(tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input") {
+        if(tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio")) {
             el.focus();
             if (tag == "textarea" || tag == "input")
                 console.log('insertmode_on');
