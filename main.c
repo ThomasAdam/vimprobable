@@ -1284,7 +1284,9 @@ setup_gui() {
 void
 setup_settings() {
     WebKitWebSettings *settings = (WebKitWebSettings*)webkit_web_settings_new();
-    char *filename;
+    SoupURI *proxy_uri;
+    char *filename, *new;
+    int  len;
 #ifdef ENABLE_COOKIE_SUPPORT
     SoupCookieJar *cookiejar;
 #endif
@@ -1305,8 +1307,19 @@ setup_settings() {
     soup_session_add_feature(session, (SoupSessionFeature*)cookiejar);
 #endif
     /* proxy */
-    SoupURI *proxy_uri = soup_uri_new(g_getenv("http_proxy"));
-    g_object_set(session, "proxy-uri", proxy_uri, NULL);
+    filename = (char *)g_getenv("http_proxy");
+    if (filename != NULL && 0 < (len = strlen(filename))) {
+        if(strstr(filename, "://") == NULL) {
+            /* prepend http:// */
+            new = g_malloc(sizeof("http://") + len);
+            strcpy(new, "http://");
+            memcpy(&new[sizeof("http://") - 1], filename, len + 1);
+            proxy_uri = soup_uri_new(new);
+        } else {
+            proxy_uri = soup_uri_new(filename);
+        }
+        g_object_set(session, "proxy-uri", proxy_uri, NULL);
+    }
 }
 
 void
