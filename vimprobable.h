@@ -90,6 +90,14 @@ typedef struct {
 } Key;
 
 typedef struct {
+    guint mask;
+    guint modkey;
+    guint button;
+    gboolean (*func)(const Arg *arg);
+    const Arg arg;
+} Mouse;
+
+typedef struct {
     char *cmd;
     gboolean (*func)(const Arg *arg);
     const Arg arg;
@@ -100,3 +108,9 @@ typedef struct {
     char *uri;
 } Searchengine;
 
+/* constants */
+#define MOUSE_BUTTON_1 1
+#define MOUSE_BUTTON_2 2
+#define MOUSE_BUTTON_3 3
+#define MOUSE_BUTTON_4 4
+#define MOUSE_BUTTON_5 5

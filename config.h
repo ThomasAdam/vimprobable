@@ -63,7 +63,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable 0.8.2"
+#define             USER_AGENT                  "Vimprobable 0.8.3"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -186,4 +186,13 @@ static Command commands[] = {
     { "tabopen",                                            open,       {TargetNew} },
     { "bma",                                                bookmark,   {0} },
     { "bookmark",                                           bookmark,   {0} },
+};
+
+/* mouse bindings
+   you can use MOUSE_BUTTON_1 to MOUSE_BUTTON_5
+*/
+static Mouse mouse[] = {
+    /* modmask,             modkey,         button,            function,   argument */
+    { 0,                    0,              MOUSE_BUTTON_2,    paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK} },
+    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,      {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
 };

@@ -17,7 +17,7 @@
 #define JS_SETUP
 
 /* remove numlock symbol from keymask */
-#define NUMLOCK(mask)         (mask & ~(GDK_MOD2_MASK))
+#define CLEAN(mask) (mask & ~(GDK_MOD2_MASK) & ~(GDK_BUTTON1_MASK) & ~(GDK_BUTTON2_MASK) & ~(GDK_BUTTON3_MASK) & ~(GDK_BUTTON4_MASK) & ~(GDK_BUTTON5_MASK))
 
 /* callbacks here */
 static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
@@ -217,7 +217,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
 
     switch (mode) {
     case ModeNormal:
-        if(NUMLOCK(event->state) == 0) {
+        if(CLEAN(event->state) == 0) {
             memset(inputBuffer, 0, 5);
             if((event->keyval >= GDK_1 && event->keyval <= GDK_9)
             ||  (event->keyval == GDK_0 && count)) {
@@ -232,7 +232,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         }
         /* keybindings */
         for(i = 0; i < LENGTH(keys); i++)
-            if(keys[i].mask == NUMLOCK(event->state)
+            if(keys[i].mask == CLEAN(event->state)
             && (keys[i].modkey == current_modkey
                 || (!keys[i].modkey && !current_modkey)
                 || keys[i].modkey == GDK_VoidSymbol)    /* wildcard */
@@ -245,7 +245,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 }
         break;
     case ModeInsert:
-        if(NUMLOCK(event->state) == 0 && event->keyval == GDK_Escape) {
+        if(CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
             a.s = "clearfocus()";
             script(&a);
@@ -253,7 +253,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             return set(&a);
         }
     case ModePassThrough:
-        if(NUMLOCK(event->state) == 0 && event->keyval == GDK_Escape) {
+        if(CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             echo(&a);
             set(&a);
             return TRUE;
@@ -264,14 +264,14 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         set(&a);
         break;
     case ModeHints:
-        if(NUMLOCK(event->state) == 0 && event->keyval == GDK_Escape) {
+        if(CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
             a.s = "clear()";
             script(&a);
             a.i = ModeNormal;
             count = 0;
             return set(&a);
-        } else if (NUMLOCK(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+        } else if (CLEAN(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                 || (event->keyval == GDK_0 && count))) {
             /* allow a zero as non-first number */
             count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
@@ -292,14 +292,14 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 count = 0;
                 update_state();
             }
-        } else if (NUMLOCK(event->state) == 0 && event->keyval == GDK_Return) {
+        } else if (CLEAN(event->state) == 0 && event->keyval == GDK_Return) {
             a.s = g_strconcat("fire(", inputBuffer, ")", NULL);
             a.i = Silent;
             script(&a);
             memset(inputBuffer, 0, 5);
             count = 0;
             update_state();
-        } else if (NUMLOCK(event->state) == 0 && event->keyval == GDK_BackSpace) {
+        } else if (CLEAN(event->state) == 0 && event->keyval == GDK_BackSpace) {
             if (strlen(inputBuffer) > 0) {
                 strncpy((inputBuffer + strlen(inputBuffer) - 1), "\0", 1);
                 a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
@@ -413,10 +413,28 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
 
 gboolean
 notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    int i;
     Arg a = { .s = NULL };
-
-    if(event->type == GDK_BUTTON_PRESS || event->type == GDK_KEY_PRESS || event->type == GDK_SCROLL || event->type == GDK_PROPERTY_NOTIFY)
+    if(event->type == GDK_BUTTON_PRESS || event->type == GDK_KEY_PRESS || event->type == GDK_SCROLL || event->type == GDK_PROPERTY_NOTIFY) {
         echo(&a);
+        return FALSE;
+    } else if (event->type == GDK_BUTTON_RELEASE) {
+        /* handle mouse click events */
+        for (i = 0; i < LENGTH(mouse); i++) {
+            if (mouse[i].mask == CLEAN(event->button.state)
+                    && (mouse[i].modkey == current_modkey
+                        || (!mouse[i].modkey && !current_modkey)
+                        || mouse[i].modkey == GDK_VoidSymbol)    /* wildcard */
+                    && mouse[i].button == event->button.button
+                    && mouse[i].func) {
+                if (mouse[i].func(&mouse[i].arg)) {
+                    current_modkey = count = 0;
+                    update_state();
+                    return TRUE;
+                }
+            }
+        }
+    }
     return FALSE;
 }
 
@@ -724,12 +742,6 @@ echo(const Arg *arg) {
         gdk_color_parse(urlboxbgcolor[index], &color);
     gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &color : NULL);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
-    if((echo_active = arg->s != NULL) && !(arg->i & NoAutoHide))
-        g_object_connect((GObject*)webview,
-            "signal::event",        (GCallback*)notify_event_cb,    NULL,
-        NULL);
-    else if((handler = g_signal_handler_find((GObject*)webview, G_SIGNAL_MATCH_FUNC, 0, 0, NULL, (GCallback*)notify_event_cb, NULL)))
-        g_signal_handler_disconnect((GObject*)webview, handler);
     return TRUE;
 }
 
@@ -1342,6 +1354,7 @@ setup_signals() {
         "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
         "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
         "signal::create-web-view",                      (GCallback)webview_open_in_new_window_cb,   NULL,
+        "signal::event",                                (GCallback)notify_event_cb,                 NULL,
     NULL);
     /* webview adjustment */
     g_object_connect((GObject*)adjust_v,
