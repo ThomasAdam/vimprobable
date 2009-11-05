@@ -414,11 +414,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
 gboolean
 notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     int i;
-    Arg a = { .s = NULL };
-    if(event->type == GDK_BUTTON_PRESS || event->type == GDK_KEY_PRESS || event->type == GDK_SCROLL || event->type == GDK_PROPERTY_NOTIFY) {
-        echo(&a);
-        return FALSE;
-    } else if (event->type == GDK_BUTTON_RELEASE) {
+     if (mode == ModeNormal && event->type == GDK_BUTTON_RELEASE) {
         /* handle mouse click events */
         for (i = 0; i < LENGTH(mouse); i++) {
             if (mouse[i].mask == CLEAN(event->button.state)
