@@ -109,8 +109,10 @@ function fire(n)
 }
 function cleanup()
 {
-    for(e in a)
-        a[e].className = a[e].className.replace(/hinting_mode_hint/,'');
+    for(e in a) {
+        if (typeof(a[e].className) != "undefined")
+            a[e].className = a[e].className.replace(/hinting_mode_hint/,'');
+    }
     div.parentNode.removeChild(div);
     window.onkeyup = null;
 }
