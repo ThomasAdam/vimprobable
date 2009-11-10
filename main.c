@@ -219,8 +219,8 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeNormal:
         if(CLEAN(event->state) == 0) {
             memset(inputBuffer, 0, 5);
-            if((event->keyval >= GDK_1 && event->keyval <= GDK_9)
-            ||  (event->keyval == GDK_0 && count)) {
+            if(current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+                    || (event->keyval == GDK_0 && count))) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
                 update_state();
                 return TRUE;
