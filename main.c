@@ -825,6 +825,10 @@ open(const Arg *arg) {
                     ++s;
                 }
                 *p = '\0';
+            } else if (strcspn(arg->s, "/") == 0) {                     /* prepend "file://" */
+                new = g_malloc(sizeof("file://") + len);
+                strcpy(new, "file://");
+                memcpy(&new[sizeof("file://") - 1], arg->s, len + 1);
             } else if(p || !strchr(arg->s, '.')) {                      /* whitespaces or no dot? */
                 p = soup_uri_encode(arg->s, "&");
                 new = g_strdup_printf(defsearch->uri, p);
