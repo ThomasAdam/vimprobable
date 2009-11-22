@@ -195,6 +195,6 @@ static Command commands[] = {
 static Mouse mouse[] = {
     /* modmask,             modkey,         button,            function,   argument */
     { 0,                    0,              MOUSE_BUTTON_2,    paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK} },
-    { GDK_SHIFT_MASK,       0,              MOUSE_BUTTON_2,    paste,      {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
-    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    open,       {TargetNew, rememberedURI} },
+    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,      {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
+    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open,       {TargetNew, rememberedURI} },
 };
