@@ -98,6 +98,9 @@ static char *search_handle;
 static gboolean search_direction;
 static gboolean echo_active = FALSE;
 
+static GdkNativeWindow embed = 0;
+static char winid[64] = "";
+
 char rememberedURI[128] = "";
 char inputKey[5];
 char inputBuffer[65] = "";
@@ -816,10 +819,22 @@ number(const Arg *arg) {
 
 gboolean
 open(const Arg *arg) {
-    char *argv[] = { *args, arg->s, NULL };
+    char *argv[6];
     char *s = arg->s, *p, *new;
     Arg a = { .i = NavigationReload };
     int len, i;
+
+    if (embed) {
+        argv[0] = *args;
+        argv[1] = "-e";
+        argv[2] = winid;
+        argv[3] = arg->s;
+        argv[4] = NULL;
+    } else {
+        argv[0] = *args;
+        argv[1] = arg->s;
+        argv[2] = NULL;
+    }
 
     if(!arg->s)
         navigate(&a);
@@ -1280,7 +1295,13 @@ setup_gui() {
     GtkScrollbar *scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
     adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
     adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    if (embed) {
+        window = gtk_plug_new(embed);
+    } else {
+        window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable", "vimprobable");
+    }
+    gtk_window_set_default_size(GTK_WINDOW(window), 640, 480);
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
     inputbox = gtk_entry_new();
     GtkWidget *viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
@@ -1401,7 +1422,27 @@ setup_signals() {
 int
 main(int argc, char *argv[]) {
     Arg a;
+    char url[256] = "";
     args = argv;
+
+    /* command line arguments */
+    if (argc >= 2 && strlen(argv[1]) == 2 && strncmp(argv[1], "-v", 2) == 0) {
+        printf("%s\n", USER_AGENT);
+        return EXIT_SUCCESS;
+    }
+    if (argc >= 3 && strlen(argv[1]) == 2 && strncmp(argv[1], "-e", 2) == 0) {
+        embed = atoi(argv[2]);
+        strncpy(winid, argv[2], 63);
+        if (argc >= 4) {
+            strncpy(url, argv[3], 255);
+        } else {
+            strncpy(url, startpage, 255);
+        }
+    } else if (argc >= 2) {
+        strncpy(url, argv[1], 255);
+    } else {
+        strncpy(url, startpage, 255);
+    }
 
     gtk_init(&argc, &argv);
     if(!g_thread_supported())
@@ -1409,7 +1450,7 @@ main(int argc, char *argv[]) {
     setup_modkeys();
     setup_gui();
     a.i = TargetCurrent;
-    a.s = argc > 1 ? argv[1] : startpage;
+    a.s = url;
     open(&a);
     gtk_main();
 
