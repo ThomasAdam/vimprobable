@@ -37,14 +37,20 @@ self.onunload = function() {
     v(document.activeElement, '');
 };
 
-function show_hints() {
+function show_hints(inputText) {
     if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
         var height = window.innerHeight;
         var width = window.innerWidth;
         var scrollX = document.defaultView.scrollX;
         var scrollY = document.defaultView.scrollY;
         /* prefixing html: will result in namespace error */
-        var hinttags = "//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select";
+        var hinttags;
+        if (typeof(inputText) == "undefined" || inputText == "") {
+            hinttags = "//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href] | //input[not(@type='hidden')] | //a | //area | //iframe | //textarea | //button | //select";
+        } else {
+            /* only elements which match the text entered so far */
+            hinttags = "//*[(@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href) and contains(., '" + inputText + "')] | //input[not(@type='hidden') and contains(., '" + inputText + "')] | //a[contains(., '" + inputText + "')] | //area[contains(., '" + inputText + "')] | //iframe[contains(@name, '" + inputText + "')] | //textarea[contains(., '" + inputText + "')] | //button[contains(@value, '" + inputText + "')] | //select[contains(., '" + inputText + "')]";
+        }
 
         /* iterator type isn't suitable here, because: "DOMException NVALID_STATE_ERR: The document has been mutated since the result was returned." */
         var r = document.evaluate(hinttags, document,
@@ -92,6 +98,10 @@ function show_hints() {
         document.getElementsByTagName("body")[0].appendChild(div);
         clearfocus();
         h = null;
+        if (i == 1) {
+            /* just one hinted element - might as well follow it */
+            return fire(1);
+        }
     }
 }
 function fire(n)

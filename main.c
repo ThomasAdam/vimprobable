@@ -99,8 +99,8 @@ static gboolean search_direction;
 static gboolean echo_active = FALSE;
 
 char rememberedURI[128] = "";
-char inputKey[2];
-char inputBuffer[5] = "";
+char inputKey[5];
+char inputBuffer[65] = "";
 char followTarget[8] = "";
 
 #include "config.h"
@@ -219,7 +219,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     switch (mode) {
     case ModeNormal:
         if(CLEAN(event->state) == 0) {
-            memset(inputBuffer, 0, 5);
+            memset(inputBuffer, 0, 65);
             if(current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                     || (event->keyval == GDK_0 && count))) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
@@ -276,36 +276,53 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 || (event->keyval == GDK_0 && count))) {
             /* allow a zero as non-first number */
             count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
-            if (strlen(inputBuffer) <= 4) {
-                memset(inputKey, 0, 2);
-                sprintf(inputKey, "%d", (event->keyval - GDK_0));
-                strncat(inputBuffer, inputKey, 1);
-                a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
-                a.i = Silent;
-                script(&a);
-                update_state();
-            } else {
-                /* overflow */
-                a.s = "clear()";
-                a.i = Silent;
-                script(&a);
-                a.i =  ModeNormal;
+            memset(inputBuffer, 0, 65);
+            sprintf(inputBuffer, "%d", count);
+            a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
+            a.i = Silent;
+            script(&a);
+            update_state();
+        } else if ((CLEAN(event->state) == 0 && (event->keyval >= GDK_a && event->keyval <= GDK_z))
+                || (CLEAN(event->state) == GDK_SHIFT_MASK && (event->keyval >= GDK_A && event->keyval <= GDK_Z))) {
+            /* update hints by link text */
+            if (strlen(inputBuffer) < 65) {
                 count = 0;
+                memset(inputKey, 0, 5);
+                sprintf(inputKey, "%c", event->keyval);
+                strncat(inputBuffer, inputKey, 1);
+                a.i = Silent;
+                a.s = "cleanup()";
+                script(&a);
+                a.s = g_strconcat("show_hints('", inputBuffer, "')", NULL);
+                a.i = Silent;
+                script(&a);
                 update_state();
             }
-        } else if (CLEAN(event->state) == 0 && event->keyval == GDK_Return) {
+        } else if (CLEAN(event->state) == 0 && event->keyval == GDK_Return && count) {
+            memset(inputBuffer, 0, 65);
+            sprintf(inputBuffer, "%d", count);
             a.s = g_strconcat("fire(", inputBuffer, ")", NULL);
             a.i = Silent;
             script(&a);
-            memset(inputBuffer, 0, 5);
+            memset(inputBuffer, 0, 65);
             count = 0;
             update_state();
         } else if (CLEAN(event->state) == 0 && event->keyval == GDK_BackSpace) {
-            if (strlen(inputBuffer) > 0) {
-                strncpy((inputBuffer + strlen(inputBuffer) - 1), "\0", 1);
+            if (count > 0) {
+                count = ((count >= 10) ? count/10 : 0);
+                memset(inputBuffer, 0, 65);
+                sprintf(inputBuffer, "%d", count);
                 a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
                 a.i = Silent;
-                count = ((count >= 10) ? count/10 : 0);
+                script(&a);
+                update_state();
+            } else if (strlen(inputBuffer) > 0) {
+                a.i = Silent;
+                a.s = "cleanup()";
+                script(&a);
+                strncpy((inputBuffer + strlen(inputBuffer) - 1), "\0", 1);
+                a.s = g_strconcat("show_hints('", inputBuffer, "')", NULL);
+                a.i = Silent;
                 script(&a);
                 update_state();
             }
