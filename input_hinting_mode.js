@@ -105,9 +105,8 @@ function fire(n)
             if (tag == "textarea" || tag == "input")
                 console.log('insertmode_on');
         } else {
-            var evObj = document.createEvent('MouseEvents');
-            evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
-            el.dispatchEvent(evObj);
+            /* send signal to open link */
+            return "open;" + el.href;
         }
     }
 }
@@ -131,8 +130,8 @@ function update_hints(n)
     if(h != null)
         h.className = h.className.replace("_focus","");
     if (j - 1 < n * 10 && typeof(a[n - 1]) != "undefined") {
-        fire(n);
-        return "fired";
+        /* return signal to follow the link */
+        return "fire;" + n;
     } else
         if (typeof(a[n - 1]) != "undefined")
             (h = a[n - 1]).className = a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");

@@ -101,6 +101,7 @@ static gboolean echo_active = FALSE;
 char rememberedURI[128] = "";
 char inputKey[2];
 char inputBuffer[5] = "";
+char followTarget[8] = "";
 
 #include "config.h"
 
@@ -955,6 +956,8 @@ set(const Arg *arg) {
         echo(&a);
         break;
     case ModeHints:
+        memset(followTarget, 0, 8);
+        strncpy(followTarget, arg->s, 8);
         a.i = Silent;
         a.s = "show_hints()";
         script(&a);
@@ -1016,8 +1019,19 @@ script(const Arg *arg) {
         echo(&a);
     }
     if (value) {
-        if (strlen(value) == 5 && strncmp(value, "fired", 5) == 0) {
-            count = 0;
+        if (strncmp(value, "fire;", 5) == 0) {
+        	count = 0;
+            a.s = g_strconcat("fire(", (value + 5), ")", NULL);
+            a.i = Silent;
+            script(&a);
+        } else if (strncmp(value, "open;", 5) == 0) {
+            if (strncmp(followTarget, "new", 3) == 0)
+                a.i = TargetNew;
+            else
+                a.i = TargetCurrent;
+            memset(followTarget, 0, 8);
+            a.s = (value + 5);
+            open(&a);
         }
     }
     g_free(value);
