@@ -6,14 +6,15 @@
 */
 
 /* general settings */
-static char startpage[]                 = "http://www.yllr.net/vimprobable/";
+char startpage[241]                     = "http://www.yllr.net/vimprobable/";
+char useragent[120]	                    = "Vimprobable2 0.4.0.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
-static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
-static const char statuscolor[]         = "#ffffff";            /* color for status bar */
-static const char sslbgcolor[]          = "#b0ff00";            /* background color for status bar with SSL url */
-static const char sslcolor[]            = "#000000";            /* color for status bar with SSL url */
+char statusbgcolor[]                    = "#000000";            /* background color for status bar */
+char statuscolor[]                      = "#ffffff";            /* color for status bar */
+char sslbgcolor[]                       = "#b0ff00";            /* background color for status bar with SSL url */
+char sslcolor[]                         = "#000000";            /* color for status bar with SSL url */
 
                                         /*  normal,                 warning,                error       */
 static const char *urlboxfont[]         = { "monospace normal 8",   "monospace normal 8",   "monospace bold 8"};
@@ -62,9 +63,6 @@ static const char progressborderright   = ']';
 
 /* font size */
 #define             DEFAULT_FONT_SIZE           12
-
-/* user agent */
-#define             USER_AGENT                  "Vimprobable 0.9.7.0"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -157,39 +155,37 @@ static Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_F,          set,        { .i = ModeHints, .s = "new" } },
 
     { 0,                    0,              GDK_d,          quit,       {0} },
-
-    { 0,                    0,              GDK_w,          toggle_plugins,{0} },
-    { 0,                    0,              GDK_e,          toggle_images,{0} },
 };
 
 /* command mapping */
 static Command commands[] = {
-    /* command,                                             function,   argument */
-    { "ba",                                                 navigate,    {NavigationBack} },
-    { "back",                                               navigate,    {NavigationBack} },
-    { "ec",                                                 script,      {Info} },
-    { "echo",                                               script,      {Info} },
-    { "echoe",                                              script,      {Error} },
-    { "echoerr",                                            script,      {Error} },
-    { "fw",                                                 navigate,    {NavigationForward} },
-    { "fo",                                                 navigate,    {NavigationForward} },
-    { "forward",                                            navigate,    {NavigationForward} },
-    { "javascript",                                         script,      {Silent} },
-    { "o",                                                  open,        {TargetCurrent} },
-    { "open",                                               open,        {TargetCurrent} },
-    { "q",                                                  quit,        {0} },
-    { "quit",                                               quit,        {0} },
-    { "re",                                                 navigate,    {NavigationReload} },
-    { "re!",                                                navigate,    {NavigationForceReload} },
-    { "reload",                                             navigate,    {NavigationReload} },
-    { "reload!",                                            navigate,    {NavigationForceReload} },
-    { "st",                                                 navigate,    {NavigationCancel} },
-    { "stop",                                               navigate,    {NavigationCancel} },
-    { "t",                                                  open,        {TargetNew} },
-    { "tabopen",                                            open,        {TargetNew} },
-    { "bma",                                                bookmark,    {0} },
-    { "bookmark",                                           bookmark,    {0} },
-    { "source",                                             view_source, {0} },
+    /* command,                                             function,         argument */
+    { "ba",                                                 navigate,         {NavigationBack} },
+    { "back",                                               navigate,         {NavigationBack} },
+    { "ec",                                                 script,           {Info} },
+    { "echo",                                               script,           {Info} },
+    { "echoe",                                              script,           {Error} },
+    { "echoerr",                                            script,           {Error} },
+    { "fw",                                                 navigate,         {NavigationForward} },
+    { "fo",                                                 navigate,         {NavigationForward} },
+    { "forward",                                            navigate,         {NavigationForward} },
+    { "javascript",                                         script,           {Silent} },
+    { "o",                                                  open,             {TargetCurrent} },
+    { "open",                                               open,             {TargetCurrent} },
+    { "q",                                                  quit,             {0} },
+    { "quit",                                               quit,             {0} },
+    { "re",                                                 navigate,         {NavigationReload} },
+    { "re!",                                                navigate,         {NavigationForceReload} },
+    { "reload",                                             navigate,         {NavigationReload} },
+    { "reload!",                                            navigate,         {NavigationForceReload} },
+    { "st",                                                 navigate,         {NavigationCancel} },
+    { "stop",                                               navigate,         {NavigationCancel} },
+    { "t",                                                  open,             {TargetNew} },
+    { "tabopen",                                            open,             {TargetNew} },
+    { "bma",                                                bookmark,         {0} },
+    { "bookmark",                                           bookmark,         {0} },
+    { "source",                                             view_source,      {0} },
+    { "set",                                                browser_settings, {0} },
 };
 
 /* mouse bindings
@@ -200,4 +196,18 @@ static Mouse mouse[] = {
     { 0,                    0,              MOUSE_BUTTON_2,    paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK} },
     { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,      {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
     { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open,       {TargetNew, rememberedURI} },
+};
+
+/* settings (arguments of :set command) */
+static Setting browsersettings[] = {
+    /* public name,      internal variable   webkit setting      boolean value?   colour value?   reload page? */
+    { "homepage",        startpage,          "",                 FALSE,           FALSE,          FALSE  },
+    { "useragent",       useragent,          "user-agent",       FALSE,           FALSE,          FALSE  },
+    { "scripts",         NULL,               "enable-scripts",   TRUE,            FALSE,          FALSE  },
+    { "plugins",         NULL,               "enable-plugins",   TRUE,            FALSE,          FALSE  },
+    { "images",          NULL,               "auto-load-images", TRUE,            FALSE,          FALSE  },
+    { "statusbgcolor",   statusbgcolor,      "",                 FALSE,           TRUE,           TRUE   },
+    { "statuscolor",     statuscolor,        "",                 FALSE,           TRUE,           TRUE   },
+    { "sslbgcolor",      sslbgcolor,         "",                 FALSE,           TRUE,           TRUE   },
+    { "sslcolor",        sslcolor,           "",                 FALSE,           TRUE,           TRUE   },
 };

@@ -98,6 +98,15 @@ typedef struct {
 } Mouse;
 
 typedef struct {
+    char     *name;
+    char     (*var);
+    char     *webkit;
+    gboolean boolval;
+    gboolean colourval;
+    gboolean reload;
+} Setting;
+
+typedef struct {
     char *cmd;
     gboolean (*func)(const Arg *arg);
     const Arg arg;
@@ -107,6 +116,13 @@ typedef struct {
     char *handle;
     char *uri;
 } Searchengine;
+
+struct map_pair
+{
+    char *line;
+    char what[20];
+    char value[240];
+} my_pair;
 
 /* constants */
 #define MOUSE_BUTTON_1 1

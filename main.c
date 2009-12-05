@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <webkit/webkit.h>
@@ -47,6 +48,7 @@ static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer use
 
 /* functions */
 static gboolean bookmark(const Arg *arg);
+static gboolean browser_settings(const Arg *arg);
 static gboolean complete(const Arg *arg);
 static gboolean descend(const Arg *arg);
 static gboolean echo(const Arg *arg);
@@ -60,8 +62,6 @@ static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
 static gboolean script(const Arg *arg);
 static gboolean scroll(const Arg *arg);
-static gboolean toggle_images(const Arg *arg);
-static gboolean toggle_plugins(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
@@ -75,7 +75,12 @@ static void setup_signals();
 static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
-static void history();
+
+static gboolean history();
+char *search_word(int whichword);
+static gboolean process_set_line(char *line);
+void process_line(char *line);
+gboolean parse_colour(char *color);
 
 /* variables */
 static GtkWidget *window;
@@ -568,7 +573,6 @@ complete(const Arg *arg) {
                 }
             }
         } else {
-            /* URL completion using the current command */
             entry = (char *)malloc(512 * sizeof(char));
             if (entry != NULL) {
                 memset(entry, 0, 512);
@@ -577,26 +581,16 @@ complete(const Arg *arg) {
                     spacepos = strcspn(str, " ");
                     searchfor = (str + spacepos + 1);
                     strncpy(command, (str + 1), spacepos - 1);
-                    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
-                    f = fopen(filename, "r");
-                    if (f != NULL) {
-                        while (finished != TRUE) {
-                            if ((char *)NULL == fgets(entry, 512, f)) {
-                                /* check if end of file was reached / error occured */
-                                if (!feof(f)) {
-                                    break;
-                                }
-                                /* end of file reached */
-                                finished = TRUE;
-                                continue;
-                            }
-                            if (strstr(entry, searchfor) != NULL) {
-                                /* found in bookmarks */
+                    if (strlen(command) == 3 && strncmp(command, "set", 3) == 0) {
+                        /* browser settings */
+                        listlen = LENGTH(browsersettings);
+                        for (i = 0; i < listlen; i++) {
+                            if (strstr(browsersettings[i].name, searchfor) != NULL) {
+                                /* match */
                                 memset(suggline, 0, 512);
                                 strncpy(suggline, command, 512);
                                 strncat(suggline, " ", 1);
-                                url = strtok(entry, " ");
-                                strncat(suggline, url, 512 - strlen(suggline) - 1);
+                                strncat(suggline, browsersettings[i].name, 512 - strlen(suggline) - 1);
                                 suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                 strncpy(suggurls[n], suggline, 512);                            
                                 suggestions[n] = suggurls[n];
@@ -613,55 +607,96 @@ complete(const Arg *arg) {
                                 gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
                                 widgets[n++] = row_eventbox;
                             }
-                            if (n >= listlen) {
-                                break;
-                            }
+                            
                         }
-                        fclose(f);
-                        /* history */
-                        if (n < listlen) {
-                            filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
-                            f = fopen(filename, "r");
-                            if (f != NULL) {
-                            	finished = FALSE;
-                                while (finished != TRUE) {
-                                    if ((char *)NULL == fgets(entry, 512, f)) {
-                                        /* check if end of file was reached / error occured */
-                                        if (!feof(f)) {
-                                            break;
-                                        }
-                                        /* end of file reached */
-                                        finished = TRUE;
-                                        continue;
-                                    }
-                                    if (strstr(entry, searchfor) != NULL) {
-                                        /* found in history */
-                                        memset(suggline, 0, 512);
-                                        strncpy(suggline, command, 512);
-                                        strncat(suggline, " ", 1);
-                                        url = strtok(entry, " ");
-                                        strncat(suggline, url, 512 - strlen(suggline) - 1);
-                                        suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                        strncpy(suggurls[n], suggline, 512);                            
-                                        suggestions[n] = suggurls[n];
-                                        row = GTK_BOX(gtk_hbox_new(FALSE, 0));
-                                        row_eventbox = gtk_event_box_new();
-                                        gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
-                                        el = gtk_label_new(NULL);
-                                        markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
-                                        gtk_label_set_markup(GTK_LABEL(el), markup);
-                                        g_free(markup);
-                                        gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
-                                        gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                                        gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
-                                        gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                        widgets[n++] = row_eventbox;
-                                    }
-                                    if (n >= listlen) {
+                    } else {
+                        /* URL completion using the current command */
+                        filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+                        f = fopen(filename, "r");
+                        if (f != NULL) {
+                            while (finished != TRUE) {
+                                if ((char *)NULL == fgets(entry, 512, f)) {
+                                    /* check if end of file was reached / error occured */
+                                    if (!feof(f)) {
                                         break;
                                     }
+                                    /* end of file reached */
+                                    finished = TRUE;
+                                    continue;
                                 }
-                                fclose(f);
+                                if (strstr(entry, searchfor) != NULL) {
+                                    /* found in bookmarks */
+                                    memset(suggline, 0, 512);
+                                    strncpy(suggline, command, 512);
+                                    strncat(suggline, " ", 1);
+                                    url = strtok(entry, " ");
+                                    strncat(suggline, url, 512 - strlen(suggline) - 1);
+                                    suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                                    strncpy(suggurls[n], suggline, 512);                            
+                                    suggestions[n] = suggurls[n];
+                                    row = GTK_BOX(gtk_hbox_new(FALSE, 0));
+                                    row_eventbox = gtk_event_box_new();
+                                    gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+                                    el = gtk_label_new(NULL);
+                                    markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
+                                    gtk_label_set_markup(GTK_LABEL(el), markup);
+                                    g_free(markup);
+                                    gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+                                    gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+                                    gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                                    gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                                    widgets[n++] = row_eventbox;
+                                }
+                                if (n >= listlen) {
+                                    break;
+                                }
+                            }
+                            fclose(f);
+                            /* history */
+                            if (n < listlen) {
+                                filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
+                                f = fopen(filename, "r");
+                                if (f != NULL) {
+                                	finished = FALSE;
+                                    while (finished != TRUE) {
+                                        if ((char *)NULL == fgets(entry, 512, f)) {
+                                            /* check if end of file was reached / error occured */
+                                            if (!feof(f)) {
+                                                break;
+                                            }
+                                            /* end of file reached */
+                                            finished = TRUE;
+                                            continue;
+                                        }
+                                        if (strstr(entry, searchfor) != NULL) {
+                                            /* found in history */
+                                            memset(suggline, 0, 512);
+                                            strncpy(suggline, command, 512);
+                                            strncat(suggline, " ", 1);
+                                            url = strtok(entry, " ");
+                                            strncat(suggline, url, 512 - strlen(suggline) - 1);
+                                            suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                                            strncpy(suggurls[n], suggline, 512);                            
+                                            suggestions[n] = suggurls[n];
+                                            row = GTK_BOX(gtk_hbox_new(FALSE, 0));
+                                            row_eventbox = gtk_event_box_new();
+                                            gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+                                            el = gtk_label_new(NULL);
+                                            markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
+                                            gtk_label_set_markup(GTK_LABEL(el), markup);
+                                            g_free(markup);
+                                            gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+                                            gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+                                            gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                                            gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                                            widgets[n++] = row_eventbox;
+                                        }
+                                        if (n >= listlen) {
+                                            break;
+                                        }
+                                    }
+                                    fclose(f);
+                                }
                             }
                         }
                     }
@@ -1104,31 +1139,6 @@ zoom(const Arg *arg) {
 }
 
 gboolean
-toggle_plugins(const Arg *arg) {
-    static gboolean plugins;
-    WebKitWebSettings *settings;
-    settings = webkit_web_view_get_settings(webview);
-    plugins = !plugins;
-    g_object_set((GObject*)settings, "enable-plugins", plugins, NULL);
-    g_object_set((GObject*)settings, "enable-scripts", plugins, NULL);
-    webkit_web_view_set_settings(webview, settings);
-    webkit_web_view_reload(webview);
-    return TRUE;
-}
-
-gboolean
-toggle_images(const Arg *arg) {
-    static gboolean images;
-    WebKitWebSettings *settings;
-    settings = webkit_web_view_get_settings(webview);
-    images = !images;
-    g_object_set((GObject*)settings, "auto-load-images", images, NULL);
-    webkit_web_view_set_settings(webview, settings);
-    webkit_web_view_reload(webview);
-    return TRUE;
-}
-
-gboolean
 bookmark(const Arg *arg) {
     FILE *f;
     const char *filename;
@@ -1150,7 +1160,8 @@ bookmark(const Arg *arg) {
     }
 }
 
-void history() {
+gboolean
+history() {
     FILE *f;
     const char *filename;
     const char *uri = webkit_web_view_get_uri(webview);
@@ -1221,6 +1232,7 @@ void history() {
             entry = NULL;
         }
     }
+    return TRUE;
 }
 
 static gboolean
@@ -1229,6 +1241,176 @@ view_source (const Arg * arg) {
     webkit_web_view_set_view_source_mode (webview, !current_mode);
     webkit_web_view_reload (webview);
     return TRUE;
+}
+
+static gboolean
+browser_settings(const Arg *arg) {
+    char line[255];
+    strncpy(line, arg->s, 254);
+    if (process_set_line(line))
+        return TRUE;
+    else
+        return FALSE;
+}
+
+char *
+search_word(int whichword) {
+    int k = 0;
+    static char word[20];
+    char *c = my_pair.line;
+
+    while (isspace(*c) && *c)
+        c++;
+
+    while (*c && !isspace (*c) && *c != '=' && k < 20) {
+        word[k++] = *c;
+        c++;
+    }
+    word[k] = '\0';
+
+    switch (whichword) {
+        case 0:
+            strncpy(my_pair.what, word, 20);
+        break;
+        case 1:
+            strncpy(my_pair.value, word, 240);
+        break;
+    }
+
+    return c;
+}
+
+static gboolean
+process_set_line(char *line) {
+    char              *c;
+    int               listlen, i;
+    gboolean          boolval;
+    WebKitWebSettings *settings;
+    settings = webkit_web_view_get_settings(webview);
+    my_pair.line = line;
+    c = search_word(0);
+
+    if (!strlen(my_pair.what))
+        return FALSE;
+
+    while (isspace(*c) && *c)
+        c++;
+
+    if (*c == ':' || *c == '=')
+        c++;
+  
+    my_pair.line = c;
+    c = search_word(1);
+    
+    listlen = LENGTH(browsersettings);
+    for (i = 0; i < listlen; i++) {
+        if (strlen(browsersettings[i].name) == strlen(my_pair.what) && strncmp(browsersettings[i].name, my_pair.what, strlen(my_pair.what)) == 0) {
+            /* mandatory argument not provided */
+            if (strlen(my_pair.value) == 0)
+                return FALSE;
+            /* interpret boolean values */
+            if (browsersettings[i].boolval) {
+                if (strncmp(my_pair.value, "on", 2) == 0 || strncmp(my_pair.value, "true", 4) == 0) {
+                    boolval = TRUE;
+                } else if (strncmp(my_pair.value, "off", 3) == 0 || strncmp(my_pair.value, "false", 5) == 0) {
+                    boolval = FALSE;
+                } else {
+                    return FALSE;
+                }
+            } else if (browsersettings[i].colourval) {
+                /* interpret as hexadecimal colour */
+                if (!parse_colour(my_pair.value)) {
+                    return FALSE;
+                }
+            }
+            if (browsersettings[i].var != NULL) {
+                /* write value into internal variable */
+                strncpy(browsersettings[i].var, my_pair.value, strlen(my_pair.value) + 1);
+            }
+            if (strlen(browsersettings[i].webkit) > 0) {
+                /* activate appropriate webkit setting */
+                if (browsersettings[i].boolval) {
+                    g_object_set((GObject*)settings, browsersettings[i].webkit, boolval, NULL);
+                } else {
+                    g_object_set((GObject*)settings, browsersettings[i].webkit, my_pair.value, NULL);
+                }
+                webkit_web_view_set_settings(webview, settings);
+            }
+            if (browsersettings[i].reload)
+                webkit_web_view_reload(webview);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+gboolean
+parse_colour(char *color) {
+    char goodcolor[8];
+    int colorlen;
+
+    colorlen = (int)strlen(color);
+
+    goodcolor[0] = '#';
+    goodcolor[7] = '\0';
+
+    /* help the user a bit by making string like
+       #a10 and strings like ffffff full 6digit
+       strings with # in front :)
+     */
+
+    if (color[0] == '#') {
+        switch (colorlen) {
+            case 7:
+	            strncpy(goodcolor, color, 7);
+	        break;
+            case 4:
+                goodcolor[1] = color[1];
+                goodcolor[2] = color[1];
+                goodcolor[3] = color[2];
+                goodcolor[4] = color[2];
+                goodcolor[5] = color[3];
+                goodcolor[6] = color[3];
+            break;
+            case 2:
+                goodcolor[1] = color[1];
+                goodcolor[2] = color[1];
+                goodcolor[3] = color[1];
+                goodcolor[4] = color[1];
+                goodcolor[5] = color[1];
+                goodcolor[6] = color[1];
+            break;
+        }
+    } else {
+        switch (colorlen) {
+            case 6:
+                strncpy(&goodcolor[1], color, 6);
+            break;
+            case 3:
+                goodcolor[1] = color[0];
+                goodcolor[2] = color[0];
+                goodcolor[3] = color[1];
+                goodcolor[4] = color[1];
+                goodcolor[5] = color[2];
+                goodcolor[6] = color[2];
+            break;
+            case 1:
+                goodcolor[1] = color[0];
+                goodcolor[2] = color[0];
+                goodcolor[3] = color[0];
+                goodcolor[4] = color[0];
+                goodcolor[5] = color[0];
+                goodcolor[6] = color[0];
+            break;
+        }
+    }
+    
+    if (strlen (goodcolor) != 7) {
+        return FALSE;
+    } else {
+        strncpy(color, goodcolor, 8);
+        return TRUE;
+    }
 }
 
 void
@@ -1332,7 +1514,7 @@ setup_gui() {
     setup_settings();
     gdk_color_parse(statusbgcolor, &bg);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
-    gtk_widget_set_name(window, "Vimprobable");
+    gtk_widget_set_name(window, "Vimprobable2");
     gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &hints, GDK_HINT_MIN_SIZE);
 #ifdef DISABLE_SCROLLBAR
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
@@ -1373,7 +1555,7 @@ setup_settings() {
     filename = g_strdup_printf(USER_STYLES_FILENAME);
     filename = g_strdup_printf("file://%s", filename);
     g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);
-    g_object_set((GObject*)settings, "user-agent", USER_AGENT, NULL);
+    g_object_set((GObject*)settings, "user-agent", useragent, NULL);
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
 #ifdef ENABLE_COOKIE_SUPPORT
@@ -1438,11 +1620,18 @@ main(int argc, char *argv[]) {
     char url[256] = "";
     args = argv;
 
-    /* command line arguments */
+    /* command line argument: version */
     if (argc >= 2 && strlen(argv[1]) == 2 && strncmp(argv[1], "-v", 2) == 0) {
-        printf("%s\n", USER_AGENT);
+        printf("%s\n", useragent);
         return EXIT_SUCCESS;
     }
+
+    gtk_init(&argc, &argv);
+    if(!g_thread_supported())
+        g_thread_init(NULL);
+    setup_modkeys();
+
+    /* command line argument: embed */
     if (argc >= 3 && strlen(argv[1]) == 2 && strncmp(argv[1], "-e", 2) == 0) {
         embed = atoi(argv[2]);
         strncpy(winid, argv[2], 63);
@@ -1457,10 +1646,6 @@ main(int argc, char *argv[]) {
         strncpy(url, startpage, 255);
     }
 
-    gtk_init(&argc, &argv);
-    if(!g_thread_supported())
-        g_thread_init(NULL);
-    setup_modkeys();
     setup_gui();
     a.i = TargetCurrent;
     a.s = url;
