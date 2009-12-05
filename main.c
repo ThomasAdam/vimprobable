@@ -1060,6 +1060,8 @@ script(const Arg *arg) {
             a.i = Silent;
             script(&a);
         } else if (strncmp(value, "open;", 5) == 0) {
+            a.i = ModeNormal;
+            set(&a);
             if (strncmp(followTarget, "new", 3) == 0)
                 a.i = TargetNew;
             else
