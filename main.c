@@ -1325,12 +1325,18 @@ process_set_line(char *line) {
             }
             if (browsersettings[i].var != NULL) {
                 /* write value into internal variable */
-                strncpy(browsersettings[i].var, my_pair.value, strlen(my_pair.value) + 1);
+                /*if (browsersettings[i].intval) {
+                    browsersettings[i].var = atoi(my_pair.value);
+                } else {*/
+                    strncpy(browsersettings[i].var, my_pair.value, strlen(my_pair.value) + 1);
+                /*}*/
             }
             if (strlen(browsersettings[i].webkit) > 0) {
                 /* activate appropriate webkit setting */
                 if (browsersettings[i].boolval) {
                     g_object_set((GObject*)settings, browsersettings[i].webkit, boolval, NULL);
+                } else if (browsersettings[i].intval) {
+                    g_object_set((GObject*)settings, browsersettings[i].webkit, atoi(my_pair.value), NULL);
                 } else {
                     g_object_set((GObject*)settings, browsersettings[i].webkit, my_pair.value, NULL);
                 }
@@ -1552,7 +1558,7 @@ setup_settings() {
     g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
     g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
     g_object_set((GObject*)settings, "enable-plugins", enablePlugins, NULL);
-    filename = g_strdup_printf(USER_STYLES_FILENAME);
+    filename = g_strdup_printf(USER_STYLESHEET);
     filename = g_strdup_printf("file://%s", filename);
     g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);
     g_object_set((GObject*)settings, "user-agent", useragent, NULL);

@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.yllr.net/vimprobable/";
-char useragent[120]	                    = "Vimprobable2 0.4.0.0";
+char useragent[120]	                    = "Vimprobable2 0.4.5.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -58,11 +58,11 @@ static const char progressborderright   = ']';
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
 
-/* user styles */
-#define             USER_STYLES_FILENAME        "%s/.config/vimprobable/style.css", getenv("HOME")
-
 /* font size */
 #define             DEFAULT_FONT_SIZE           12
+
+/* user styles */
+#define             USER_STYLESHEET             "%s/.config/vimprobable/style.css", getenv("HOME")
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -200,14 +200,29 @@ static Mouse mouse[] = {
 
 /* settings (arguments of :set command) */
 static Setting browsersettings[] = {
-    /* public name,      internal variable   webkit setting      boolean value?   colour value?   reload page? */
-    { "homepage",        startpage,          "",                 FALSE,           FALSE,          FALSE  },
-    { "useragent",       useragent,          "user-agent",       FALSE,           FALSE,          FALSE  },
-    { "scripts",         NULL,               "enable-scripts",   TRUE,            FALSE,          FALSE  },
-    { "plugins",         NULL,               "enable-plugins",   TRUE,            FALSE,          FALSE  },
-    { "images",          NULL,               "auto-load-images", TRUE,            FALSE,          FALSE  },
-    { "statusbgcolor",   statusbgcolor,      "",                 FALSE,           TRUE,           TRUE   },
-    { "statuscolor",     statuscolor,        "",                 FALSE,           TRUE,           TRUE   },
-    { "sslbgcolor",      sslbgcolor,         "",                 FALSE,           TRUE,           TRUE   },
-    { "sslcolor",        sslcolor,           "",                 FALSE,           TRUE,           TRUE   },
+    /* public name,      internal variable   webkit setting                 integer value?  boolean value?   colour value?   reload page? */
+    { "useragent",       useragent,          "user-agent",                  FALSE,          FALSE,           FALSE,          FALSE  },
+    { "scripts",         NULL,               "enable-scripts",              FALSE,          TRUE,            FALSE,          FALSE  },
+    { "plugins",         NULL,               "enable-plugins",              FALSE,          TRUE,            FALSE,          FALSE  },
+    { "images",          NULL,               "auto-load-images",            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "shrinkimages",    NULL,               "auto-shrink-images",          FALSE,          TRUE,            FALSE,          FALSE  },
+    { "cursivefont",     NULL,               "cursive-font-family",         FALSE,          FALSE,           FALSE,          FALSE  },
+    { "defaultencoding", NULL,               "default-encoding",            FALSE,          FALSE,           FALSE,          FALSE  },
+    { "defaultfont",     NULL,               "default-font-family",         FALSE,          FALSE,           FALSE,          FALSE  },
+    { "fontsize",        NULL,               "default-font-size",           TRUE,           FALSE,           FALSE,          FALSE  },
+    { "monofontsize",    NULL,               "default-monospace-font-size", TRUE,           FALSE,           FALSE,          FALSE  },
+    { "caret",           NULL,               "enable-caret-browsing",       FALSE,          TRUE,            FALSE,          FALSE  },
+    { "fantasyfont",     NULL,               "fantasy-font-family",         FALSE,          FALSE,           FALSE,          FALSE  },
+    { "minimumfontsize", NULL,               "minimum-font-size",           TRUE,           FALSE,           FALSE,          FALSE  },
+    { "monofont",        NULL,               "monospace-font-family",       FALSE,          FALSE,           FALSE,          FALSE  },
+    { "backgrounds",     NULL,               "print-backgrounds",           FALSE,          TRUE,            FALSE,          FALSE  },
+    { "sansfont",        NULL,               "sans-serif-font-family",      FALSE,          FALSE,           FALSE,          FALSE  },
+    { "seriffont",       NULL,               "serif-font-family",           FALSE,          FALSE,           FALSE,          FALSE  },
+    { "stylesheet",      NULL,               "user-stylesheet-uri",         FALSE,          FALSE,           FALSE,          FALSE  },
+
+    { "homepage",        startpage,          "",                            FALSE,          FALSE,           FALSE,          FALSE  },
+    { "statusbgcolor",   statusbgcolor,      "",                            FALSE,          FALSE,           TRUE,           TRUE   },
+    { "statuscolor",     statuscolor,        "",                            FALSE,          FALSE,           TRUE,           TRUE   },
+    { "sslbgcolor",      sslbgcolor,         "",                            FALSE,          FALSE,           TRUE,           TRUE   },
+    { "sslcolor",        sslcolor,           "",                            FALSE,          FALSE,           TRUE,           TRUE   },
 };

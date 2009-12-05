@@ -101,6 +101,7 @@ typedef struct {
     char     *name;
     char     (*var);
     char     *webkit;
+    gboolean intval;
     gboolean boolval;
     gboolean colourval;
     gboolean reload;
