@@ -1,6 +1,7 @@
 /*
     (c) 2009 by Leon Winter
     (c) 2009 by Hannes Schueller
+    (c) 2009 by Matto Fransen
     see LICENSE file
 */
 
@@ -63,7 +64,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable 0.9.6.0"
+#define             USER_AGENT                  "Vimprobable 0.9.7.0"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -164,30 +165,31 @@ static Key keys[] = {
 /* command mapping */
 static Command commands[] = {
     /* command,                                             function,   argument */
-    { "ba",                                                 navigate,   {NavigationBack} },
-    { "back",                                               navigate,   {NavigationBack} },
-    { "ec",                                                 script,     {Info} },
-    { "echo",                                               script,     {Info} },
-    { "echoe",                                              script,     {Error} },
-    { "echoerr",                                            script,     {Error} },
-    { "fw",                                                 navigate,   {NavigationForward} },
-    { "fo",                                                 navigate,   {NavigationForward} },
-    { "forward",                                            navigate,   {NavigationForward} },
-    { "javascript",                                         script,     {Silent} },
-    { "o",                                                  open,       {TargetCurrent} },
-    { "open",                                               open,       {TargetCurrent} },
-    { "q",                                                  quit,       {0} },
-    { "quit",                                               quit,       {0} },
-    { "re",                                                 navigate,   {NavigationReload} },
-    { "re!",                                                navigate,   {NavigationForceReload} },
-    { "reload",                                             navigate,   {NavigationReload} },
-    { "reload!",                                            navigate,   {NavigationForceReload} },
-    { "st",                                                 navigate,   {NavigationCancel} },
-    { "stop",                                               navigate,   {NavigationCancel} },
-    { "t",                                                  open,       {TargetNew} },
-    { "tabopen",                                            open,       {TargetNew} },
-    { "bma",                                                bookmark,   {0} },
-    { "bookmark",                                           bookmark,   {0} },
+    { "ba",                                                 navigate,    {NavigationBack} },
+    { "back",                                               navigate,    {NavigationBack} },
+    { "ec",                                                 script,      {Info} },
+    { "echo",                                               script,      {Info} },
+    { "echoe",                                              script,      {Error} },
+    { "echoerr",                                            script,      {Error} },
+    { "fw",                                                 navigate,    {NavigationForward} },
+    { "fo",                                                 navigate,    {NavigationForward} },
+    { "forward",                                            navigate,    {NavigationForward} },
+    { "javascript",                                         script,      {Silent} },
+    { "o",                                                  open,        {TargetCurrent} },
+    { "open",                                               open,        {TargetCurrent} },
+    { "q",                                                  quit,        {0} },
+    { "quit",                                               quit,        {0} },
+    { "re",                                                 navigate,    {NavigationReload} },
+    { "re!",                                                navigate,    {NavigationForceReload} },
+    { "reload",                                             navigate,    {NavigationReload} },
+    { "reload!",                                            navigate,    {NavigationForceReload} },
+    { "st",                                                 navigate,    {NavigationCancel} },
+    { "stop",                                               navigate,    {NavigationCancel} },
+    { "t",                                                  open,        {TargetNew} },
+    { "tabopen",                                            open,        {TargetNew} },
+    { "bma",                                                bookmark,    {0} },
+    { "bookmark",                                           bookmark,    {0} },
+    { "source",                                             view_source, {0} },
 };
 
 /* mouse bindings

@@ -1,6 +1,7 @@
 /*
     (c) 2009 by Leon Winter
     (c) 2009 by Hannes Schueller
+    (c) 2009 by Matto Fransen
     see LICENSE file
 */
 
@@ -60,6 +61,7 @@ static gboolean script(const Arg *arg);
 static gboolean scroll(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean zoom(const Arg *arg);
+static gboolean view_source(const Arg * arg);
 static void update_url();
 static void update_state();
 static void setup_modkeys();
@@ -1216,6 +1218,14 @@ void history() {
             entry = NULL;
         }
     }
+}
+
+static gboolean
+view_source (const Arg * arg) {
+    gboolean current_mode = webkit_web_view_get_view_source_mode (webview);
+    webkit_web_view_set_view_source_mode (webview, !current_mode);
+    webkit_web_view_reload (webview);
+    return TRUE;
 }
 
 void
