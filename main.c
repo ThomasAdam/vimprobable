@@ -46,6 +46,7 @@ static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
 
 /* functions */
+static gboolean bookmark(const Arg *arg);
 static gboolean complete(const Arg *arg);
 static gboolean descend(const Arg *arg);
 static gboolean echo(const Arg *arg);
@@ -59,9 +60,12 @@ static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
 static gboolean script(const Arg *arg);
 static gboolean scroll(const Arg *arg);
+static gboolean toggle_images(const Arg *arg);
+static gboolean toggle_plugins(const Arg *arg);
 static gboolean yank(const Arg *arg);
-static gboolean zoom(const Arg *arg);
 static gboolean view_source(const Arg * arg);
+static gboolean zoom(const Arg *arg);
+
 static void update_url();
 static void update_state();
 static void setup_modkeys();
@@ -71,9 +75,6 @@ static void setup_signals();
 static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
-static gboolean toggle_plugins();
-static gboolean toggle_images();
-static gboolean bookmark();
 static void history();
 
 /* variables */
@@ -1101,7 +1102,7 @@ zoom(const Arg *arg) {
 }
 
 gboolean
-toggle_plugins() {
+toggle_plugins(const Arg *arg) {
     static gboolean plugins;
     WebKitWebSettings *settings;
     settings = webkit_web_view_get_settings(webview);
@@ -1114,7 +1115,7 @@ toggle_plugins() {
 }
 
 gboolean
-toggle_images() {
+toggle_images(const Arg *arg) {
     static gboolean images;
     WebKitWebSettings *settings;
     settings = webkit_web_view_get_settings(webview);
@@ -1126,7 +1127,7 @@ toggle_images() {
 }
 
 gboolean
-bookmark() {
+bookmark(const Arg *arg) {
     FILE *f;
     const char *filename;
     const char *uri = webkit_web_view_get_uri(webview);
