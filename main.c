@@ -79,8 +79,9 @@ static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **me
 static gboolean history();
 char *search_word(int whichword);
 static gboolean process_set_line(char *line);
-void process_line(char *line);
+gboolean process_line(char *line);
 gboolean parse_colour(char *color);
+gboolean read_rcfile(void);
 
 /* variables */
 static GtkWidget *window;
@@ -1236,10 +1237,10 @@ history() {
 }
 
 static gboolean
-view_source (const Arg * arg) {
-    gboolean current_mode = webkit_web_view_get_view_source_mode (webview);
-    webkit_web_view_set_view_source_mode (webview, !current_mode);
-    webkit_web_view_reload (webview);
+view_source(const Arg * arg) {
+    gboolean current_mode = webkit_web_view_get_view_source_mode(webview);
+    webkit_web_view_set_view_source_mode(webview, !current_mode);
+    webkit_web_view_reload(webview);
     return TRUE;
 }
 
@@ -1256,13 +1257,13 @@ browser_settings(const Arg *arg) {
 char *
 search_word(int whichword) {
     int k = 0;
-    static char word[20];
+    static char word[240];
     char *c = my_pair.line;
 
     while (isspace(*c) && *c)
         c++;
 
-    while (*c && !isspace (*c) && *c != '=' && k < 20) {
+    while (*c && !isspace (*c) && *c != '=' && k < 240) {
         word[k++] = *c;
         c++;
     }
@@ -1286,10 +1287,10 @@ process_set_line(char *line) {
     int               listlen, i;
     gboolean          boolval;
     WebKitWebSettings *settings;
+
     settings = webkit_web_view_get_settings(webview);
     my_pair.line = line;
     c = search_word(0);
-
     if (!strlen(my_pair.what))
         return FALSE;
 
@@ -1417,6 +1418,49 @@ parse_colour(char *color) {
         strncpy(color, goodcolor, 8);
         return TRUE;
     }
+}
+
+gboolean
+process_line(char *line) {
+    char *c = line;
+
+    while (isspace(*c))
+        c++;
+    /* Ignore blank lines.  */
+    if (c[0] == '\0')
+        return TRUE;
+    /*if (strncasecmp(c, ":map", 4) == 0) {
+        c += 5;
+        return process_map_line(c);
+    } else */if (strncasecmp(c, ":set", 4) == 0) {
+        c += 5;
+        return process_set_line(c);
+    }
+    return FALSE;
+}
+
+gboolean
+read_rcfile(void) {
+    int t;
+    char s[255];
+    const char *rcfile;
+    FILE *fpin;
+    gboolean returnval = TRUE;
+
+    rcfile = g_strdup_printf(RCFILE);
+    if ((fpin = fopen(rcfile, "r")) == NULL)
+        return TRUE;
+    while (fgets(s, 254, fpin)) {
+        /* ignore lines that don't begin with a : */
+        if (s[0] != ':')
+	        continue;
+        t = strlen(s);
+        s[t - 1] = '\0';
+        if (!process_line(s))
+            returnval = FALSE;
+    }
+    fclose(fpin);
+    return returnval;
 }
 
 void
@@ -1636,6 +1680,14 @@ main(int argc, char *argv[]) {
     if(!g_thread_supported())
         g_thread_init(NULL);
     setup_modkeys();
+    setup_gui();
+
+	/* read config file */
+	if (!read_rcfile()) {
+        a.i = Error;
+        a.s = g_strdup_printf("Error in config file");
+        echo(&a);
+	}
 
     /* command line argument: embed */
     if (argc >= 3 && strlen(argv[1]) == 2 && strncmp(argv[1], "-e", 2) == 0) {
@@ -1652,7 +1704,6 @@ main(int argc, char *argv[]) {
         strncpy(url, startpage, 255);
     }
 
-    setup_gui();
     a.i = TargetCurrent;
     a.s = url;
     open(&a);

@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.yllr.net/vimprobable/";
-char useragent[120]	                    = "Vimprobable2 0.4.5.0";
+char useragent[120]	                    = "Vimprobable2 0.6.0.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -63,6 +63,9 @@ static const char progressborderright   = ']';
 
 /* user styles */
 #define             USER_STYLESHEET             "%s/.config/vimprobable/style.css", getenv("HOME")
+
+/* config file */
+#define             RCFILE                      "%s/.config/vimprobable/vimprobablerc", getenv("HOME")
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
