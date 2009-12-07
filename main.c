@@ -1247,6 +1247,8 @@ view_source(const Arg * arg) {
 static gboolean
 browser_settings(const Arg *arg) {
     char line[255];
+    if (!arg->s)
+        return FALSE;
     strncpy(line, arg->s, 254);
     if (process_set_line(line))
         return TRUE;
