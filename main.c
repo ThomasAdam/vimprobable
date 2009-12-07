@@ -1680,7 +1680,6 @@ main(int argc, char *argv[]) {
     if(!g_thread_supported())
         g_thread_init(NULL);
     setup_modkeys();
-    setup_gui();
 
 	/* read config file */
 	if (!read_rcfile()) {
@@ -1703,6 +1702,8 @@ main(int argc, char *argv[]) {
     } else {
         strncpy(url, startpage, 255);
     }
+
+    setup_gui();
 
     a.i = TargetCurrent;
     a.s = url;
