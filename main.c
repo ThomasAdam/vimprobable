@@ -1699,7 +1699,7 @@ main(int argc, char *argv[]) {
 	}
 
     /* command line argument: URL */
-    if (argc > 1 && strncmp(argv[argc - 1], "-", 1) != 0) {
+    if (argc > 1 && strncmp(argv[argc - 1], "-", 1) != 0 && strncmp(argv[argc - 2], "-e", 2) != 0) {
         strncpy(url, argv[argc - 1], 255);
     } else {
         strncpy(url, startpage, 255);
