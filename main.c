@@ -1683,6 +1683,14 @@ main(int argc, char *argv[]) {
         g_thread_init(NULL);
     setup_modkeys();
 
+    /* command line argument: embed */
+    if (argc >= 3 && strlen(argv[1]) == 2 && strncmp(argv[1], "-e", 2) == 0) {
+        embed = atoi(argv[2]);
+        strncpy(winid, argv[2], 63);
+    }
+
+    setup_gui();
+
 	/* read config file */
 	if (!read_rcfile()) {
         a.i = Error;
@@ -1690,22 +1698,12 @@ main(int argc, char *argv[]) {
         echo(&a);
 	}
 
-    /* command line argument: embed */
-    if (argc >= 3 && strlen(argv[1]) == 2 && strncmp(argv[1], "-e", 2) == 0) {
-        embed = atoi(argv[2]);
-        strncpy(winid, argv[2], 63);
-        if (argc >= 4) {
-            strncpy(url, argv[3], 255);
-        } else {
-            strncpy(url, startpage, 255);
-        }
-    } else if (argc >= 2) {
-        strncpy(url, argv[1], 255);
+    /* command line argument: URL */
+    if (argc > 1 && strncmp(argv[argc - 1], "-", 1) != 0) {
+        strncpy(url, argv[argc - 1], 255);
     } else {
         strncpy(url, startpage, 255);
     }
-
-    setup_gui();
 
     a.i = TargetCurrent;
     a.s = url;
