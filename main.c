@@ -1313,9 +1313,9 @@ process_set_line(char *line) {
                 return FALSE;
             /* interpret boolean values */
             if (browsersettings[i].boolval) {
-                if (strncmp(my_pair.value, "on", 2) == 0 || strncmp(my_pair.value, "true", 4) == 0) {
+                if (strncmp(my_pair.value, "on", 2) == 0 || strncmp(my_pair.value, "true", 4) == 0 || strncmp(my_pair.value, "ON", 2) == 0 || strncmp(my_pair.value, "TRUE", 4) == 0) {
                     boolval = TRUE;
-                } else if (strncmp(my_pair.value, "off", 3) == 0 || strncmp(my_pair.value, "false", 5) == 0) {
+                } else if (strncmp(my_pair.value, "off", 3) == 0 || strncmp(my_pair.value, "false", 5) == 0 || strncmp(my_pair.value, "OFF", 3) == 0 || strncmp(my_pair.value, "FALSE", 5) == 0) {
                     boolval = FALSE;
                 } else {
                     return FALSE;
