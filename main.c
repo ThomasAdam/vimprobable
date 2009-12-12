@@ -1484,11 +1484,11 @@ process_line(char *line) {
     /* Ignore blank lines.  */
     if (c[0] == '\0')
         return TRUE;
-    /*if (strncasecmp(c, ":map", 4) == 0) {
-        c += 5;
+    /*if (strncasecmp(c, "map", 3) == 0) {
+        c += 4;
         return process_map_line(c);
-    } else */if (strncasecmp(c, ":set", 4) == 0) {
-        c += 5;
+    } else */if (strncasecmp(c, "set", 3) == 0) {
+        c += 4;
         return process_set_line(c);
     }
     return FALSE;
@@ -1506,8 +1506,8 @@ read_rcfile(void) {
     if ((fpin = fopen(rcfile, "r")) == NULL)
         return TRUE;
     while (fgets(s, 254, fpin)) {
-        /* ignore lines that don't begin with a : */
-        if (s[0] != ':')
+        /* ignore lines that begin with #, / and such */
+        if (!isalpha(s[0]))
 	        continue;
         t = strlen(s);
         s[t - 1] = '\0';
