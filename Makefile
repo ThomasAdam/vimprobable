@@ -4,16 +4,16 @@ LIBS  += webkit-1.0
 LIBS  += libsoup-2.4
 FLAGS  = `pkg-config --cflags --libs $(LIBS)`
 SOURCE = main.c
-SOURCE_JS = tmp.c
 TARGET = vimprobable2
 INSTALLDIR = /usr/local/bin
 
 all: $(TARGET)
 
-$(TARGET): main.c config.h
+hintingmode.h: input_hinting_mode.js
 	perl ./js-merge-helper.pl
-	$(GCC) $(FLAGS) -Wall -o $(TARGET) $(SOURCE_JS)
-	rm $(SOURCE_JS)
+
+$(TARGET): main.c config.h hintingmode.h
+	$(GCC) $(FLAGS) -Wall -o $(TARGET) $(SOURCE)
 
 clean:
 	rm -f $(TARGET)
