@@ -13,9 +13,7 @@
 #include <libsoup/soup.h>
 #include <JavaScriptCore/JavaScript.h>
 #include "vimprobable.h"
-
-/* inline js fill be filled by js-merge-helper.pl */
-#define JS_SETUP
+#include "hintingmode.h"
 
 /* remove numlock symbol from keymask */
 #define CLEAN(mask) (mask & ~(GDK_MOD2_MASK) & ~(GDK_BUTTON1_MASK) & ~(GDK_BUTTON2_MASK) & ~(GDK_BUTTON3_MASK) & ~(GDK_BUTTON4_MASK) & ~(GDK_BUTTON5_MASK))

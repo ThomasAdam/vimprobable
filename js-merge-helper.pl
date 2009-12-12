@@ -14,12 +14,8 @@ s/\\/\\\\/g;        # escape backslashes
 s/\"/\\\"/g;        # escape quotes
 $js = $_;
 
-open(CFILE, "main.c") or die "Failed to open main.c: $!";
-$_ = do { local $/; <CFILE> };
-close(CFILE);
-
-s/(#define JS_SETUP)/$1 "$js"/;
-
-open(CFILE, ">tmp.c") or die "Failed to open tmp.c for writing: $!";
-print CFILE $_;
-close(CFILE);
+open(HFILE, ">hintingmode.h") or die "Failed to open hintingmode.h: $!";
+print HFILE "#define JS_SETUP ";
+printf  HFILE "\"%s\"\n", $js;
+close(HFILE);
+exit;
