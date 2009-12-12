@@ -1,0 +1,197 @@
+.\" Process this file with
+.\" groff -man -Tascii vimprobable.1
+.\"
+.TH VIMPROBABLE 1 "December 2009" "Linux User Manuals"
+.SH NAME
+Vimprobable \- A WWW browser based on webkit with keybindings inspired by vim, the great editor.
+.SH DESCRIPTION
+Vimprobable is a WWW browser that is build around the webkit library. Vimprobable is fast. 
+Vimprobable comes without buttons and other graphic widgets. It is aimed at being controlled 
+as mouseless as possible. It uses keybindings that are inspired by vim, the great editor.
+.PP
+Just like vim, moving through the webpage can be done by entering commands by the keyboard.
+Most of these commands require just one or two keystrokes.
+.PP
+Vimprobable mimics the ex-commandmode of vim. By entering a colon (:) commands like open,
+back and forward can be entered.
+
+.SH QUICK START
+
+Don't want to read this entire manpage? Here are a few basic steps:
+
+.I "    " o
+Insert URL from keyboard and load it
+
+.I "    " t
+Insert URL from keyboard and load it into new window
+
+.I "    " j
+Scroll down
+
+.I "    " k
+Scroll up
+
+.I "    " d  
+Close current window
+
+.SH KEYBOARD BINDINGS
+The default keyboard bindings are explaned in this sections. These keybindings
+can be changed by modifying config.h.
+
+.IP "Move through current page"
+Vimprobable recognizes the following motion commands:
+0, $, g, <shift>G, h, j, k, l, Ctrl-b, Ctrl-f, Ctrl-d, Ctrl-u, Ctrl-e, Ctrl-y
+
+.IP "Move through pages"
+Ctrl-i, Ctrl-o, <shift>H, <shift>L
+.PP
+These commands are used to walk through the browse-history.
+
+.IP "Reloading and cancel loading"
+
+.I "    " r 
+Reload
+
+.I "    " <shift>R
+Force reload
+
+.I "    " c
+Cancel load
+
+.IP "Zoom in and out"
+
+.I "    " zi
+Zoom text in
+
+.I "    " zI
+Zoom full content in
+
+.I "    " zo
+Zoom text out
+
+.I "    " zo
+Zoom full content out
+
+.I "    " zz
+Zoom reset
+
+.I "    " zZ
+Zoom reset
+
+.IP "URL commands"
+
+.I "    " y
+Yank current URL into clipboard
+
+.I "    " Y
+Yank current selection into clipboard
+
+.I "    " gu
+Load URL one directory up
+
+.I "    " gu
+Load rootdirectory of current URL
+
+.I "    " gh
+Load homepage
+
+.I "    " gH
+Load homepage into new window
+
+.I "    " p
+Load URL from clipboard
+
+.I "    " P
+Load URL from clipboard into new window
+
+.I "    " o
+Insert URL from keyboard and load it
+
+.I "    " t
+Insert URL from keyboard and load it into new window
+
+.I "    " w
+Toggle scripts and plugins
+
+.I "    " e
+Toggle images
+
+
+.IP Search
+
+.I "    " /
+Start search
+
+.I "    " ?
+Start backward search
+
+.I "    " n
+Next search result
+
+
+
+.SH COLON COMMANDS
+
+The following commands are entered after first entering a colon (:)
+
+.IP ":open "
+
+Insert URL from keyboard and load it
+
+Shortcut: o
+
+.IP ":tabopen "
+
+Insert URL from keyboard and load it into new window
+
+Shortcut: t
+
+.IP ":bma or :bookmark"
+
+Bookmarks the current page. 
+
+Bookmarks are retrieved by tabcompletion when entering a new URL.
+
+.IP ":fo[rward] and :ba[ck]"
+
+The commands :fo, :forward, :ba and :backward moves through the browse-history
+
+.IP ":re[load], :re! and :reload!"
+
+The commands :re, :reload, ;re! and :reload! are given to reload or
+force reload.
+
+.IP ":st[op]"
+
+Cancel current loading
+
+.IP ":source"
+
+Toggles between normal view and sourcecode view.
+
+.IP ":quit"
+
+Close current window
+
+Shortcut: d
+
+.SH FILES
+
+.I $HOME/.config/vimprobable/bookmarks
+
+.I $HOME/.config/vimprobable/cookies
+
+.I $HOME/.config/vimprobable/history
+
+.I $HOME/.config/vimprobable/style.css
+
+
+.SH BUGS
+There has not been any significant bughunting yet.
+.SH AUTHORS
+Hannes Schueller and Matto Fransen
+.SH "SEE ALSO"
+.BR vimprobable2 (1),
+
+
+
