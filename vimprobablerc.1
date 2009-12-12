@@ -1,0 +1,120 @@
+.\" Process this file with
+.\" groff -man -Tascii vimprobablerc.1
+.\"
+.TH VIMPROBABLERC 1 "December 2009" "Linux User Manuals"
+.SH NAME
+vimprobablerc \- The configuration file for Vimprobable
+.SH DESCRIPTION
+If you have a .config/vimprobable/vimprobablerc in your home directory, Vimprobable 
+will read it at startup.
+.PP
+The vimprobablerc file consists of a series of configuration options, one per line. Blank lines and lines starting with a 
+colon (:) are seen as comments and will be ignored.
+.SH FILES
+.I $HOME/.config/vimprobable/vimprobablerc
+.PP
+Per user configuration file. 
+.SH FORMAT
+.IP set 
+.RS
+set is used to alter a default setting. For possible options that can be altered,
+see the SETTINGS section below.
+
+Each line looks like this:
+
+.I "    " set what=value
+
+Vimprobable is not picky about white space in these lines.
+.RE 
+.IP map 
+.RS
+map is used to change the default key-binding. For possible options that 
+can be altered see the MAPPING section below.
+
+Each line looks like this:
+
+.I "    " map what=value
+
+Vimprobable is not picky about white space in these lines.
+.RE 
+
+.SH SETTINGS
+
+This section describes the possible options that can be changed from
+their default value.
+
+.IP homepage=URL
+Set the URL of the homepage.
+
+.IP useragent=<useragent-string>
+Replace the default useragent-string.
+
+.IP scripts=[true|false]
+Enable or disenable scripts.
+
+.IP plugins=[true|false]       
+Enable or disenable plugins.
+
+.IP images=[true|false]
+Enable or disenable autoload of images.
+
+.IP shrinkimages=[true|false]  
+Enable or disenable autoshrink of images.
+
+.IP cursivefont=cursivefont-family
+Replace the default cursive font family
+
+.IP defaultencoding=encoding
+Replace the default encoding
+
+.IP defaultfont=default-font-family
+Replace the default font family
+
+.IP fontsize=integer
+Replace the default fontsize
+
+.IP monofontsize=integer  
+Replace the default monospace fontsize
+
+.IP caret=[true|false]         
+Enable or disenable caret browsing
+
+.IP fantasyfont=fantasy-font-family
+Replace the default fantasy font family
+
+.IP minimumfontsize=integer 
+Replace the default minimum font size
+
+.IP monofont=default-monospace-font-family
+Replace the default monospace font family
+
+.IP backgrounds=[true|false]         
+Enable or disenable print backgrounds
+
+.IP sansfont=default-sans-font-family
+Replace the default sans-serif font family
+
+.IP seriffont=default-serif-font-family
+Replace the default serif font family
+
+.IP stylesheet=URL
+Replace the user stylesheet
+
+.SH MAPPINGS
+
+Currently under development.
+
+.SH INTERACTIVE SETTING
+All settings can be changed on the fly by entering
+:set followed by one of the commands in the SETTINGS section
+above.
+
+.SH BUGS
+There has not been any significant bughunting yet.
+.SH AUTHORS
+Hannes Schueller and Matto Fransen
+.SH "SEE ALSO"
+.BR vimprobable (1),
+
+
+

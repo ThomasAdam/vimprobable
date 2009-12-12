@@ -5,7 +5,7 @@ LIBS  += libsoup-2.4
 FLAGS  = `pkg-config --cflags --libs $(LIBS)`
 SOURCE = main.c
 TARGET = vimprobable2
-INSTALLDIR = /usr/local/bin
+PREFIX = /usr/local
 
 all: $(TARGET)
 
@@ -19,7 +19,11 @@ clean:
 	rm -f $(TARGET)
 
 install: all uninstall
-	cp $(TARGET) $(INSTALLDIR) && chmod 755 $(INSTALLDIR)/$(TARGET)
+	cp $(TARGET) $(PREFIX)/bin && chmod 755 $(PREFIX)/bin/$(TARGET)
+	cp vimprobable2.1 $(PREFIX)/man/man1 && chmod 644 $(PREFIX)/man/man1/vimprobable2.1
+	cp vimprobablerc.1 $(PREFIX)/man/man1 && chmod 644 $(PREFIX)/man/man1/vimprobablerc.1
 
 uninstall:
-	rm -f $(INSTALLDIR)/$(TARGET)
+	rm -f $(PREFIX)/bin/$(TARGET)
+	rm -f $(PREFIX)/man/man1/vimprobable2.1
+	rm -f $(PREFIX)/man/man1/vimprobablerc.1
