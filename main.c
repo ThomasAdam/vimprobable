@@ -47,6 +47,7 @@ static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer use
 /* functions */
 static gboolean bookmark(const Arg *arg);
 static gboolean browser_settings(const Arg *arg);
+static gboolean commandhistoryfetch(const Arg *arg);
 static gboolean complete(const Arg *arg);
 static gboolean descend(const Arg *arg);
 static gboolean echo(const Arg *arg);
@@ -80,6 +81,7 @@ static gboolean process_set_line(char *line);
 gboolean process_line(char *line);
 gboolean parse_colour(char *color);
 gboolean read_rcfile(void);
+void save_command_history(char *line);
 
 /* variables */
 static GtkWidget *window;
@@ -114,6 +116,11 @@ char inputBuffer[65] = "";
 char followTarget[8] = "";
 
 #include "config.h"
+
+char commandhistory[COMMANDHISTSIZE][255];
+int  lastcommand    = 0;
+int  maxcommands    = 0;
+int  commandpointer = 0;
 
 /* callbacks */
 void
@@ -373,6 +380,24 @@ webview_scroll_cb(GtkAdjustment *adjustment, gpointer user_data) {
     update_state();
 }
 
+void save_command_history(char *line) {
+    char *c;
+
+    c = line;
+    while (isspace(*c) && *c)
+        c++;
+    if (!strlen(c)) 
+        return;
+    strncpy(commandhistory[lastcommand], c, 254);
+    lastcommand++;
+    if (maxcommands < COMMANDHISTSIZE - 1) 
+        maxcommands++;
+    if (lastcommand == COMMANDHISTSIZE)
+        lastcommand = 0;
+    commandpointer = lastcommand;
+}
+
+
 void
 inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     char *text;
@@ -397,6 +422,9 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
                     break;
             }
         }
+
+        save_command_history(text);
+
         if(!success) {
             a.i = Error;
             a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
@@ -432,6 +460,12 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     } else if(event->keyval == GDK_Tab) {
         a.i = DirectionNext;
         return complete(&a);
+    } else if(event->keyval == GDK_Up) {
+        a.i = DirectionPrev;
+        return commandhistoryfetch(&a);
+    } else if(event->keyval == GDK_Down) {
+        a.i = DirectionNext;
+        return commandhistoryfetch(&a);
     } else if(event->keyval == GDK_ISO_Left_Tab) {
         a.i = DirectionPrev;
         return complete(&a);
@@ -1136,6 +1170,27 @@ zoom(const Arg *arg) {
         (count ? (float)count / 100.0 : 1.0));
     return TRUE;
 }
+
+gboolean
+commandhistoryfetch(const Arg *arg) {
+    if (arg->i == DirectionPrev) {
+        commandpointer--;
+        if (commandpointer < 0) 
+            commandpointer = maxcommands - 1;
+    } else {
+        commandpointer++;
+        if (commandpointer == COMMANDHISTSIZE || commandpointer == maxcommands) 
+            commandpointer = 0;
+    }
+
+    if (commandpointer < 0) 
+        return FALSE;
+
+    gtk_entry_set_text(GTK_ENTRY(inputbox), commandhistory[commandpointer ]);
+    gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
+    return TRUE;
+}
+
 
 gboolean
 bookmark(const Arg *arg) {
