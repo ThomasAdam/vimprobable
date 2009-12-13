@@ -204,8 +204,7 @@ webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetwork
                         char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data) {
     if (webkit_web_view_can_show_mime_type(webview, mime_type) == FALSE) {
         webkit_web_policy_decision_download(decision);
-        WebKitDownload *download = webkit_download_new(request);
-        return webview_download_cb(webview, download, user_data);
+        return TRUE;
     } else {
         return FALSE;
     }
@@ -225,6 +224,7 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     g_free(uri);
     html = g_strdup_printf("Download <b>%s</b>...", filename);
     webkit_web_view_load_html_string(webview, html, webkit_download_get_uri(download));
+    webkit_download_start(download);
     update_state();
     g_free(html);
     return TRUE;
