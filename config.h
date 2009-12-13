@@ -64,7 +64,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable 0.9.7.1"
+#define             USER_AGENT                  "Vimprobable 0.9.7.2"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
