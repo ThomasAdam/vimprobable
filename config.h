@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.yllr.net/vimprobable/";
-char useragent[120]	                    = "Vimprobable2 0.6.2.0";
+char useragent[120]	                    = "Vimprobable2 0.7.0.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -91,7 +91,7 @@ static Searchengine *defsearch = &searchengines[0];
 /* key bindings for normal mode
     Note: GDK_VoidSymbol is a wildcard so it matches on every modkey
 */
-static Key keys[] = {
+Key keys[] = {
     /* modmask,             modkey,         key,            function,   argument */
     { 0,                    0,              GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
     { GDK_SHIFT_MASK,       0,              GDK_dollar,     scroll,     {ScrollJumpTo   | DirectionRight} },
@@ -192,6 +192,21 @@ static Command commands[] = {
     { "bookmark",                                           bookmark,         {0} },
     { "source",                                             view_source,      {0} },
     { "set",                                                browser_settings, {0} },
+    { "map",                                                mappings,         {0} },
+};
+
+/* mapping symbols */
+static mappingtable maptable[] = {
+    /* label,              function,   argument */
+    { "jumpleft",          scroll,     {ScrollJumpTo   | DirectionLeft} },
+    { "jumpright",         scroll,     {ScrollJumpTo   | DirectionRight} },
+    { "jumptop",           scroll,     {ScrollJumpTo   | DirectionTop} },
+    { "jumpbottom",        scroll,     {ScrollJumpTo   | DirectionBottom} },
+    { "pageup",            scroll,     {ScrollMove     | DirectionTop      | UnitPage} },	
+    { "pagedown",          scroll,     {ScrollMove     | DirectionBottom   | UnitPage} },
+    { "navigationback",    navigate,   {NavigationBack} },
+    { "navigationforward", navigate,   {NavigationForward} },
+    { "reload",            navigate,   {NavigationReload} },
 };
 
 /* mouse bindings

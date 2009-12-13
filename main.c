@@ -76,8 +76,10 @@ static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 
 static gboolean history();
-char *search_word(int whichword);
+static gboolean mappings(const Arg *arg);
+char * search_word(int whichword);
 static gboolean process_set_line(char *line);
+static gboolean process_map_line(char *line);
 gboolean process_line(char *line);
 gboolean parse_colour(char *color);
 gboolean read_rcfile(void);
@@ -1298,6 +1300,128 @@ view_source(const Arg * arg) {
 }
 
 static gboolean
+mappings(const Arg *arg) {
+    char line[255];
+
+    if ( !arg->s )
+        return FALSE;
+    strncpy(line, arg->s, 254);
+    if (process_map_line(line))
+        return TRUE;
+    else
+        return FALSE;
+}
+
+static gboolean
+changemapping(Key * search_key, int maprecord) {
+    int i;
+
+    for (i = 0; i < LENGTH(keys); i++) {
+        if (
+            keys[i].mask   == search_key->mask &&
+            keys[i].modkey == search_key->modkey &&
+            keys[i].key    == search_key->key
+           ) {
+            keys[i].func= maptable[maprecord].func;
+            keys[i].arg= maptable[maprecord].arg; 
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static gboolean
+process_mapping(char * keystring, int maprecord) {
+    Key search_key;
+
+    search_key.mask   = 0;
+    search_key.modkey = 0;
+    search_key.key    = 0;
+
+    if (strlen(keystring) == 1) {
+        search_key.key = keystring[0];
+    }
+
+    if (strlen(keystring) == 2) {
+        search_key.modkey= keystring[0];
+        search_key.key = keystring[1];
+    }
+
+    /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v
+       or stuff like <S-v>a for Shift-v,a or <C-v>a for Ctrl-v,a
+    */
+    if ((strlen(keystring) == 5 ||  strlen(keystring) == 6)  && keystring[0] == '<'  && keystring[4] == '>') {
+        switch (toupper(keystring[1])) {
+            case 'S':
+                search_key.mask = GDK_SHIFT_MASK; 
+                if (strlen(keystring) == 5) {
+                    keystring[3] = toupper(keystring[3]);
+                } else {
+                    keystring[3] = tolower(keystring[3]);
+                    keystring[5] = toupper(keystring[5]);
+                }
+            break;
+            case 'C':
+                search_key.mask = GDK_CONTROL_MASK; 
+            break;
+        }
+        if (!search_key.mask) 
+            return FALSE; 
+        if (strlen(keystring) == 5) {
+            search_key.key = keystring[3];
+        } else {
+            search_key.modkey= keystring[3];
+            search_key.key = keystring[5];
+        }
+    }
+
+    /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v
+       or  stuff like a<S-v> for a,Shift-v or a<C-v> for a,Ctrl-v 
+    */
+    if (strlen(keystring) == 6 && keystring[1] == '<' && keystring[5] == '>') {
+        switch (toupper(keystring[2])) {
+            case 'S':
+                search_key.mask = GDK_SHIFT_MASK;
+                keystring[4] = toupper(keystring[4]);
+            break;
+            case 'C':
+                search_key.mask = GDK_CONTROL_MASK; 
+            break;
+        }
+        if (!search_key.mask) 
+            return FALSE;
+        search_key.modkey= keystring[0];
+        search_key.key = keystring[4];
+    }
+    return (changemapping(&search_key, maprecord));
+}
+
+static gboolean
+process_map_line(char *line) {
+    int listlen, i;
+    char *c;
+    my_pair.line = line;
+    c = search_word (0);
+
+    if (!strlen (my_pair.what))
+        return FALSE;
+    while (isspace (*c) && *c)
+        c++;
+
+    if (*c == ':' || *c == '=')
+        c++;
+    my_pair.line = c;
+    c = search_word (1);
+    if (!strlen (my_pair.value))
+        return FALSE;
+    listlen = LENGTH(maptable);
+    for (i = 0; i < listlen; i++) {
+        if (strlen(maptable[i].label) == strlen(my_pair.value) && strncmp(maptable[i].label, my_pair.value, strlen(my_pair.value)) == 0)
+            return process_mapping(my_pair.what, i);
+    }
+    return FALSE;
+}
+static gboolean
 browser_settings(const Arg *arg) {
     char line[255];
     if (!arg->s)
@@ -1484,10 +1608,10 @@ process_line(char *line) {
     /* Ignore blank lines.  */
     if (c[0] == '\0')
         return TRUE;
-    /*if (strncasecmp(c, "map", 3) == 0) {
+    if (strncasecmp(c, "map", 3) == 0) {
         c += 4;
         return process_map_line(c);
-    } else */if (strncasecmp(c, "set", 3) == 0) {
+    } else if (strncasecmp(c, "set", 3) == 0) {
         c += 4;
         return process_set_line(c);
     }

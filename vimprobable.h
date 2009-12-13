@@ -85,8 +85,8 @@ typedef struct {
     guint mask;
     guint modkey;
     guint key;
-    gboolean (*func)(const Arg *arg);
-    const Arg arg;
+    gboolean (*func)(const Arg *func);
+    Arg arg;
 } Key;
 
 typedef struct {
@@ -124,6 +124,12 @@ struct map_pair
     char what[20];
     char value[240];
 } my_pair;
+
+typedef struct {
+    char label[40];
+    gboolean (*func)(const Arg *fpr);
+    const Arg arg;
+} mappingtable ;
 
 /* constants */
 #define MOUSE_BUTTON_1 1
