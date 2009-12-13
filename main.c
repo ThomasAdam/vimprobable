@@ -73,6 +73,8 @@ static void setup_signals();
 static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
+void download_progress(WebKitDownload *d, GParamSpec *pspec);
+
 static void history();
 
 /* variables */
@@ -106,6 +108,7 @@ char rememberedURI[128] = "";
 char inputKey[5];
 char inputBuffer[65] = "";
 char followTarget[8] = "";
+WebKitDownload *activeDownload = NULL;
 
 #include "config.h"
 
@@ -199,6 +202,8 @@ gboolean
 webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data) {
     const gchar *filename;
     gchar *uri, *path, *html;
+    uint size;
+
     filename = webkit_download_get_suggested_filename(download);
     if (filename == NULL || strlen(filename) == 0) {
         filename = "vimprobable_download";
@@ -207,12 +212,41 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     uri = g_strconcat("file://", path, NULL);
     webkit_download_set_destination_uri(download, uri);
     g_free(uri);
-    html = g_strdup_printf("Download <b>%s</b>...", filename);
+    size = (uint)webkit_download_get_total_size(download);
+    if (size > 0)
+        html = g_strdup_printf("Download <b>%s</b> (expected size: %u bytes)...", filename, size);
+    else
+        html = g_strdup_printf("Download <b>%s</b> (unknown size)...", filename);
     webkit_web_view_load_html_string(webview, html, webkit_download_get_uri(download));
-    webkit_download_start(download);
+    activeDownload = download;
+    g_signal_connect(activeDownload, "notify::progress", G_CALLBACK(download_progress), NULL);
+    g_signal_connect(activeDownload, "notify::status", G_CALLBACK(download_progress), NULL);
+    webkit_download_start(activeDownload);
     update_state();
     g_free(html);
     return TRUE;
+}
+
+void
+download_progress(WebKitDownload *d, GParamSpec *pspec) {
+    WebKitDownloadStatus status;
+    Arg a;
+
+    if (activeDownload != NULL) {
+        status = webkit_download_get_status(activeDownload);
+        if (status != WEBKIT_DOWNLOAD_STATUS_STARTED && status != WEBKIT_DOWNLOAD_STATUS_CREATED) {
+            if (status != WEBKIT_DOWNLOAD_STATUS_FINISHED) {
+                a.i = Error;
+                echo(&a);
+            } else {
+                a.i = Info;
+                a.s = g_strdup_printf("Download finished");
+                echo(&a);
+            }
+            activeDownload = NULL;
+        }
+        update_state();
+    }
 }
 
 gboolean
@@ -1265,6 +1299,7 @@ update_state() {
 #ifdef ENABLE_WGET_PROGRESS_BAR
     double progress;
     char progressbar[progressbartick + 1];
+    WebKitDownloadStatus status;
 
     g_object_get((GObject*)webview, "progress", &progress, NULL);
 #endif
@@ -1278,7 +1313,17 @@ update_state() {
     else
         sprintf(&scroll_state[0], "%d%%", val);
 #ifdef ENABLE_WGET_PROGRESS_BAR
-    if(webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED) {
+    if (activeDownload != NULL) {
+        status = webkit_download_get_status(activeDownload);
+        if (status == WEBKIT_DOWNLOAD_STATUS_STARTED || status == WEBKIT_DOWNLOAD_STATUS_CREATED) {
+            progress = (gint)(webkit_download_get_progress(activeDownload) * 100);
+            ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
+            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %c%s%c %s</span>",
+                statusfont, count, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
+        } else {
+            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);
+        }
+    } else if (webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED) {
         ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
         markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %c%s%c %s</span>",
             statusfont, count, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
