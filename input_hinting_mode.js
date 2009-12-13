@@ -115,8 +115,14 @@ function fire(n)
             if (tag == "textarea" || tag == "input")
                 console.log('insertmode_on');
         } else {
-            /* send signal to open link */
-            return "open;" + el.href;
+            if (el.href) {
+                /* send signal to open link */
+                return "open;" + el.href;
+            } else {
+                var evObj = document.createEvent('MouseEvents');
+                evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
+                el.dispatchEvent(evObj);
+            }
         }
     }
 }
