@@ -258,12 +258,16 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeNormal:
         if(CLEAN(event->state) == 0) {
             memset(inputBuffer, 0, 65);
-            if(current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+            if (event->keyval == GDK_Escape) {
+                a.i = Info;
+                a.s = "";
+                echo(&a);
+            } else if (current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                     || (event->keyval == GDK_0 && count))) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
                 update_state();
                 return TRUE;
-            } else if(strchr(modkeys, event->keyval) && current_modkey != event->keyval) {
+            } else if (strchr(modkeys, event->keyval) && current_modkey != event->keyval) {
                 current_modkey = event->keyval;
                 update_state();
                 return TRUE;
