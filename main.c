@@ -1740,7 +1740,7 @@ update_state() {
             markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);
         }
     } else if (webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED) {
-        ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
+        ascii_bar(progressbartick, (int)(progress * progressbartick), (char*)progressbar);
         markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %c%s%c %s</span>",
             statusfont, count, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
     } else
