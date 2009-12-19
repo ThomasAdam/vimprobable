@@ -125,12 +125,6 @@ struct map_pair
     char value[240];
 } my_pair;
 
-typedef struct {
-    char label[40];
-    gboolean (*func)(const Arg *fpr);
-    const Arg arg;
-} mappingtable ;
-
 /* constants */
 #define MOUSE_BUTTON_1 1
 #define MOUSE_BUTTON_2 2

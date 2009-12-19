@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.yllr.net/vimprobable/";
-char useragent[120]	                    = "Vimprobable2 0.7.3.3";
+char useragent[120]	                    = "Vimprobable2 0.7.3.5";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -165,48 +165,43 @@ Key keys[] = {
 
 /* command mapping */
 static Command commands[] = {
-    /* command,                                             function,         argument */
-    { "ba",                                                 navigate,         {NavigationBack} },
-    { "back",                                               navigate,         {NavigationBack} },
-    { "ec",                                                 script,           {Info} },
-    { "echo",                                               script,           {Info} },
-    { "echoe",                                              script,           {Error} },
-    { "echoerr",                                            script,           {Error} },
-    { "fw",                                                 navigate,         {NavigationForward} },
-    { "fo",                                                 navigate,         {NavigationForward} },
-    { "forward",                                            navigate,         {NavigationForward} },
-    { "javascript",                                         script,           {Silent} },
-    { "o",                                                  open,             {TargetCurrent} },
-    { "open",                                               open,             {TargetCurrent} },
-    { "q",                                                  quit,             {0} },
-    { "quit",                                               quit,             {0} },
-    { "re",                                                 navigate,         {NavigationReload} },
-    { "re!",                                                navigate,         {NavigationForceReload} },
-    { "reload",                                             navigate,         {NavigationReload} },
-    { "reload!",                                            navigate,         {NavigationForceReload} },
-    { "st",                                                 navigate,         {NavigationCancel} },
-    { "stop",                                               navigate,         {NavigationCancel} },
-    { "t",                                                  open,             {TargetNew} },
-    { "tabopen",                                            open,             {TargetNew} },
-    { "bma",                                                bookmark,         {0} },
-    { "bookmark",                                           bookmark,         {0} },
-    { "source",                                             view_source,      {0} },
-    { "set",                                                browser_settings, {0} },
-    { "map",                                                mappings,         {0} },
-};
-
-/* mapping symbols */
-static mappingtable maptable[] = {
-    /* label,              function,   argument */
-    { "jumpleft",          scroll,     {ScrollJumpTo   | DirectionLeft} },
-    { "jumpright",         scroll,     {ScrollJumpTo   | DirectionRight} },
-    { "jumptop",           scroll,     {ScrollJumpTo   | DirectionTop} },
-    { "jumpbottom",        scroll,     {ScrollJumpTo   | DirectionBottom} },
-    { "pageup",            scroll,     {ScrollMove     | DirectionTop      | UnitPage} },	
-    { "pagedown",          scroll,     {ScrollMove     | DirectionBottom   | UnitPage} },
-    { "navigationback",    navigate,   {NavigationBack} },
-    { "navigationforward", navigate,   {NavigationForward} },
-    { "reload",            navigate,   {NavigationReload} },
+    /* command,                                        	function,         argument */
+    { "ba",                                            	navigate,         {NavigationBack} },
+    { "back",                                          	navigate,         {NavigationBack} },
+    { "ec",                                            	script,           {Info} },
+    { "echo",                                          	script,           {Info} },
+    { "echoe",                                         	script,           {Error} },
+    { "echoerr",                                       	script,           {Error} },
+    { "fw",                                            	navigate,         {NavigationForward} },
+    { "fo",                                            	navigate,         {NavigationForward} },
+    { "forward",                                       	navigate,         {NavigationForward} },
+    { "javascript",                                    	script,           {Silent} },
+    { "o",                                             	open,             {TargetCurrent} },
+    { "open",                                          	open,             {TargetCurrent} },
+    { "q",                                             	quit,             {0} },
+    { "quit",                                          	quit,             {0} },
+    { "re",                                            	navigate,         {NavigationReload} },
+    { "re!",                                           	navigate,         {NavigationForceReload} },
+    { "reload",                                        	navigate,         {NavigationReload} },
+    { "reload!",                                       	navigate,         {NavigationForceReload} },
+    { "st",                                            	navigate,         {NavigationCancel} },
+    { "stop",                                          	navigate,         {NavigationCancel} },
+    { "t",                                             	open,             {TargetNew} },
+    { "tabopen",                                       	open,             {TargetNew} },
+    { "bma",                                           	bookmark,         {0} },
+    { "bookmark",                                      	bookmark,         {0} },
+    { "source",                                        	view_source,      {0} },
+    { "set",                                           	browser_settings, {0} },
+    { "map",                                           	mappings,         {0} },
+    { "jumpleft",         	                            scroll,           {ScrollJumpTo   | DirectionLeft} },
+    { "jumpright",        	                            scroll,           {ScrollJumpTo   | DirectionRight} },
+    { "jumptop",          	                            scroll,           {ScrollJumpTo   | DirectionTop} },
+    { "jumpbottom",       	                            scroll,           {ScrollJumpTo   | DirectionBottom} },
+    { "pageup",           	                            scroll,           {ScrollMove     | DirectionTop      | UnitPage} },	
+    { "pagedown",         	                            scroll,           {ScrollMove     | DirectionBottom   | UnitPage} },
+    { "navigationback",   	                            navigate,         {NavigationBack} },
+    { "navigationforward",	                            navigate,         {NavigationForward} },
+    { "reload",           	                            navigate,         {NavigationReload} },
 };
 
 /* mouse bindings

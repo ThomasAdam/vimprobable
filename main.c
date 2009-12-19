@@ -1359,8 +1359,8 @@ changemapping(Key * search_key, int maprecord) {
             keys[i].modkey == search_key->modkey &&
             keys[i].key    == search_key->key
            ) {
-            keys[i].func= maptable[maprecord].func;
-            keys[i].arg= maptable[maprecord].arg; 
+            keys[i].func= commands[maprecord].func;
+            keys[i].arg=  commands[maprecord].arg; 
             return TRUE;
         }
     }
@@ -1451,9 +1451,9 @@ process_map_line(char *line) {
     c = search_word (1);
     if (!strlen (my_pair.value))
         return FALSE;
-    listlen = LENGTH(maptable);
+    listlen = LENGTH(commands);
     for (i = 0; i < listlen; i++) {
-        if (strlen(maptable[i].label) == strlen(my_pair.value) && strncmp(maptable[i].label, my_pair.value, strlen(my_pair.value)) == 0)
+        if (strlen(commands[i].cmd) == strlen(my_pair.value) && strncmp(commands[i].cmd, my_pair.value, strlen(my_pair.value)) == 0)
             return process_mapping(my_pair.what, i);
     }
     return FALSE;
