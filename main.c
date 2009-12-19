@@ -1481,21 +1481,19 @@ search_word(int whichword) {
 
     switch (whichword) {
         case 0:
-	    while (*c && !isspace (*c) && *c != '=' && k < 240) {
-		word[k++] = *c;
-		c++;
-	    }
-	    word[k] = '\0';
-
+            while (*c && !isspace (*c) && *c != '=' && k < 240) {
+                word[k++] = *c;
+                c++;
+            }
+            word[k] = '\0';
             strncpy(my_pair.what, word, 20);
         break;
         case 1:
-	    while (*c && k < 240) {
-		word[k++] = *c;
-		c++;
-	    }
-	    word[k] = '\0';
-
+            while (*c && k < 240) {
+                word[k++] = *c;
+                c++;
+            }
+            word[k] = '\0';
             strncpy(my_pair.value, word, 240);
         break;
     }
