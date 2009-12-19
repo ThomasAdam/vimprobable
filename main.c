@@ -1262,15 +1262,15 @@ history() {
     char *entry, buffer[512], *new;
     int n, i = 0;
     gboolean finished = FALSE;
-    if (entry != NULL) {
-        if (uri != NULL) {
-           if (title != NULL) {
-                entry = malloc((strlen(uri) + strlen(title) + 2) * sizeof(char));
-                memset(entry, 0, strlen(uri) + strlen(title) + 2);
-            } else {
-                entry = malloc((strlen(uri) + 1) * sizeof(char));
-                memset(entry, 0, strlen(uri) + 1);
-            }
+    if (uri != NULL) {
+       if (title != NULL) {
+            entry = malloc((strlen(uri) + strlen(title) + 2) * sizeof(char));
+            memset(entry, 0, strlen(uri) + strlen(title) + 2);
+        } else {
+           entry = malloc((strlen(uri) + 1) * sizeof(char));
+           memset(entry, 0, strlen(uri) + 1);
+        }
+        if (entry != NULL) {
             strncpy(entry, uri, strlen(uri));
             if (title != NULL) {
                 strncat(entry, " ", 1);
