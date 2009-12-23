@@ -36,6 +36,19 @@ Each line looks like this:
 .I "    " map what=value
 
 Vimprobable is not picky about white space in these lines.
+
+.SH FORMAT MODIFIED KEYS
+
+It is possible to mapi keys modified with eiter Control or Shift.
+To map a key modified with Control, use this format: <C-h>
+where C stands for the Control-key and h for the h-key.
+or <S-k> where S stands for the Shift-key and k for the k-key.
+
+Examples:
+<C-h> : Ctrl-h
+<C-k> : Ctrl-k
+z<S-i>: z followed by Shift-i
+
 .RE 
 
 .SH SETTINGS
@@ -102,7 +115,43 @@ Replace the user stylesheet
 
 .SH MAPPINGS
 
-Currently under development.
+Keys can be mapped to the following functions:
+
+.IP jumpleft
+Scroll to left edge
+
+.IP jumpright
+Scroll to right edge
+
+.IP jumptop
+Scroll to top of the page
+
+.IP jumpbottom
+Scroll to bottom of the page
+
+.IP pageup
+Scroll one screensize up
+
+.IP pagedown
+Scroll one screensize down
+
+.IP navigationback
+Go to previous page in browser-history
+
+.IP navigationforward
+Go to next page in browser-history
+
+.IP reload
+Reload current page
+
+Example: 
+To map the 'R' key to reload to current page, add the following
+line into ~/.config/vimprobable/vimprobablerc:
+
+map <S-R> reload
+
+At the moment only keys with a predefined value can be mapped. 
+In future releases this will be expanded to all the keys.
 
 .SH INTERACTIVE SETTING
 All settings can be changed on the fly by entering
