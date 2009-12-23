@@ -20,29 +20,27 @@
 #define CLEAN(mask) (mask & ~(GDK_MOD2_MASK) & ~(GDK_BUTTON1_MASK) & ~(GDK_BUTTON2_MASK) & ~(GDK_BUTTON3_MASK) & ~(GDK_BUTTON4_MASK) & ~(GDK_BUTTON5_MASK))
 
 /* callbacks here */
-static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
-static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
-static void webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
-static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
-static void webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data);
-static void webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
-static void webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
-static gboolean webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
-                        WebKitWebPolicyDecision *decision, gpointer user_data);
-static gboolean webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
-static gboolean webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
-                        WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data);
-static gboolean webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
-                        char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data);
-static gboolean webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data);
-static gboolean webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event);
-static void webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data);
-static gboolean webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data);
-static void webview_scroll_cb(GtkAdjustment *adjustment, gpointer user_data);
 static void inputbox_activate_cb(GtkEntry *entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
+static gboolean webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data);
+static gboolean webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data);
+static void webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data);
+static gboolean webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event);
+static void webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
+static void webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
+static gboolean webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
+                        char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data);
+static gboolean webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
+                        WebKitWebPolicyDecision *decision, gpointer user_data);
+static gboolean webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
+                        WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data);
+static gboolean webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
+static void webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data);
+static void webview_scroll_cb(GtkAdjustment *adjustment, gpointer user_data);
+static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
+static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
 
 /* functions */
 static gboolean bookmark(const Arg *arg);
@@ -65,18 +63,18 @@ static gboolean yank(const Arg *arg);
 static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
 
-static void update_url();
-static void update_state();
-static void setup_modkeys();
-static void setup_gui();
-static void setup_settings();
-static void setup_signals();
+static void update_url(const char *uri);
+static void update_state(void);
+static void setup_modkeys(void);
+static void setup_gui(void);
+static void setup_settings(void);
+static void setup_signals(void);
 static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 void download_progress(WebKitDownload *d, GParamSpec *pspec);
 
-static gboolean history();
+static gboolean history(void);
 static gboolean mappings(const Arg *arg);
 char * search_word(int whichword);
 static gboolean process_set_line(char *line);
@@ -425,11 +423,11 @@ void save_command_history(char *line) {
     c = line;
     while (isspace(*c) && *c)
         c++;
-    if (!strlen(c)) 
+    if (!strlen(c))
         return;
     strncpy(commandhistory[lastcommand], c, 254);
     lastcommand++;
-    if (maxcommands < COMMANDHISTSIZE - 1) 
+    if (maxcommands < COMMANDHISTSIZE - 1)
         maxcommands++;
     if (lastcommand == COMMANDHISTSIZE)
         lastcommand = 0;
@@ -497,7 +495,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             complete(&a);
             a.i = ModeNormal;
             return set(&a);
-        break;	
+        break;
         case GDK_Tab:
             a.i = DirectionNext;
             return complete(&a);
@@ -670,7 +668,7 @@ complete(const Arg *arg) {
                                 strncat(suggline, " ", 1);
                                 strncat(suggline, browsersettings[i].name, 512 - strlen(suggline) - 1);
                                 suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                strncpy(suggurls[n], suggline, 512);                            
+                                strncpy(suggurls[n], suggline, 512);
                                 suggestions[n] = suggurls[n];
                                 row = GTK_BOX(gtk_hbox_new(FALSE, 0));
                                 row_eventbox = gtk_event_box_new();
@@ -685,7 +683,7 @@ complete(const Arg *arg) {
                                 gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
                                 widgets[n++] = row_eventbox;
                             }
-                            
+
                         }
                     } else {
                         /* URL completion using the current command */
@@ -710,7 +708,7 @@ complete(const Arg *arg) {
                                     url = strtok(entry, " ");
                                     strncat(suggline, url, 512 - strlen(suggline) - 1);
                                     suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                    strncpy(suggurls[n], suggline, 512);                            
+                                    strncpy(suggurls[n], suggline, 512);
                                     suggestions[n] = suggurls[n];
                                     row = GTK_BOX(gtk_hbox_new(FALSE, 0));
                                     row_eventbox = gtk_event_box_new();
@@ -754,7 +752,7 @@ complete(const Arg *arg) {
                                             url = strtok(entry, " ");
                                             strncat(suggline, url, 512 - strlen(suggline) - 1);
                                             suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                            strncpy(suggurls[n], suggline, 512);                            
+                                            strncpy(suggurls[n], suggline, 512);
                                             suggestions[n] = suggurls[n];
                                             row = GTK_BOX(gtk_hbox_new(FALSE, 0));
                                             row_eventbox = gtk_event_box_new();
@@ -1220,15 +1218,15 @@ gboolean
 commandhistoryfetch(const Arg *arg) {
     if (arg->i == DirectionPrev) {
         commandpointer--;
-        if (commandpointer < 0) 
+        if (commandpointer < 0)
             commandpointer = maxcommands - 1;
     } else {
         commandpointer++;
-        if (commandpointer == COMMANDHISTSIZE || commandpointer == maxcommands) 
+        if (commandpointer == COMMANDHISTSIZE || commandpointer == maxcommands)
             commandpointer = 0;
     }
 
-    if (commandpointer < 0) 
+    if (commandpointer < 0)
         return FALSE;
 
     gtk_entry_set_text(GTK_ENTRY(inputbox), commandhistory[commandpointer ]);
@@ -1366,7 +1364,7 @@ changemapping(Key * search_key, int maprecord) {
             keys[i].key    == search_key->key
            ) {
             keys[i].func= commands[maprecord].func;
-            keys[i].arg=  commands[maprecord].arg; 
+            keys[i].arg=  commands[maprecord].arg;
             return TRUE;
         }
     }
@@ -1396,7 +1394,7 @@ process_mapping(char * keystring, int maprecord) {
     if ((strlen(keystring) == 5 ||  strlen(keystring) == 6)  && keystring[0] == '<'  && keystring[4] == '>') {
         switch (toupper(keystring[1])) {
             case 'S':
-                search_key.mask = GDK_SHIFT_MASK; 
+                search_key.mask = GDK_SHIFT_MASK;
                 if (strlen(keystring) == 5) {
                     keystring[3] = toupper(keystring[3]);
                 } else {
@@ -1405,11 +1403,11 @@ process_mapping(char * keystring, int maprecord) {
                 }
             break;
             case 'C':
-                search_key.mask = GDK_CONTROL_MASK; 
+                search_key.mask = GDK_CONTROL_MASK;
             break;
         }
-        if (!search_key.mask) 
-            return FALSE; 
+        if (!search_key.mask)
+            return FALSE;
         if (strlen(keystring) == 5) {
             search_key.key = keystring[3];
         } else {
@@ -1419,7 +1417,7 @@ process_mapping(char * keystring, int maprecord) {
     }
 
     /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v
-       or  stuff like a<S-v> for a,Shift-v or a<C-v> for a,Ctrl-v 
+       or  stuff like a<S-v> for a,Shift-v or a<C-v> for a,Ctrl-v
     */
     if (strlen(keystring) == 6 && keystring[1] == '<' && keystring[5] == '>') {
         switch (toupper(keystring[2])) {
@@ -1428,10 +1426,10 @@ process_mapping(char * keystring, int maprecord) {
                 keystring[4] = toupper(keystring[4]);
             break;
             case 'C':
-                search_key.mask = GDK_CONTROL_MASK; 
+                search_key.mask = GDK_CONTROL_MASK;
             break;
         }
-        if (!search_key.mask) 
+        if (!search_key.mask)
             return FALSE;
         search_key.modkey= keystring[0];
         search_key.key = keystring[4];
@@ -1525,10 +1523,10 @@ process_set_line(char *line) {
 
     if (*c == ':' || *c == '=')
         c++;
-  
+
     my_pair.line = c;
     c = search_word(1);
-    
+
     listlen = LENGTH(browsersettings);
     for (i = 0; i < listlen; i++) {
         if (strlen(browsersettings[i].name) == strlen(my_pair.what) && strncmp(browsersettings[i].name, my_pair.what, strlen(my_pair.what)) == 0) {
@@ -1637,7 +1635,7 @@ parse_colour(char *color) {
             break;
         }
     }
-    
+
     if (strlen (goodcolor) != 7) {
         return FALSE;
     } else {
