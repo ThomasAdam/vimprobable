@@ -491,23 +491,29 @@ gboolean
 inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
 
-    if(event->keyval == GDK_Escape) {
-        a.i = HideCompletion;
-        complete(&a);
-        a.i = ModeNormal;
-        return set(&a);
-    } else if(event->keyval == GDK_Tab) {
-        a.i = DirectionNext;
-        return complete(&a);
-    } else if(event->keyval == GDK_Up) {
-        a.i = DirectionPrev;
-        return commandhistoryfetch(&a);
-    } else if(event->keyval == GDK_Down) {
-        a.i = DirectionNext;
-        return commandhistoryfetch(&a);
-    } else if(event->keyval == GDK_ISO_Left_Tab) {
-        a.i = DirectionPrev;
-        return complete(&a);
+    switch (event->keyval) {
+        case GDK_Escape:
+            a.i = HideCompletion;
+            complete(&a);
+            a.i = ModeNormal;
+            return set(&a);
+        break;	
+        case GDK_Tab:
+            a.i = DirectionNext;
+            return complete(&a);
+        break;
+        case GDK_Up:
+            a.i = DirectionPrev;
+            return commandhistoryfetch(&a);
+        break;
+        case GDK_Down:
+            a.i = DirectionNext;
+            return commandhistoryfetch(&a);
+        break;
+        case GDK_ISO_Left_Tab:
+            a.i = DirectionPrev;
+            return complete(&a);
+        break;
     }
     return FALSE;
 }
