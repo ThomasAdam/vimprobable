@@ -200,7 +200,7 @@ gboolean
 webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data) {
     const gchar *filename;
     gchar *uri, *path, *html;
-    uint size;
+    uint32_t size;
 
     filename = webkit_download_get_suggested_filename(download);
     if (filename == NULL || strlen(filename) == 0) {
@@ -210,7 +210,7 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     uri = g_strconcat("file://", path, NULL);
     webkit_download_set_destination_uri(download, uri);
     g_free(uri);
-    size = (uint)webkit_download_get_total_size(download);
+    size = (uint32_t)webkit_download_get_total_size(download);
     if (size > 0)
         html = g_strdup_printf("Download <b>%s</b> (expected size: %u bytes)...", filename, size);
     else
@@ -565,7 +565,7 @@ complete(const Arg *arg) {
     } else if(arg->i == HideCompletion)
         return TRUE;
     if(!widgets) {
-        prefix = strdup(str);
+        prefix = g_strdup_printf(str);
         listlen = LENGTH(commands);
         widgets = malloc(sizeof(GtkWidget*) * listlen);
         suggestions = malloc(sizeof(char*) * listlen);
@@ -838,7 +838,7 @@ number(const Arg *arg) {
 
     if(!source)
         return TRUE;
-    uri = strdup(source); /* copy string */
+    uri = g_strdup_printf(source); /* copy string */
     p =& uri[0];
     while(*p != '\0') /* goto the end of the string */
         ++p;
@@ -968,7 +968,7 @@ search(const Arg *arg) {
 
     if(arg->s) {
         free(search_handle);
-        search_handle = strdup(arg->s);
+        search_handle = g_strdup_printf(arg->s);
     }
     if(!search_handle)
         return TRUE;
