@@ -148,10 +148,10 @@ void
 ascii_bar(int total, int state, char *string) {
     int i;
 
-    for(i = 0; i < state; i++)
+    for (i = 0; i < state; i++)
         string[i] = progressbartickchar;
     string[i++] = progressbarcurrent;
-    for(; i < total; i++)
+    for (; i < total; i++)
         string[i] = progressbarspacer;
     string[i] = '\0';
 }
@@ -268,7 +268,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
 
     switch (mode) {
     case ModeNormal:
-        if(CLEAN(event->state) == 0) {
+        if (CLEAN(event->state) == 0) {
             memset(inputBuffer, 0, 65);
             if (event->keyval == GDK_Escape) {
                 a.i = Info;
@@ -286,21 +286,21 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             }
         }
         /* keybindings */
-        for(i = 0; i < LENGTH(keys); i++)
-            if(keys[i].mask == CLEAN(event->state)
+        for (i = 0; i < LENGTH(keys); i++)
+            if (keys[i].mask == CLEAN(event->state)
             && (keys[i].modkey == current_modkey
                 || (!keys[i].modkey && !current_modkey)
                 || keys[i].modkey == GDK_VoidSymbol)    /* wildcard */
             && keys[i].key == event->keyval
             && keys[i].func)
-                if(keys[i].func(&keys[i].arg)) {
+                if (keys[i].func(&keys[i].arg)) {
                     current_modkey = count = 0;
                     update_state();
                     return TRUE;
                 }
         break;
     case ModeInsert:
-        if(CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
             a.s = "clearfocus()";
             script(&a);
@@ -308,7 +308,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             return set(&a);
         }
     case ModePassThrough:
-        if(CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             echo(&a);
             set(&a);
             return TRUE;
@@ -319,7 +319,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         set(&a);
         break;
     case ModeHints:
-        if(CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
             a.s = "clear()";
             script(&a);
@@ -391,7 +391,7 @@ webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer d
     const char *uri = webkit_web_view_get_uri(webview);
 
     memset(rememberedURI, 0, 128);
-    if(link) {
+    if (link) {
         gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
         strncpy(rememberedURI, link, 128);
     } else
@@ -402,10 +402,10 @@ gboolean
 webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data) {
     Arg a;
 
-    if(!strcmp(message, "hintmode_off") || !strcmp(message, "insertmode_off")) {
+    if (!strcmp(message, "hintmode_off") || !strcmp(message, "insertmode_off")) {
         a.i = ModeNormal;
         return set(&a);
-    } else if(!strcmp(message, "insertmode_on")) {
+    } else if (!strcmp(message, "insertmode_on")) {
         a.i = ModeInsert;
         return set(&a);
     }
@@ -446,29 +446,29 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
 
     a.i = HideCompletion;
     complete(&a);
-    if(length < 2)
+    if (length < 2)
         return;
     text = (char*)gtk_entry_get_text(entry);
-    if(text[0] == ':') {
-        for(i = 0; i < LENGTH(commands); i++) {
+    if (text[0] == ':') {
+        for (i = 0; i < LENGTH(commands); i++) {
             len = strlen(commands[i].cmd);
-            if(length >= len && !strncmp(&text[1], commands[i].cmd, len) && (text[len + 1] == ' ' || !text[len + 1])) {
+            if (length >= len && !strncmp(&text[1], commands[i].cmd, len) && (text[len + 1] == ' ' || !text[len + 1])) {
                 a.i = commands[i].arg.i;
                 a.s = length > len + 2 ? &text[len + 2] : commands[i].arg.s;
-                if((success = commands[i].func(&a)))
+                if ((success = commands[i].func(&a)))
                     break;
             }
         }
 
         save_command_history(text);
 
-        if(!success) {
+        if (!success) {
             a.i = Error;
             a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
             echo(&a);
             g_free(a.s);
         }
-    } else if((forward = text[0] == '/') || text[0] == '?') {
+    } else if ((forward = text[0] == '/') || text[0] == '?') {
         webkit_web_view_unmark_text_matches(webview);
 #ifdef ENABLE_MATCH_HIGHLITING
         webkit_web_view_mark_text_matches(webview, &text[1], FALSE, 0);
@@ -480,7 +480,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         search(&a);
     } else
         return;
-    if(!echo_active)
+    if (!echo_active)
         gtk_entry_set_text(entry, "");
     gtk_widget_grab_focus(GTK_WIDGET(webview));
 }
@@ -546,14 +546,14 @@ static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event) {
     char *text = (char*)gtk_entry_get_text(entry);
     gboolean forward = FALSE;
 #endif
-    if(!length) {
+    if (!length) {
         a.i = HideCompletion;
         complete(&a);
         a.i = ModeNormal;
         return set(&a);
     }
 #ifdef ENABLE_INCREMENTAL_SEARCH
-    else if(length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
+    else if (length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
         webkit_web_view_unmark_text_matches(webview);
         webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
     }
@@ -580,14 +580,14 @@ complete(const Arg *arg) {
 
     str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
     len = strlen(str);
-    if((len == 0 || str[0] != ':') && arg->i != HideCompletion)
+    if ((len == 0 || str[0] != ':') && arg->i != HideCompletion)
         return TRUE;
-    if(prefix) {
-        if(arg->i != HideCompletion && widgets && current != -1 && !strcmp(&str[1], suggestions[current])) {
+    if (prefix) {
+        if (arg->i != HideCompletion && widgets && current != -1 && !strcmp(&str[1], suggestions[current])) {
             gdk_color_parse(completionbgcolor[0], &color);
             gtk_widget_modify_bg(widgets[current], GTK_STATE_NORMAL, &color);
             current = (n + current + (arg->i == DirectionPrev ? -1 : 1)) % n;
-            if((arg->i == DirectionNext && current == 0)
+            if ((arg->i == DirectionNext && current == 0)
             || (arg->i == DirectionPrev && current == n - 1))
                 current = -1;
         } else {
@@ -602,12 +602,12 @@ complete(const Arg *arg) {
             prefix = NULL;
             n = 0;
             current = -1;
-            if(arg->i == HideCompletion)
+            if (arg->i == HideCompletion)
                 return TRUE;
         }
-    } else if(arg->i == HideCompletion)
+    } else if (arg->i == HideCompletion)
         return TRUE;
-    if(!widgets) {
+    if (!widgets) {
         prefix = g_strdup_printf(str);
         listlen = LENGTH(commands);
         widgets = malloc(sizeof(GtkWidget*) * listlen);
@@ -621,11 +621,11 @@ complete(const Arg *arg) {
         _table = GTK_BOX(gtk_vbox_new(FALSE, 0));
         highlight = len > 1;
         if (strchr(str, ' ') == NULL) {
-            for(i = 0; i < listlen; i++) {
+            for (i = 0; i < listlen; i++) {
                 cmdlen = strlen(commands[i].cmd);
-                if(!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
+                if (!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
                     p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
-                    if(highlight) {
+                    if (highlight) {
                         memcpy(p, COMPLETION_TAG_OPEN, sizeof(COMPLETION_TAG_OPEN) - 1);
                         memcpy((p += sizeof(COMPLETION_TAG_OPEN) - 1), &str[1], len - 1);
                         memcpy((p += len - 1), COMPLETION_TAG_CLOSE, sizeof(COMPLETION_TAG_CLOSE) - 1);
@@ -789,7 +789,7 @@ complete(const Arg *arg) {
         }
         widgets = realloc(widgets, sizeof(GtkWidget*) * n);
         suggestions = realloc(suggestions, sizeof(char*) * n);
-        if(!n) {
+        if (!n) {
             gdk_color_parse(completionbgcolor[1], &color);
             gtk_widget_modify_bg(table, GTK_STATE_NORMAL, &color);
             el = gtk_label_new(NULL);
@@ -803,11 +803,11 @@ complete(const Arg *arg) {
         gtk_container_add(GTK_CONTAINER(table), GTK_WIDGET(_table));
         gtk_box_pack_start(box, GTK_WIDGET(table), FALSE, FALSE, 0);
         gtk_widget_show_all(window);
-        if(!n)
+        if (!n)
             return TRUE;
         current = arg->i == DirectionPrev ? n - 1 : 0;
     }
-    if(current != -1) {
+    if (current != -1) {
         gdk_color_parse(completionbgcolor[2], &color);
         gtk_widget_modify_bg(GTK_WIDGET(widgets[current]), GTK_STATE_NORMAL, &color);
         s = g_strconcat(":", suggestions[current], NULL);
@@ -825,22 +825,22 @@ descend(const Arg *arg) {
     int i, len;
     count = count ? count : 1;
 
-    if(!source)
+    if (!source)
         return TRUE;
-    if(arg->i == Rootdir) {
-        for(i = 0; i < 3; i++)                  /* get to the third slash */
-            if(!(p = strchr(++p, '/')))
+    if (arg->i == Rootdir) {
+        for (i = 0; i < 3; i++)                  /* get to the third slash */
+            if (!(p = strchr(++p, '/')))
                 return TRUE;                    /* if we cannot find it quit */
     } else {
         len = strlen(source);
-        if(!len)                                /* if string is empty quit */
+        if (!len)                                /* if string is empty quit */
             return TRUE;
         p = source + len;                       /* start at the end */
-        if(*(p - 1) == '/')                     /* /\/$/ is not an additional level */
+        if (*(p - 1) == '/')                     /* /\/$/ is not an additional level */
             ++count;
-        for(i = 0; i < count; i++)
+        for (i = 0; i < count; i++)
             while(*(p--) != '/' || *p == '/')   /* count /\/+/ as one slash */
-                if(p == source)                 /* if we reach the first char pointer quit */
+                if (p == source)                 /* if we reach the first char pointer quit */
                     return TRUE;
         ++p;                                    /* since we do p-- in the while, we are pointing at
                                                    the char before the slash, so +1  */
@@ -860,15 +860,15 @@ echo(const Arg *arg) {
     GdkColor color;
     int index = !arg->s ? 0 : arg->i & (~NoAutoHide);
 
-    if(index < Info || index > Error)
+    if (index < Info || index > Error)
         return TRUE;
     font = pango_font_description_from_string(urlboxfont[index]);
     gtk_widget_modify_font(inputbox, font);
     pango_font_description_free(font);
-    if(urlboxcolor[index])
+    if (urlboxcolor[index])
         gdk_color_parse(urlboxcolor[index], &color);
     gtk_widget_modify_text(inputbox, GTK_STATE_NORMAL, urlboxcolor[index] ? &color : NULL);
-    if(urlboxbgcolor[index])
+    if (urlboxbgcolor[index])
         gdk_color_parse(urlboxbgcolor[index], &color);
     gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &color : NULL);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
@@ -885,7 +885,7 @@ input(const Arg *arg) {
     /* to avoid things like :open URL :open URL2  or :open :open URL */
     gtk_entry_set_text(GTK_ENTRY(inputbox), "");
     gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
-    if(arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(webview)))
+    if (arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(webview)))
         gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
     gtk_widget_grab_focus(inputbox);
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
@@ -894,9 +894,9 @@ input(const Arg *arg) {
 
 gboolean
 navigate(const Arg *arg) {
-    if(arg->i & NavigationForwardBack)
+    if (arg->i & NavigationForwardBack)
         webkit_web_view_go_back_or_forward(webview, (arg->i == NavigationBack ? -1 : 1) * (count ? count : 1));
-    else if(arg->i & NavigationReloadActions)
+    else if (arg->i & NavigationReloadActions)
         (arg->i == NavigationReload ? webkit_web_view_reload : webkit_web_view_reload_bypass_cache)(webview);
     else
         webkit_web_view_stop_loading(webview);
@@ -909,7 +909,7 @@ number(const Arg *arg) {
     char *uri, *p, *new;
     int number, diff = (count ? count : 1) * (arg->i == Increment ? 1 : -1);
 
-    if(!source)
+    if (!source)
         return TRUE;
     uri = g_strdup_printf(source); /* copy string */
     p =& uri[0];
@@ -918,7 +918,7 @@ number(const Arg *arg) {
     --p;
     while(*p >= '0' && *p <= '9') /* go back until non number char is reached */
         --p;
-    if(*(++p) == '\0') { /* if no numbers were found abort */
+    if (*(++p) == '\0') { /* if no numbers were found abort */
         free(uri);
         return TRUE;
     }
@@ -950,24 +950,24 @@ open(const Arg *arg) {
         argv[2] = NULL;
     }
 
-    if(!arg->s)
+    if (!arg->s)
         navigate(&a);
-    else if(arg->i == TargetCurrent) {
+    else if (arg->i == TargetCurrent) {
         len = strlen(arg->s);
         new = NULL, p = strchr(arg->s, ' ');
-        if(p)                                                           /* check for search engines */
-            for(i = 0; i < LENGTH(searchengines); i++)
-                if(!strncmp(arg->s, searchengines[i].handle, p - arg->s)) {
+        if (p)                                                           /* check for search engines */
+            for (i = 0; i < LENGTH(searchengines); i++)
+                if (!strncmp(arg->s, searchengines[i].handle, p - arg->s)) {
                     p = soup_uri_encode(++p, "&");
                     new = g_strdup_printf(searchengines[i].uri, p);
                     g_free(p);
                     break;
                 }
-        if(!new) {
-            if(len > 3 && strstr(arg->s, "://")) {                      /* valid url? */
+        if (!new) {
+            if (len > 3 && strstr(arg->s, "://")) {                      /* valid url? */
                 p = new = g_malloc(len + 1);
                 while(*s != '\0') {                                     /* strip whitespaces */
-                    if(*s != ' ')
+                    if (*s != ' ')
                         *(p++) = *s;
                     ++s;
                 }
@@ -976,7 +976,7 @@ open(const Arg *arg) {
                 new = g_malloc(sizeof("file://") + len);
                 strcpy(new, "file://");
                 memcpy(&new[sizeof("file://") - 1], arg->s, len + 1);
-            } else if(p || !strchr(arg->s, '.')) {                      /* whitespaces or no dot? */
+            } else if (p || !strchr(arg->s, '.')) {                      /* whitespaces or no dot? */
                 p = soup_uri_encode(arg->s, "&");
                 new = g_strdup_printf(defsearch->uri, p);
                 g_free(p);
@@ -998,16 +998,16 @@ yank(const Arg *arg) {
     const char *url;
     Arg a = { .i = Info };
 
-    if(arg->i & SourceURL) {
+    if (arg->i & SourceURL) {
         url = webkit_web_view_get_uri(webview);
-        if(!url)
+        if (!url)
             return TRUE;
         a.s = g_strdup_printf("Yanked %s", url);
         echo(&a);
         g_free(a.s);
-        if(arg->i & ClipboardPrimary)
+        if (arg->i & ClipboardPrimary)
             gtk_clipboard_set_text(clipboards[0], url, -1);
-        if(arg->i & ClipboardGTK)
+        if (arg->i & ClipboardGTK)
             gtk_clipboard_set_text(clipboards[1], url, -1);
     } else
         webkit_web_view_copy_clipboard(webview);
@@ -1018,11 +1018,11 @@ gboolean
 paste(const Arg *arg) {
     Arg a = { .i = arg->i & TargetNew, .s = NULL };
 
-    if(arg->i & ClipboardPrimary)
+    if (arg->i & ClipboardPrimary)
         a.s = gtk_clipboard_wait_for_text(clipboards[0]);
-    if(!a.s && arg->i & ClipboardGTK)
+    if (!a.s && arg->i & ClipboardGTK)
         a.s = gtk_clipboard_wait_for_text(clipboards[1]);
-    if(a.s)
+    if (a.s)
         open(&a);
     return TRUE;
 }
@@ -1039,22 +1039,22 @@ search(const Arg *arg) {
     gboolean success, direction = arg->i & DirectionPrev;
     Arg a;
 
-    if(arg->s) {
+    if (arg->s) {
         free(search_handle);
         search_handle = g_strdup_printf(arg->s);
     }
-    if(!search_handle)
+    if (!search_handle)
         return TRUE;
-    if(arg->i & DirectionAbsolute)
+    if (arg->i & DirectionAbsolute)
         search_direction = direction;
     else
         direction ^= search_direction;
     do {
         success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, direction, FALSE);
-        if(!success) {
-            if(arg->i & Wrapping) {
+        if (!success) {
+            if (arg->i & Wrapping) {
                 success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, direction, TRUE);
-                if(success) {
+                if (success) {
                     a.i = Warning;
                     a.s = g_strdup_printf("search hit %s, continuing at %s",
                             direction ? "BOTTOM" : "TOP",
@@ -1067,7 +1067,7 @@ search(const Arg *arg) {
                 break;
         }
     } while(--count);
-    if(!success) {
+    if (!success) {
         a.i = Error;
         a.s = g_strdup_printf("Pattern not found: %s", search_handle);
         echo(&a);
@@ -1082,7 +1082,7 @@ set(const Arg *arg) {
 
     switch (arg->i) {
     case ModeNormal:
-        if(search_handle) {
+        if (search_handle) {
             search_handle = NULL;
             webkit_web_view_unmark_text_matches(webview);
         }
@@ -1139,7 +1139,7 @@ jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message) {
     str = JSStringCreateWithUTF8CString(script);
     val = JSEvaluateScript(context, str, JSContextGetGlobalObject(context), NULL, 0, &exception);
     JSStringRelease(str);
-    if(!val)
+    if (!val)
         *message = jsapi_ref_to_string(context, exception);
     else
         *value = jsapi_ref_to_string(context, val);
@@ -1150,16 +1150,16 @@ script(const Arg *arg) {
     gchar *value = NULL, *message = NULL;
     Arg a;
 
-    if(!arg->s)
+    if (!arg->s)
         return TRUE;
     jsapi_evaluate_script(arg->s, &value, &message);
-    if(message) {
+    if (message) {
         a.i = Error;
         a.s = message;
         echo(&a);
         g_free(message);
     }
-    if(arg->i != Silent && value) {
+    if (arg->i != Silent && value) {
         a.i = arg->i;
         a.s = value;
         echo(&a);
@@ -1190,7 +1190,7 @@ gboolean
 scroll(const Arg *arg) {
     GtkAdjustment *adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
 
-    if(arg->i & ScrollMove)
+    if (arg->i & ScrollMove)
         gtk_adjustment_set_value(adjust, gtk_adjustment_get_value(adjust) +
             (arg->i & (1 << 2) ? 1 : -1) *      /* direction */
             ((arg->i & UnitLine || (arg->i & UnitBuffer && count)) ? (scrollstep * (count ? count : 1)) : (
@@ -1697,7 +1697,7 @@ update_url(const char *uri) {
     gboolean back = webkit_web_view_can_go_back(webview);
     gboolean fwd = webkit_web_view_can_go_forward(webview);
 
-    if(!back && !fwd)
+    if (!back && !fwd)
         before[0] = after[0] = '\0';
 #endif
     gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
@@ -1728,11 +1728,11 @@ update_state() {
     g_object_get((GObject*)webview, "progress", &progress, NULL);
 #endif
 
-    if(max == 0)
+    if (max == 0)
         sprintf(&scroll_state[0], "All");
-    else if(val == 0)
+    else if (val == 0)
         sprintf(&scroll_state[0], "Top");
-    else if(val == 100)
+    else if (val == 100)
         sprintf(&scroll_state[0], "Bot");
     else
         sprintf(&scroll_state[0], "%d%%", val);
@@ -1763,8 +1763,8 @@ setup_modkeys() {
     modkeys = calloc(LENGTH(keys) + 1, sizeof(char));
     char *ptr = modkeys;
 
-    for(i = 0; i < LENGTH(keys); i++)
-        if(keys[i].modkey && !strchr(modkeys, keys[i].modkey))
+    for (i = 0; i < LENGTH(keys); i++)
+        if (keys[i].modkey && !strchr(modkeys, keys[i].modkey))
             *(ptr++) = keys[i].modkey;
     modkeys = realloc(modkeys, &ptr[0] - &modkeys[0] + 1);
 }
@@ -1852,7 +1852,7 @@ setup_settings() {
     /* proxy */
     filename = (char *)g_getenv("http_proxy");
     if (filename != NULL && 0 < (len = strlen(filename))) {
-        if(strstr(filename, "://") == NULL) {
+        if (strstr(filename, "://") == NULL) {
             /* prepend http:// */
             new = g_malloc(sizeof("http://") + len);
             strcpy(new, "http://");
@@ -1912,7 +1912,7 @@ main(int argc, char *argv[]) {
     }
 
     gtk_init(&argc, &argv);
-    if(!g_thread_supported())
+    if (!g_thread_supported())
         g_thread_init(NULL);
     setup_modkeys();
 
