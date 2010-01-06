@@ -84,6 +84,9 @@ gboolean parse_colour(char *color);
 gboolean read_rcfile(void);
 void save_command_history(char *line);
 
+void make_keyslist(void);
+gboolean process_keypress(GdkEventKey *event);
+
 /* variables */
 static GtkWidget *window;
 static GtkBox *box;
@@ -123,6 +126,7 @@ char commandhistory[COMMANDHISTSIZE][255];
 int  lastcommand    = 0;
 int  maxcommands    = 0;
 int  commandpointer = 0;
+KeyList *keylistroot = NULL;
 
 /* callbacks */
 void
@@ -261,9 +265,52 @@ download_progress(WebKitDownload *d, GParamSpec *pspec) {
     }
 }
 
+
+void
+make_keyslist(void) {
+    int i;
+    KeyList *ptr, *current;
+    
+    ptr     = NULL;
+    current = NULL;
+    for (i = 0; i < LENGTH(keys); i++) {
+        current = malloc(sizeof(KeyList)); 
+        if (current == NULL) {
+            printf("Not enough memory\n");
+            exit(-1);
+        }
+        current->Element = keys[i];
+        current->next = NULL;
+        if (keylistroot == NULL) keylistroot = current;
+        if (ptr != NULL) ptr->next = current;
+        ptr = current;
+    }
+}
+
+gboolean
+process_keypress(GdkEventKey *event) {
+    KeyList *current;
+
+    current = keylistroot;
+    while (current != NULL) {
+        if (current->Element.mask == CLEAN(event->state)
+                && (current->Element.modkey == current_modkey
+                    || (!current->Element.modkey && !current_modkey)
+                    || current->Element.modkey == GDK_VoidSymbol )    /* wildcard */
+                && current->Element.key == event->keyval
+                && current->Element.func)
+            if (current->Element.func(&current->Element.arg)) {
+                current_modkey = count = 0;
+                update_state();
+                return TRUE;
+            }
+        current = current->next;
+    }
+    return FALSE;
+}
+
 gboolean
 webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
-    unsigned int i;
     Arg a = { .i = ModeNormal, .s = NULL };
 
     switch (mode) {
@@ -286,18 +333,8 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             }
         }
         /* keybindings */
-        for (i = 0; i < LENGTH(keys); i++)
-            if (keys[i].mask == CLEAN(event->state)
-            && (keys[i].modkey == current_modkey
-                || (!keys[i].modkey && !current_modkey)
-                || keys[i].modkey == GDK_VoidSymbol)    /* wildcard */
-            && keys[i].key == event->keyval
-            && keys[i].func)
-                if (keys[i].func(&keys[i].arg)) {
-                    current_modkey = count = 0;
-                    update_state();
-                    return TRUE;
-                }
+        if (process_keypress(event) == TRUE) return TRUE;
+	
         break;
     case ModeInsert:
         if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
@@ -1355,20 +1392,40 @@ mappings(const Arg *arg) {
 
 static gboolean
 changemapping(Key * search_key, int maprecord) {
-    int i;
+    KeyList *current, *newkey;
 
-    for (i = 0; i < LENGTH(keys); i++) {
-        if (
-            keys[i].mask   == search_key->mask &&
-            keys[i].modkey == search_key->modkey &&
-            keys[i].key    == search_key->key
-           ) {
-            keys[i].func= commands[maprecord].func;
-            keys[i].arg=  commands[maprecord].arg;
-            return TRUE;
+    current = keylistroot;
+
+    if (current)
+        while (current->next != NULL) {
+            if ( 
+                current->Element.mask   == search_key->mask &&
+                current->Element.modkey == search_key->modkey &&
+                current->Element.key    == search_key->key
+               ) {
+                current->Element.func = commands[maprecord].func;
+                current->Element.arg  =  commands[maprecord].arg;
+                return TRUE;
+            } 
+            current = current->next;
         }
+    newkey = malloc(sizeof(KeyList)); 
+    if (newkey == NULL) {
+        printf("Not enough memory\n");
+        exit (-1);
     }
-    return FALSE;
+    newkey->Element.mask   = search_key->mask;
+    newkey->Element.modkey = search_key->modkey;
+    newkey->Element.key    = search_key->key;
+    newkey->Element.func   = commands[maprecord].func;
+    newkey->Element.arg    = commands[maprecord].arg;
+    newkey->next           = NULL;
+
+    if (keylistroot == NULL) keylistroot = newkey;
+
+    if (current != NULL) current->next = newkey;
+
+    return TRUE;
 }
 
 static gboolean
@@ -1922,6 +1979,7 @@ main(int argc, char *argv[]) {
         strncpy(winid, argv[2], 63);
     }
 
+    make_keyslist();
     setup_gui();
 
 	/* read config file */

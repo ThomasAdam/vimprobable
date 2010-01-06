@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.yllr.net/vimprobable/";
-char useragent[120]	                    = "Vimprobable2 0.7.3.7";
+char useragent[120]	                    = "Vimprobable2 0.7.8.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */

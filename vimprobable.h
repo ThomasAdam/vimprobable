@@ -90,6 +90,11 @@ typedef struct {
 } Key;
 
 typedef struct {
+    void * next;
+    Key  Element;
+} KeyList;
+
+typedef struct {
     guint mask;
     guint modkey;
     guint button;
