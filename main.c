@@ -86,6 +86,8 @@ void save_command_history(char *line);
 
 void make_keyslist(void);
 gboolean process_keypress(GdkEventKey *event);
+void fill_suggline(char * suggline, const char * command, const char *fill_with);
+GtkWidget * fill_eventbox(const char * completion_line);
 
 /* variables */
 static GtkWidget *window;
@@ -599,6 +601,35 @@ static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event) {
 }
 
 /* funcs here */
+
+void fill_suggline(char * suggline, const char * command,  const char *fill_with) {		
+    memset(suggline, 0, 512);
+    strncpy(suggline, command, 512);
+    strncat(suggline, " ", 1);
+    strncat(suggline, fill_with, 512 - strlen(suggline) - 1);
+}
+
+GtkWidget * fill_eventbox(const char * completion_line) {
+    GtkBox    * row;
+    GtkWidget *row_eventbox, *el;
+    GdkColor  color;
+    char      * markup;
+
+    row = GTK_BOX(gtk_hbox_new(FALSE, 0));
+    row_eventbox = gtk_event_box_new();
+    gdk_color_parse(completionbgcolor[0], &color);
+    gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+    el = gtk_label_new(NULL);
+    markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", 
+        g_markup_escape_text(completion_line, strlen(completion_line)), "</span>", NULL);
+    gtk_label_set_markup(GTK_LABEL(el), markup);
+    g_free(markup);
+    gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+    gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+    gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+    return row_eventbox;
+}
+
 gboolean
 complete(const Arg *arg) {
     FILE *f;
@@ -700,23 +731,11 @@ complete(const Arg *arg) {
                         for (i = 0; i < listlen; i++) {
                             if (strstr(browsersettings[i].name, searchfor) != NULL) {
                                 /* match */
-                                memset(suggline, 0, 512);
-                                strncpy(suggline, command, 512);
-                                strncat(suggline, " ", 1);
-                                strncat(suggline, browsersettings[i].name, 512 - strlen(suggline) - 1);
+                                fill_suggline(suggline, command, browsersettings[i].name);
                                 suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                 strncpy(suggurls[n], suggline, 512);
                                 suggestions[n] = suggurls[n];
-                                row = GTK_BOX(gtk_hbox_new(FALSE, 0));
-                                row_eventbox = gtk_event_box_new();
-                                gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
-                                el = gtk_label_new(NULL);
-                                markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
-                                gtk_label_set_markup(GTK_LABEL(el), markup);
-                                g_free(markup);
-                                gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
-                                gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                                gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                                row_eventbox = fill_eventbox(suggline);
                                 gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
                                 widgets[n++] = row_eventbox;
                             }
@@ -739,24 +758,12 @@ complete(const Arg *arg) {
                                 }
                                 if (strstr(entry, searchfor) != NULL) {
                                     /* found in bookmarks */
-                                    memset(suggline, 0, 512);
-                                    strncpy(suggline, command, 512);
-                                    strncat(suggline, " ", 1);
                                     url = strtok(entry, " ");
-                                    strncat(suggline, url, 512 - strlen(suggline) - 1);
+                                    fill_suggline(suggline, command, url);
                                     suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                     strncpy(suggurls[n], suggline, 512);
                                     suggestions[n] = suggurls[n];
-                                    row = GTK_BOX(gtk_hbox_new(FALSE, 0));
-                                    row_eventbox = gtk_event_box_new();
-                                    gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
-                                    el = gtk_label_new(NULL);
-                                    markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
-                                    gtk_label_set_markup(GTK_LABEL(el), markup);
-                                    g_free(markup);
-                                    gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
-                                    gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                                    gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                                    row_eventbox = fill_eventbox(suggline);
                                     gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
                                     widgets[n++] = row_eventbox;
                                 }
@@ -783,24 +790,12 @@ complete(const Arg *arg) {
                                         }
                                         if (strstr(entry, searchfor) != NULL) {
                                             /* found in history */
-                                            memset(suggline, 0, 512);
-                                            strncpy(suggline, command, 512);
-                                            strncat(suggline, " ", 1);
                                             url = strtok(entry, " ");
-                                            strncat(suggline, url, 512 - strlen(suggline) - 1);
+                                            fill_suggline(suggline, command, url);
                                             suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                             strncpy(suggurls[n], suggline, 512);
                                             suggestions[n] = suggurls[n];
-                                            row = GTK_BOX(gtk_hbox_new(FALSE, 0));
-                                            row_eventbox = gtk_event_box_new();
-                                            gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
-                                            el = gtk_label_new(NULL);
-                                            markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
-                                            gtk_label_set_markup(GTK_LABEL(el), markup);
-                                            g_free(markup);
-                                            gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
-                                            gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                                            gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+                                            row_eventbox = fill_eventbox(suggline);
                                             gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
                                             widgets[n++] = row_eventbox;
                                         }
