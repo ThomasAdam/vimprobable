@@ -1221,18 +1221,23 @@ script(const Arg *arg) {
 gboolean
 scroll(const Arg *arg) {
     GtkAdjustment *adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
-
-    if (arg->i & ScrollMove)
-        gtk_adjustment_set_value(adjust, gtk_adjustment_get_value(adjust) +
-            (arg->i & (1 << 2) ? 1 : -1) *      /* direction */
-            ((arg->i & UnitLine || (arg->i & UnitBuffer && count)) ? (scrollstep * (count ? count : 1)) : (
-                arg->i & UnitBuffer ? gtk_adjustment_get_page_size(adjust) / 2 :
-                (count ? count : 1) * (gtk_adjustment_get_page_size(adjust) -
-                    (gtk_adjustment_get_page_size(adjust) > pagingkeep ? pagingkeep : 0)))));
-    else
-        gtk_adjustment_set_value(adjust,
-            ((arg->i & (1 << 2)) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
-    update_state();
+    int max = gtk_adjustment_get_upper(adjust) - gtk_adjustment_get_page_size(adjust);
+    int val = (int)(gtk_adjustment_get_value(adjust) / max * 100);
+    int direction = (arg->i & (1 << 2)) ? 1 : -1;
+    
+    if ((direction == 1 && val < 100) || (direction == -1 && val > 0)) {
+        if (arg->i & ScrollMove)
+            gtk_adjustment_set_value(adjust, gtk_adjustment_get_value(adjust) +
+                direction *      /* direction */
+                ((arg->i & UnitLine || (arg->i & UnitBuffer && count)) ? (scrollstep * (count ? count : 1)) : (
+                    arg->i & UnitBuffer ? gtk_adjustment_get_page_size(adjust) / 2 :
+                    (count ? count : 1) * (gtk_adjustment_get_page_size(adjust) -
+                        (gtk_adjustment_get_page_size(adjust) > pagingkeep ? pagingkeep : 0)))));
+        else
+            gtk_adjustment_set_value(adjust,
+                ((direction == 1) ?  gtk_adjustment_get_upper : gtk_adjustment_get_lower)(adjust));
+        update_state();
+    }
     return TRUE;
 }
 
