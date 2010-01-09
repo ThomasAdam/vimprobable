@@ -97,7 +97,7 @@ static char *modkeys;
 static char current_modkey;
 static char *search_handle;
 static gboolean search_direction;
-static gboolean echo_active = FALSE;
+static gboolean echo_active = TRUE;
 
 static GdkNativeWindow embed = 0;
 static char winid[64] = "";
