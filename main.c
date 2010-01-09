@@ -23,6 +23,7 @@
 static void inputbox_activate_cb(GtkEntry *entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event);
+static WebKitWebView* inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view);
 static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
 static gboolean webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data);
 static gboolean webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data);
@@ -111,7 +112,8 @@ static char *modkeys;
 static char current_modkey;
 static char *search_handle;
 static gboolean search_direction;
-static gboolean echo_active = FALSE;
+static gboolean echo_active = TRUE;
+WebKitWebInspector *inspector;
 
 static GdkNativeWindow embed = 0;
 static char winid[64] = "";
@@ -214,6 +216,28 @@ webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetwork
     } else {
         return FALSE;
     }
+}
+
+static WebKitWebView*
+inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
+    gchar*     inspector_title;
+    GtkWidget* inspector_window;
+    GtkWidget* inspector_view;
+
+    /* just enough code to show the inspector - no signal handling etc. */
+    inspector_title = g_strdup_printf("Inspect page - %s - Vimprobable2", webkit_web_view_get_uri(web_view));
+    if (embed) {
+        inspector_window = gtk_plug_new(embed);
+    } else {
+        inspector_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable2", "vimprobable2");
+    }
+    gtk_window_set_title(GTK_WINDOW(inspector_window), inspector_title);
+    g_free(inspector_title);
+    inspector_view = webkit_web_view_new();
+    gtk_container_add(GTK_CONTAINER(inspector_window), inspector_view);
+    gtk_widget_show_all(inspector_window); 
+    return WEBKIT_WEB_VIEW(inspector_view);
 }
 
 gboolean
@@ -1836,7 +1860,7 @@ setup_gui() {
         window = gtk_plug_new(embed);
     } else {
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable", "vimprobable");
+        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable2", "vimprobable2");
     }
     gtk_window_set_default_size(GTK_WINDOW(window), 640, 480);
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
@@ -1850,6 +1874,7 @@ setup_gui() {
     GdkColor bg;
     PangoFontDescription *font;
     GdkGeometry hints = { 1, 1 };
+    inspector = webkit_web_view_get_inspector(WEBKIT_WEB_VIEW(webview));
 
     clipboards[0] = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
     clipboards[1] = gtk_clipboard_get(GDK_NONE);
@@ -1954,6 +1979,9 @@ setup_signals() {
         "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
         "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
     NULL);
+    /* inspector */
+    g_signal_connect((GObject*)inspector, 
+        "inspect-web-view",                             (GCallback)inspector_inspect_web_view_cb,   NULL);
 }
 
 int
