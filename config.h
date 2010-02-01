@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.yllr.net/vimprobable/";
-char useragent[120]	                    = "Vimprobable2 0.7.9.0";
+char useragent[120]	                    = "Vimprobable2 0.7.9.1";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -64,8 +64,6 @@ static const char progressborderright   = ']';
 /* user styles */
 #define             USER_STYLESHEET             "%s/.config/vimprobable/style.css", getenv("HOME")
 
-/* config file */
-#define             RCFILE                      "%s/.config/vimprobable/vimprobablerc", getenv("HOME")
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -75,9 +73,6 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 /* searching */
 #define             ENABLE_MATCH_HIGHLITING
 static const int searchoptions          = CaseInsensitive | Wrapping;
-
-/* max entries in command history */
-#define COMMANDHISTSIZE 50
 
 /* search engines */
 static Searchengine searchengines[] = {

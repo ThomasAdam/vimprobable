@@ -1,9 +1,16 @@
+/*
+    (c) 2009 by Leon Winter
+    (c) 2009, 2010 by Hannes Schueller
+    (c) 2009, 2010 by Matto Fransen
+    see LICENSE file
+*/
+
 /* macros */
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
 
 /* enums */
-enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };               /* modes */
-enum { TargetCurrent, TargetNew };                                                      /* target */
+enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };	/* modes */
+enum { TargetCurrent, TargetNew };	/* target */
 /* bitmask,
     1 << 0:  0 = jumpTo,            1 = scroll
     1 << 1:  0 = top/down,          1 = left/right
@@ -14,12 +21,14 @@ enum { TargetCurrent, TargetNew };                                              
 enum { ScrollJumpTo, ScrollMove };
 enum { OrientationVert, OrientationHoriz = (1 << 1) };
 enum { DirectionTop,
-        DirectionBottom = (1 << 2),
-        DirectionLeft = OrientationHoriz,
-        DirectionRight = OrientationHoriz | (1 << 2) };
+	DirectionBottom = (1 << 2),
+	DirectionLeft = OrientationHoriz,
+	DirectionRight = OrientationHoriz | (1 << 2)
+};
 enum { UnitPage,
-        UnitLine = (1 << 3),
-        UnitBuffer = (1 << 4) };
+	UnitLine = (1 << 3),
+	UnitBuffer = (1 << 4)
+};
 /* bitmask:
     1 << 0:  0 = Reload/Cancel      1 = Forward/Back
     Forward/Back:
@@ -30,10 +39,11 @@ enum { UnitPage,
 */
 enum { NavigationForwardBack = 1, NavigationReloadActions = (1 << 1) };
 enum { NavigationCancel,
-        NavigationBack = (NavigationForwardBack | 1 << 1),
-        NavigationForward = (NavigationForwardBack),
-        NavigationReload = (NavigationReloadActions | 1 << 2),
-        NavigationForceReload = NavigationReloadActions };
+	NavigationBack = (NavigationForwardBack | 1 << 1),
+	NavigationForward = (NavigationForwardBack),
+	NavigationReload = (NavigationReloadActions | 1 << 2),
+	NavigationForceReload = NavigationReloadActions
+};
 /* bitmask:
     1 << 1:  ClipboardPrimary (X11)
     1 << 2:  ClipboardGTK
@@ -47,8 +57,9 @@ enum { SourceSelection, SourceURL = 1 << 3 };
     1 << 2:  0 = TextZoom           1 = FullContentZoom
 */
 enum { ZoomReset,
-        ZoomOut,
-        ZoomIn = ZoomOut | (1 << 1) };
+	ZoomOut,
+	ZoomIn = ZoomOut | (1 << 1)
+};
 enum { ZoomText, ZoomFullContent = (1 << 2) };
 /* bitmask:
     0 = Info, 1 = Warning, 2 = Error
@@ -71,63 +82,63 @@ enum { Increment, Decrement };
 */
 enum { DirectionRelative, DirectionAbsolute = 1 << 1 };
 enum { DirectionNext, DirectionPrev, HideCompletion };
-enum { DirectionBackwards = DirectionAbsolute, DirectionForward = (1 << 0) | DirectionAbsolute };
+enum { DirectionBackwards = DirectionAbsolute, DirectionForward =
+	    (1 << 0) | DirectionAbsolute };
 enum { CaseInsensitive, CaseSensitive = 1 << 2 };
 enum { Wrapping = 1 << 3 };
 
 /* structs here */
 typedef struct {
-    int i;
-    char *s;
+	int i;
+	char *s;
 } Arg;
 
 typedef struct {
-    guint mask;
-    guint modkey;
-    guint key;
-    gboolean (*func)(const Arg *func);
-    Arg arg;
+	guint mask;
+	guint modkey;
+	guint key;
+	 gboolean(*func) (const Arg * func);
+	Arg arg;
 } Key;
 
 typedef struct {
-    void * next;
-    Key  Element;
+	void *next;
+	Key Element;
 } KeyList;
 
 typedef struct {
-    guint mask;
-    guint modkey;
-    guint button;
-    gboolean (*func)(const Arg *arg);
-    const Arg arg;
+	guint mask;
+	guint modkey;
+	guint button;
+	gboolean(*func) (const Arg * arg);
+	const Arg arg;
 } Mouse;
 
 typedef struct {
-    char     *name;
-    char     (*var);
-    char     *webkit;
-    gboolean intval;
-    gboolean boolval;
-    gboolean colourval;
-    gboolean reload;
+	char *name;
+	char (*var);
+	char *webkit;
+	gboolean intval;
+	gboolean boolval;
+	gboolean colourval;
+	gboolean reload;
 } Setting;
 
 typedef struct {
-    char *cmd;
-    gboolean (*func)(const Arg *arg);
-    const Arg arg;
+	char *cmd;
+	gboolean(*func) (const Arg * arg);
+	const Arg arg;
 } Command;
 
 typedef struct {
-    char *handle;
-    char *uri;
+	char *handle;
+	char *uri;
 } Searchengine;
 
-struct map_pair
-{
-    char *line;
-    char what[20];
-    char value[240];
+struct map_pair {
+	char *line;
+	char what[20];
+	char value[240];
 } my_pair;
 
 /* constants */
