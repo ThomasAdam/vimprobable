@@ -1,19 +1,14 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009 by Hannes Schueller
-    (c) 2009 by Matto Fransen
+    (c) 2009, 2010 by Hannes Schueller
+    (c) 2009, 2010 by Matto Fransen
     see LICENSE file
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
-#include <webkit/webkit.h>
-#include <libsoup/soup.h>
-#include <JavaScriptCore/JavaScript.h>
+#include "includes.h"
 #include "vimprobable.h"
+#include "utilities.h"
+#include "callbacks.h"
 #include "hintingmode.h"
 
 /* remove numlock symbol from keymask */
@@ -33,13 +28,10 @@ static void webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *fr
 static void webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
 static gboolean webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         char *mime_type, WebKitWebPolicyDecision *decision, gpointer user_data);
-static gboolean webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
-                        WebKitWebPolicyDecision *decision, gpointer user_data);
 static gboolean webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data);
 static gboolean webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data);
 static void webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data);
-static void webview_scroll_cb(GtkAdjustment *adjustment, gpointer user_data);
 static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
 static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
 
@@ -65,7 +57,6 @@ static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
 
 static void update_url(const char *uri);
-static void update_state(void);
 static void setup_modkeys(void);
 static void setup_gui(void);
 static void setup_settings(void);
@@ -80,7 +71,6 @@ static gboolean mappings(const Arg *arg);
 char * search_word(int whichword);
 static gboolean process_set_line(char *line);
 static gboolean process_map_line(char *line);
-gboolean process_line(char *line);
 gboolean parse_colour(char *color);
 gboolean read_rcfile(void);
 void save_command_history(char *line);
@@ -89,6 +79,9 @@ void make_keyslist(void);
 gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
 GtkWidget * fill_eventbox(const char * completion_line);
+
+
+#include "main.h"
 
 /* variables */
 static GtkWidget *window;
@@ -180,12 +173,6 @@ webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer
         history();
     update_state();
     script(&a);
-}
-
-gboolean
-webview_navigation_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
-                        WebKitWebPolicyDecision *decision, gpointer user_data) {
-    return FALSE;
 }
 
 static gboolean
@@ -474,29 +461,6 @@ webview_console_cb(WebKitWebView *webview, char *message, int line, char *source
     }
     return FALSE;
 }
-
-void
-webview_scroll_cb(GtkAdjustment *adjustment, gpointer user_data) {
-    update_state();
-}
-
-void save_command_history(char *line) {
-    char *c;
-
-    c = line;
-    while (isspace(*c) && *c)
-        c++;
-    if (!strlen(c))
-        return;
-    strncpy(commandhistory[lastcommand], c, 254);
-    lastcommand++;
-    if (maxcommands < COMMANDHISTSIZE - 1)
-        maxcommands++;
-    if (lastcommand == COMMANDHISTSIZE)
-        lastcommand = 0;
-    commandpointer = lastcommand;
-}
-
 
 void
 inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
@@ -1744,29 +1708,7 @@ process_line(char *line) {
     return FALSE;
 }
 
-gboolean
-read_rcfile(void) {
-    int t;
-    char s[255];
-    const char *rcfile;
-    FILE *fpin;
-    gboolean returnval = TRUE;
 
-    rcfile = g_strdup_printf(RCFILE);
-    if ((fpin = fopen(rcfile, "r")) == NULL)
-        return TRUE;
-    while (fgets(s, 254, fpin)) {
-        /* ignore lines that begin with #, / and such */
-        if (!isalpha(s[0]))
-	        continue;
-        t = strlen(s);
-        s[t - 1] = '\0';
-        if (!process_line(s))
-            returnval = FALSE;
-    }
-    fclose(fpin);
-    return returnval;
-}
 
 void
 update_url(const char *uri) {
