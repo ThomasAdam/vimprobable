@@ -376,10 +376,14 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             a.i = ModeNormal;
             count = 0;
             return set(&a);
-        } else if (CLEAN(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
-                || (event->keyval == GDK_0 && count))) {
+        } else if (CLEAN(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9) 
+                || (event->keyval >= GDK_KP_1 && event->keyval <= GDK_KP_9)
+                || ((event->keyval == GDK_0 || event->keyval == GDK_KP_0) && count))) {
             /* allow a zero as non-first number */
-            count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+            if (event->keyval >= GDK_KP_1 && event->keyval <= GDK_KP_9)
+                count = (count ? count * 10 : 0) + (event->keyval - GDK_KP_0);
+            else
+                count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
             memset(inputBuffer, 0, 65);
             sprintf(inputBuffer, "%d", count);
             a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
@@ -430,7 +434,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 script(&a);
                 update_state();
             }
-        }
+        } 
         break;
     }
     return FALSE;
