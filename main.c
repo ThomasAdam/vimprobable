@@ -64,7 +64,7 @@ static void setup_signals(void);
 static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
-void download_progress(WebKitDownload *d, GParamSpec *pspec);
+static void download_progress(WebKitDownload *d, GParamSpec *pspec);
 
 static gboolean history(void);
 static gboolean mappings(const Arg *arg);
@@ -109,13 +109,13 @@ static gboolean echo_active = TRUE;
 WebKitWebInspector *inspector;
 
 static GdkNativeWindow embed = 0;
-static char winid[64] = "";
+static char *winid = NULL;
 
-char rememberedURI[128] = "";
-char inputKey[5];
-char inputBuffer[65] = "";
-char followTarget[8] = "";
-WebKitDownload *activeDownload = NULL;
+static char rememberedURI[128] = "";
+static char inputKey[5];
+static char inputBuffer[65] = "";
+static char followTarget[8] = "";
+static WebKitDownload *activeDownload = NULL;
 
 #include "config.h"
 
@@ -1928,27 +1928,36 @@ setup_signals() {
 
 int
 main(int argc, char *argv[]) {
-    Arg a;
-    char url[256] = "";
+    static Arg a;
+    static char url[256] = "";
+    static gboolean ver = false;
+    static GOptionEntry opts[] = {
+            { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
+            { "embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "embedded", NULL },
+            { NULL }
+    };
+    static GError *err;
     args = argv;
 
     /* command line argument: version */
-    if (argc >= 2 && strlen(argv[1]) == 2 && strncmp(argv[1], "-v", 2) == 0) {
+    if (!gtk_init_with_args(&argc, &argv, "[<uri>]", opts, NULL, &err)) {
+        g_printerr("can't init gtk: %s\n", err->message);
+        g_error_free(err);
+        return EXIT_FAILURE;
+    }
+
+    if (ver) {
         printf("%s\n", useragent);
         return EXIT_SUCCESS;
     }
 
-    gtk_init(&argc, &argv);
     if (!g_thread_supported())
         g_thread_init(NULL);
+
+    if (winid)
+        embed = atoi(winid);
+
     setup_modkeys();
-
-    /* command line argument: embed */
-    if (argc >= 3 && strlen(argv[1]) == 2 && strncmp(argv[1], "-e", 2) == 0) {
-        embed = atoi(argv[2]);
-        strncpy(winid, argv[2], 63);
-    }
-
     make_keyslist();
     setup_gui();
 
@@ -1960,7 +1969,7 @@ main(int argc, char *argv[]) {
 	}
 
     /* command line argument: URL */
-    if (argc > 1 && strncmp(argv[argc - 1], "-", 1) != 0 && strncmp(argv[argc - 2], "-e", 2) != 0) {
+    if (argc > 1) {
         strncpy(url, argv[argc - 1], 255);
     } else {
         strncpy(url, startpage, 255);
