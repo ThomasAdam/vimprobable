@@ -29,8 +29,8 @@ if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElem
         }, true);
 
     document.getElementsByTagName("body")[0].appendChild(document.createElement("style"));
-    document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0');
-    document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0');
+    document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0;');
+    document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0;');
 }
 
 self.onunload = function() {
@@ -62,6 +62,7 @@ function show_hints(inputText) {
         j = 1;
         var i;
         a = [];
+        colors = [];
         for (i = 0; i < r.snapshotLength; i++)
         {
             var elem = r.snapshotItem(i);
@@ -88,6 +89,10 @@ function show_hints(inputText) {
             var text = document.createTextNode(j);
             hint.appendChild(text);
             div.appendChild(hint);
+            /* remember site-defined colour of this element */
+            colors[j] = elem.style.color;
+            /* make the link black to ensure it's readable */
+            elem.style.color = "#000";
             j++;
         }
         i = 0;
@@ -129,8 +134,11 @@ function fire(n)
 function cleanup()
 {
     for(e in a) {
-        if (typeof(a[e].className) != "undefined")
+        if (typeof(a[e].className) != "undefined") {
             a[e].className = a[e].className.replace(/hinting_mode_hint/,'');
+            /* reset to site-defined colour */
+            a[e].style.color = colors[e];
+        }
     }
     div.parentNode.removeChild(div);
     window.onkeyup = null;
