@@ -64,7 +64,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable 0.9.8.10"
+#define             USER_AGENT                  "Vimprobable 0.9.9.0"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -155,6 +155,7 @@ static Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
     { 0,                    0,              GDK_f,          set,        { .i = ModeHints, .s = "current" } },
     { GDK_SHIFT_MASK,       0,              GDK_F,          set,        { .i = ModeHints, .s = "new" } },
+    { 0,                    GDK_g,          GDK_i,          focus_input,{} },
 
     { 0,                    0,              GDK_d,          quit,       {0} },
 

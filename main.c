@@ -46,6 +46,7 @@ static gboolean bookmark(const Arg *arg);
 static gboolean complete(const Arg *arg);
 static gboolean descend(const Arg *arg);
 static gboolean echo(const Arg *arg);
+static gboolean focus_input(const Arg *arg);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
@@ -1271,10 +1272,21 @@ void history() {
 }
 
 static gboolean
-view_source (const Arg * arg) {
+view_source(const Arg * arg) {
     gboolean current_mode = webkit_web_view_get_view_source_mode (webview);
     webkit_web_view_set_view_source_mode (webview, !current_mode);
     webkit_web_view_reload (webview);
+    return TRUE;
+}
+
+static gboolean
+focus_input(const Arg *arg) {
+    static Arg a;
+
+    a.s = g_strconcat("focus_input()", NULL);
+    a.i = Silent;
+    script(&a);
+    update_state();
     return TRUE;
 }
 
