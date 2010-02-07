@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.yllr.net/vimprobable/";
-char useragent[120]	                    = "Vimprobable2 0.7.9.5";
+char useragent[120]	                    = "Vimprobable2 0.8.0.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -154,6 +154,7 @@ Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
     { 0,                    0,              GDK_f,          set,        { .i = ModeHints, .s = "current" } },
     { GDK_SHIFT_MASK,       0,              GDK_F,          set,        { .i = ModeHints, .s = "new" } },
+    { 0,                    GDK_g,          GDK_i,          focus_input,{} },
 
     { 0,                    0,              GDK_d,          quit,       {0} },
 };

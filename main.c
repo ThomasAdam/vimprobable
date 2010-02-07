@@ -42,6 +42,7 @@ static gboolean commandhistoryfetch(const Arg *arg);
 static gboolean complete(const Arg *arg);
 static gboolean descend(const Arg *arg);
 static gboolean echo(const Arg *arg);
+static gboolean focus_input(const Arg *arg);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
@@ -1380,6 +1381,17 @@ mappings(const Arg *arg) {
         return TRUE;
     else
         return FALSE;
+}
+
+static gboolean
+focus_input(const Arg *arg) {
+    static Arg a;
+
+    a.s = g_strconcat("focus_input()", NULL);
+    a.i = Silent;
+    script(&a);
+    update_state();
+    return TRUE;
 }
 
 static gboolean

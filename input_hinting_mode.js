@@ -161,3 +161,42 @@ function update_hints(n)
             (h = a[n - 1]).className = a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
 }
 
+function focus_input()
+{
+    if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
+        /* prefixing html: will result in namespace error */
+        var hinttags = "//input[not(@type='hidden')] | //textarea | //button | //select";
+        var r = document.evaluate(hinttags, document,
+            function(p) {
+                return 'http://www.w3.org/1999/xhtml';
+            }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        var i;
+        var j = 0;
+        var first;
+        for (i = 0; i < r.snapshotLength; i++) {
+            var elem = r.snapshotItem(i);
+            if (i == 0) {
+                first = elem;
+            }
+            if (j == 1) {
+                elem.focus();
+                var tag = elem.nodeName.toLowerCase();
+                if (tag == "textarea" || tag == "input")
+                    console.log('insertmode_on');
+                break;
+            } else {
+                if (elem == document.activeElement)
+                    j = 1;
+            }
+        }
+        if (j == 0) {
+            /* no appropriate field found focused - focus the first one */
+            if (first !== null) {
+            	first.focus();
+                var tag = elem.nodeName.toLowerCase();
+                if (tag == "textarea" || tag == "input")
+                    console.log('insertmode_on');
+            }
+        }
+    }
+}
