@@ -1122,7 +1122,7 @@ gboolean
 scroll(const Arg *arg) {
     GtkAdjustment *adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
     int max = gtk_adjustment_get_upper(adjust) - gtk_adjustment_get_page_size(adjust);
-    int val = (int)(gtk_adjustment_get_value(adjust) / max * 100);
+    float val = (int)(gtk_adjustment_get_value(adjust) / max * 100);
     int direction = (arg->i & (1 << 2)) ? 1 : -1;
     
     if ((direction == 1 && val < 100) || (direction == -1 && val > 0)) {
