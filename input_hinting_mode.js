@@ -165,7 +165,7 @@ function focus_input()
 {
     if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
         /* prefixing html: will result in namespace error */
-        var hinttags = "//input[not(@type='hidden')] | //textarea | //button | //select";
+        var hinttags = "//input[@type='text'] | //input[@type='password'] | //textarea";
         var r = document.evaluate(hinttags, document,
             function(p) {
                 return 'http://www.w3.org/1999/xhtml';
