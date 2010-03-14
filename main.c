@@ -638,7 +638,11 @@ complete(const Arg *arg) {
                                 memset(suggline, 0, 512);
                                 strncpy(suggline, command, 512);
                                 strncat(suggline, " ", 1);
-                                url = strtok(entry, " ");
+                                if (strchr(entry, ' ') != NULL) {
+                                    url = strtok(entry, " ");
+                                } else {
+                                    url = strtok(entry, "\n");
+                                }
                                 strncat(suggline, url, 512 - strlen(suggline) - 1);
                                 suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                 strncpy(suggurls[n], suggline, 512);
@@ -682,7 +686,11 @@ complete(const Arg *arg) {
                                         memset(suggline, 0, 512);
                                         strncpy(suggline, command, 512);
                                         strncat(suggline, " ", 1);
-                                        url = strtok(entry, " ");
+                                        if (strchr(entry, ' ') != NULL) {
+                                            url = strtok(entry, " ");
+                                        } else {
+                                            url = strtok(entry, "\n");
+                                        }
                                         strncat(suggline, url, 512 - strlen(suggline) - 1);
                                         suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                         strncpy(suggurls[n], suggline, 512);
