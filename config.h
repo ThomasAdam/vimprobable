@@ -54,6 +54,9 @@ static const char progressborderright   = ']';
 #define             HISTORY_MAX_ENTRIES         1000
 #define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
 
+/* quickmarks */
+#define             QUICKMARK_FILE              getenv("HOME"), "/.config/vimprobable/quickmarks"
+
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
 
@@ -64,7 +67,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable 0.9.9.3"
+#define             USER_AGENT                  "Vimprobable 0.9.10.0"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -89,6 +92,15 @@ static Searchengine *defsearch = &searchengines[0];
 */
 static Key keys[] = {
     /* modmask,             modkey,         key,            function,   argument */
+    { 0,                    GDK_q,          GDK_1,          quickmark,  { .s = "1" } },
+    { 0,                    GDK_q,          GDK_2,          quickmark,  { .s = "2"  } },
+    { 0,                    GDK_q,          GDK_3,          quickmark,  { .s = "3" } },
+    { 0,                    GDK_q,          GDK_4,          quickmark,  { .s = "4" } },
+    { 0,                    GDK_q,          GDK_5,          quickmark,  { .s = "5" } },
+    { 0,                    GDK_q,          GDK_6,          quickmark,  { .s = "6" } },
+    { 0,                    GDK_q,          GDK_7,          quickmark,  { .s = "7" } },
+    { 0,                    GDK_q,          GDK_8,          quickmark,  { .s = "8" } },
+    { 0,                    GDK_q,          GDK_9,          quickmark,  { .s = "9" } },
     { 0,                    0,              GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
     { GDK_SHIFT_MASK,       0,              GDK_dollar,     scroll,     {ScrollJumpTo   | DirectionRight} },
     { 0,                    GDK_g,          GDK_g,          scroll,     {ScrollJumpTo   | DirectionTop} },

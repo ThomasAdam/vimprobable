@@ -62,6 +62,7 @@ static gboolean toggle_plugins(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
+static gboolean quickmark(const Arg *arg);
 
 static void update_url(const char *uri);
 static void update_state(void);
@@ -1157,6 +1158,30 @@ zoom(const Arg *arg) {
             (((float)(count ? count : 1)) * (arg->i & (1 << 1) ? 1.0 : -1.0) * zoomstep) :
         (count ? (float)count / 100.0 : 1.0));
     return TRUE;
+}
+
+gboolean 
+quickmark(const Arg *a) {
+    int i, b;
+    b = atoi(a->s);
+    char *fn = strcat(QUICKMARK_FILE);
+    FILE *fp;
+    fp = fopen(fn, "r");
+    char buf[100];
+ 
+    if (fp != NULL && b < 10) {
+       for( i=0; i < b; ++i ) {
+           if (feof(fp)) {
+               break;
+           }
+           fgets(buf, 100, fp);
+       }
+       char *ptr = strrchr(buf, '\n');
+       *ptr = '\0';
+       Arg x = { .s = buf };
+       return open(&x);
+    }
+    else { return false; }
 }
 
 gboolean
