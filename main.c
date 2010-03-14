@@ -751,7 +751,11 @@ complete(const Arg *arg) {
                                 }
                                 if (strstr(entry, searchfor) != NULL) {
                                     /* found in bookmarks */
-                                    url = strtok(entry, " ");
+                                    if (strchr(entry, ' ') != NULL) {
+                                        url = strtok(entry, " ");
+                                    } else {
+                                        url = strtok(entry, "\n");
+                                    }
                                     fill_suggline(suggline, command, url);
                                     suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                     strncpy(suggurls[n], suggline, 512);
@@ -783,7 +787,11 @@ complete(const Arg *arg) {
                                         }
                                         if (strstr(entry, searchfor) != NULL) {
                                             /* found in history */
-                                            url = strtok(entry, " ");
+                                    		if (strchr(entry, ' ') != NULL) {
+                                        		url = strtok(entry, " ");
+                                    		} else {
+                                        		url = strtok(entry, "\n");
+                                    		}
                                             fill_suggline(suggline, command, url);
                                             suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                             strncpy(suggurls[n], suggline, 512);
