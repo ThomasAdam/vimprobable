@@ -172,7 +172,7 @@ function focus_input()
             }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         var i;
         var j = 0;
-        var first;
+        var first = null;
         for (i = 0; i < r.snapshotLength; i++) {
             var elem = r.snapshotItem(i);
             if (i == 0) {
