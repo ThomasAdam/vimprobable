@@ -225,7 +225,7 @@ inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
     g_free(inspector_title);
     inspector_view = webkit_web_view_new();
     gtk_container_add(GTK_CONTAINER(inspector_window), inspector_view);
-    gtk_widget_show_all(inspector_window); 
+    gtk_widget_show_all(inspector_window);
     return WEBKIT_WEB_VIEW(inspector_view);
 }
 
@@ -285,11 +285,11 @@ void
 make_keyslist(void) {
     int i;
     KeyList *ptr, *current;
-    
+
     ptr     = NULL;
     current = NULL;
     for (i = 0; i < LENGTH(keys); i++) {
-        current = malloc(sizeof(KeyList)); 
+        current = malloc(sizeof(KeyList));
         if (current == NULL) {
             printf("Not enough memory\n");
             exit(-1);
@@ -349,7 +349,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         }
         /* keybindings */
         if (process_keypress(event) == TRUE) return TRUE;
-	
+
         break;
     case ModeInsert:
         if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
@@ -378,7 +378,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             a.i = ModeNormal;
             count = 0;
             return set(&a);
-        } else if (CLEAN(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9) 
+        } else if (CLEAN(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                 || (event->keyval >= GDK_KP_1 && event->keyval <= GDK_KP_9)
                 || ((event->keyval == GDK_0 || event->keyval == GDK_KP_0) && count))) {
             /* allow a zero as non-first number */
@@ -436,7 +436,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 script(&a);
                 update_state();
             }
-        } 
+        }
         break;
     }
     return FALSE;
@@ -596,7 +596,7 @@ static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event) {
 
 /* funcs here */
 
-void fill_suggline(char * suggline, const char * command,  const char *fill_with) {		
+void fill_suggline(char * suggline, const char * command,  const char *fill_with) {
     memset(suggline, 0, 512);
     strncpy(suggline, command, 512);
     strncat(suggline, " ", 1);
@@ -614,7 +614,7 @@ GtkWidget * fill_eventbox(const char * completion_line) {
     gdk_color_parse(completionbgcolor[0], &color);
     gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
     el = gtk_label_new(NULL);
-    markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", 
+    markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">",
         g_markup_escape_text(completion_line, strlen(completion_line)), "</span>", NULL);
     gtk_label_set_markup(GTK_LABEL(el), markup);
     g_free(markup);
@@ -775,7 +775,7 @@ complete(const Arg *arg) {
                                 filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
                                 f = fopen(filename, "r");
                                 if (f != NULL) {
-                                	finished = FALSE;
+                                    finished = FALSE;
                                     while (finished != TRUE) {
                                         if ((char *)NULL == fgets(entry, 512, f)) {
                                             /* check if end of file was reached / error occured */
@@ -788,11 +788,11 @@ complete(const Arg *arg) {
                                         }
                                         if (strstr(entry, searchfor) != NULL) {
                                             /* found in history */
-                                    		if (strchr(entry, ' ') != NULL) {
-                                        		url = strtok(entry, " ");
-                                    		} else {
-                                        		url = strtok(entry, "\n");
-                                    		}
+                                            if (strchr(entry, ' ') != NULL) {
+                                                url = strtok(entry, " ");
+                                            } else {
+                                                url = strtok(entry, "\n");
+                                            }
                                             fill_suggline(suggline, command, url);
                                             suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                                             strncpy(suggurls[n], suggline, 512);
@@ -1179,7 +1179,7 @@ jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message) {
         *value = jsapi_ref_to_string(context, val);
 }
 
-gboolean 
+gboolean
 quickmark(const Arg *a) {
     int i, b;
     b = atoi(a->s);
@@ -1187,7 +1187,7 @@ quickmark(const Arg *a) {
     FILE *fp;
     fp = fopen(fn, "r");
     char buf[100];
- 
+
     if (fp != NULL && b < 10) {
        for( i=0; i < b; ++i ) {
            if (feof(fp)) {
@@ -1224,7 +1224,7 @@ script(const Arg *arg) {
     }
     if (value) {
         if (strncmp(value, "fire;", 5) == 0) {
-        	count = 0;
+            count = 0;
             a.s = g_strconcat("fire(", (value + 5), ")", NULL);
             a.i = Silent;
             script(&a);
@@ -1250,7 +1250,7 @@ scroll(const Arg *arg) {
     int max = gtk_adjustment_get_upper(adjust) - gtk_adjustment_get_page_size(adjust);
     float val = gtk_adjustment_get_value(adjust) / max * 100;
     int direction = (arg->i & (1 << 2)) ? 1 : -1;
-    
+
     if ((direction == 1 && val < 100) || (direction == -1 && val > 0)) {
         if (arg->i & ScrollMove)
             gtk_adjustment_set_value(adjust, gtk_adjustment_get_value(adjust) +
@@ -1435,7 +1435,7 @@ changemapping(Key * search_key, int maprecord) {
 
     if (current)
         while (current->next != NULL) {
-            if ( 
+            if (
                 current->Element.mask   == search_key->mask &&
                 current->Element.modkey == search_key->modkey &&
                 current->Element.key    == search_key->key
@@ -1443,10 +1443,10 @@ changemapping(Key * search_key, int maprecord) {
                 current->Element.func = commands[maprecord].func;
                 current->Element.arg  =  commands[maprecord].arg;
                 return TRUE;
-            } 
+            }
             current = current->next;
         }
-    newkey = malloc(sizeof(KeyList)); 
+    newkey = malloc(sizeof(KeyList));
     if (newkey == NULL) {
         printf("Not enough memory\n");
         exit (-1);
@@ -1687,8 +1687,8 @@ parse_colour(char *color) {
     if (color[0] == '#') {
         switch (colorlen) {
             case 7:
-	            strncpy(goodcolor, color, 7);
-	        break;
+                strncpy(goodcolor, color, 7);
+            break;
             case 4:
                 goodcolor[1] = color[1];
                 goodcolor[2] = color[1];
@@ -1971,7 +1971,7 @@ setup_signals() {
         "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
     NULL);
     /* inspector */
-    g_signal_connect((GObject*)inspector, 
+    g_signal_connect((GObject*)inspector,
         "inspect-web-view",                             (GCallback)inspector_inspect_web_view_cb,   NULL);
 }
 
@@ -2010,12 +2010,12 @@ main(int argc, char *argv[]) {
     make_keyslist();
     setup_gui();
 
-	/* read config file */
-	if (!read_rcfile()) {
+    /* read config file */
+    if (!read_rcfile()) {
         a.i = Error;
         a.s = g_strdup_printf("Error in config file");
         echo(&a);
-	}
+    }
 
     /* command line argument: URL */
     if (argc > 1) {
