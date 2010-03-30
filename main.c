@@ -913,7 +913,7 @@ open(const Arg *arg) {
                     ++s;
                 }
                 *p = '\0';
-            } else if (strcspn(arg->s, "/") == 0) {                     /* prepend "file://" */
+            } else if (strcspn(arg->s, "/") == 0 || strcspn(arg->s, "./") == 0) { /* prepend "file://" */
                 new = g_malloc(sizeof("file://") + len);
                 strcpy(new, "file://");
                 memcpy(&new[sizeof("file://") - 1], arg->s, len + 1);
