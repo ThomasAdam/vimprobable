@@ -6,7 +6,7 @@
 */
 
 /* general settings */
-static char startpage[]                 = "http://www.yllr.net/vimprobable/";
+static char startpage[]                 = "http://www.vimprobable.org/";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
