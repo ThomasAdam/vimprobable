@@ -38,7 +38,7 @@ hintingmode.h: input_hinting_mode.js
 	perl ./js-merge-helper.pl
 
 $(TARGET): $(OBJ)
-	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 .PHONY: clean install uninstall
 clean:
