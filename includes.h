@@ -10,6 +10,8 @@
 #include <ctype.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <glib.h>
+#include <glib/gprintf.h>
 #include <webkit/webkit.h>
 #include <libsoup/soup.h>
 #include <JavaScriptCore/JavaScript.h>
