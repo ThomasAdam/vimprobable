@@ -968,9 +968,12 @@ number(const Arg *arg) {
 gboolean
 open(const Arg *arg) {
     char *argv[6];
-    char *s = arg->s, *p, *new;
+    char *search_string, *url_string;
     Arg a = { .i = NavigationReload };
-    int len, i;
+    int i;
+
+    search_string = NULL;
+    url_string = NULL;
 
     if (embed) {
         argv[0] = *args;
@@ -984,48 +987,90 @@ open(const Arg *arg) {
         argv[2] = NULL;
     }
 
-    if (!arg->s)
+    if (!arg->s) {
         navigate(&a);
-    else if (arg->i == TargetCurrent) {
-        len = strlen(arg->s);
-        new = NULL, p = strchr(arg->s, ' ');
-        if (p)                                                           /* check for search engines */
-            for (i = 0; i < LENGTH(searchengines); i++)
-                if (!strncmp(arg->s, searchengines[i].handle, p - arg->s)) {
-                    p = soup_uri_encode(++p, "&");
-                    new = g_strdup_printf(searchengines[i].uri, p);
-                    g_free(p);
-                    break;
-                }
-        if (!new) {
-            if (len > 3 && strstr(arg->s, "://")) {                      /* valid url? */
-                p = new = g_malloc(len + 1);
-                while(*s != '\0') {                                     /* strip whitespaces */
-                    if (*s != ' ')
-                        *(p++) = *s;
-                    ++s;
-                }
-                *p = '\0';
-            } else if (strcspn(arg->s, "/") == 0 || strcspn(arg->s, "./") == 0) {  /* prepend "file://" */
-                new = g_malloc(sizeof("file://") + len);
-                strcpy(new, "file://");
-                memcpy(&new[sizeof("file://") - 1], arg->s, len + 1);
-            } else if (p || !strchr(arg->s, '.')) {                      /* whitespaces or no dot? */
-                p = soup_uri_encode(arg->s, "&");
-                new = g_strdup_printf(defsearch->uri, p);
-                g_free(p);
-            } else {                                                    /* prepend "http://" */
-                new = g_malloc(sizeof("http://") + len);
-                strcpy(new, "http://");
-                memcpy(&new[sizeof("http://") - 1], arg->s, len + 1);
-            }
-        }
-        webkit_web_view_load_uri(webview, new);
-        g_free(new);
-    } else
-        g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
+	return TRUE;
+    }
+
+    url_string = g_strdup(arg->s);
+
+    if (arg->i == TargetCurrent) {
+	/* Then we have a set order of precedence that we should follow.
+	 *
+	 * 1.  If a URI begins with "about:", just treat is nothing for now --
+	 * it will be possible to expand on it later, if there's a need for
+	 * "about:config" for example.
+	 *
+	 * 2.  Match against search engines.
+	 *
+	 * 3.  If it looks like a valid URL, load it.
+	 *
+	 * 4.  Work out if it's a file, and load that.
+	 *
+	 * 5.  Finally, assume it's a valid URI and load it.
+	*/
+
+	/* about: handling. */
+	if (g_str_has_prefix(arg->s, "about:"))
+		goto load_uri;
+
+	/* Search engine handling. */
+	if ((search_string = strchr(arg->s, ' ')) != NULL) {
+		for (i = 0; i < LENGTH(searchengines); i++)
+		{
+			if (!strncmp(arg->s, searchengines[i].handle,
+					(search_string - arg->s))) {
+				search_string = soup_uri_encode(
+					++search_string, "&");
+				url_string = g_strdup_printf(
+					searchengines[i].uri, search_string);
+
+				g_free(search_string);
+
+				break;
+			}
+		}
+	}
+
+	/* If it's a "valid" URI, load it. */
+	if (g_strrstr(url_string, "://"))
+		goto load_uri;
+
+	/* Check if we mean file:// or not here. */
+	/* XXX: Handle relative paths:  "../../foo.html" for instance. */
+	if (g_str_has_prefix(arg->s, "/") ||
+			g_str_has_prefix(arg->s, "./")) {
+		g_snprintf(url_string, MAX_URI_LENGTH,
+			"file://%s", arg->s);
+		goto load_uri;
+	}
+
+	if (!url_string || !strchr(arg->s, '.')) {
+		search_string = soup_uri_encode(arg->s, "&");
+                url_string = g_strdup_printf(defsearch->uri, search_string);
+
+		g_free(search_string);
+
+		goto load_uri;
+	}
+
+	/* Default to http:// */
+	if (!g_str_has_prefix(arg->s, "http://")) {
+		g_snprintf(url_string, MAX_URI_LENGTH,
+			"http://%s", arg->s);
+		goto load_uri;
+	}
+    } else {
+	    g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH,
+			    NULL, NULL, NULL, NULL);
+
+	    return TRUE;
+    }
+
+load_uri:
+    webkit_web_view_load_uri(webview, url_string);
     return TRUE;
-}
+ }
 
 gboolean
 yank(const Arg *arg) {
