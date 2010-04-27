@@ -147,3 +147,6 @@ struct map_pair {
 #define MOUSE_BUTTON_3 3
 #define MOUSE_BUTTON_4 4
 #define MOUSE_BUTTON_5 5
+
+/* Maximum URL length we accept. */
+#define MAX_URI_LENGTH 8192
