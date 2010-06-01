@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.vimprobable.org/";
-char useragent[120]	                    = "Vimprobable2 0.8.2.0";
+char useragent[120]	                    = "Vimprobable2 0.8.4.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -64,6 +64,9 @@ static const char progressborderright   = ']';
 /* user styles */
 #define             USER_STYLESHEET             "%s/.config/vimprobable/style.css", getenv("HOME")
 
+/* proxy */
+static const gboolean use_proxy         = TRUE; /* TRUE if you're going to use a proxy (whose address
+                                                  is specified in http_proxy environment variable), false otherwise */
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -249,4 +252,5 @@ static Setting browsersettings[] = {
     { "sslbgcolor",      sslbgcolor,         "",                            FALSE,          FALSE,           TRUE,           TRUE   },
     { "sslcolor",        sslcolor,           "",                            FALSE,          FALSE,           TRUE,           TRUE   },
     { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
+    { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
 };

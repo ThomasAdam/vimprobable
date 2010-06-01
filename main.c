@@ -48,6 +48,7 @@ static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
 static gboolean open(const Arg *arg);
 static gboolean paste(const Arg *arg);
+static gboolean quickmark(const Arg *arg);
 static gboolean quit(const Arg *arg);
 static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
@@ -56,7 +57,6 @@ static gboolean scroll(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
-static gboolean quickmark(const Arg *arg);
 
 static void update_url(const char *uri);
 static void setup_modkeys(void);
@@ -76,6 +76,7 @@ static gboolean process_map_line(char *line);
 gboolean parse_colour(char *color);
 gboolean read_rcfile(void);
 void save_command_history(char *line);
+void toggle_proxy(gboolean onoff);
 
 void make_keyslist(void);
 gboolean process_keypress(GdkEventKey *event);
@@ -1635,11 +1636,10 @@ process_set_line(char *line) {
             /* mandatory argument not provided */
             if (strlen(my_pair.value) == 0)
                 return FALSE;
-	    /* process quickmark? */
-	    if (strlen(my_pair.what)==5 && strncmp("qmark", my_pair.what, 5) == 0)
-	    {
-		    return( process_save_qmark(my_pair.value, webview ));
-	    }
+            /* process qmark? */
+            if (strlen(my_pair.what) == 5 && strncmp("qmark", my_pair.what, 5) == 0) {
+                return (process_save_qmark(my_pair.value, webview));
+            }
             /* interpret boolean values */
             if (browsersettings[i].boolval) {
                 if (strncmp(my_pair.value, "on", 2) == 0 || strncmp(my_pair.value, "true", 4) == 0 || strncmp(my_pair.value, "ON", 2) == 0 || strncmp(my_pair.value, "TRUE", 4) == 0) {
@@ -1674,6 +1674,11 @@ process_set_line(char *line) {
                 }
                 webkit_web_view_set_settings(webview, settings);
             }
+            /* toggle proxy usage? */
+            if (strlen(my_pair.what) == 5 && strncmp("proxy", my_pair.what, 5) == 0) {
+                toggle_proxy(boolval);
+            }
+            /* reload page? */
             if (browsersettings[i].reload)
                 webkit_web_view_reload(webview);
             return TRUE;
@@ -1770,7 +1775,37 @@ process_line(char *line) {
     return FALSE;
 }
 
+void
+toggle_proxy(gboolean onoff) {
+    SoupURI *proxy_uri;
+    Arg     a;
+    char    *filename, *new;
+    int     len;
 
+    if (onoff == FALSE)  {
+        g_object_set(session, "proxy-uri", NULL);
+        a.i = Info;
+        a.s = "Proxy deactivated";
+        echo(&a);
+    } else  {
+        filename = (char *)g_getenv("http_proxy");
+        if (filename != NULL && 0 < (len = strlen(filename))) {
+            if (strstr(filename, "://") == NULL) {
+                /* prepend http:// */
+                new = g_malloc(sizeof("http://") + len);
+                strcpy(new, "http://");
+                memcpy(&new[sizeof("http://") - 1], filename, len + 1);
+                proxy_uri = soup_uri_new(new);
+            } else {
+                proxy_uri = soup_uri_new(filename);
+            }
+            g_object_set(session, "proxy-uri", proxy_uri, NULL);
+            a.i = Info;
+            a.s = "Proxy activated";
+            echo(&a);
+        } 
+    }
+}
 
 void
 update_url(const char *uri) {
@@ -1936,18 +1971,20 @@ setup_settings() {
     soup_session_add_feature(session, (SoupSessionFeature*)cookiejar);
 #endif
     /* proxy */
-    filename = (char *)g_getenv("http_proxy");
-    if (filename != NULL && 0 < (len = strlen(filename))) {
-        if (strstr(filename, "://") == NULL) {
-            /* prepend http:// */
-            new = g_malloc(sizeof("http://") + len);
-            strcpy(new, "http://");
-            memcpy(&new[sizeof("http://") - 1], filename, len + 1);
-            proxy_uri = soup_uri_new(new);
-        } else {
-            proxy_uri = soup_uri_new(filename);
+    if (use_proxy == TRUE) {
+        filename = (char *)g_getenv("http_proxy");
+        if (filename != NULL && 0 < (len = strlen(filename))) {
+            if (strstr(filename, "://") == NULL) {
+                /* prepend http:// */
+                new = g_malloc(sizeof("http://") + len);
+                strcpy(new, "http://");
+                memcpy(&new[sizeof("http://") - 1], filename, len + 1);
+                proxy_uri = soup_uri_new(new);
+            } else {
+                proxy_uri = soup_uri_new(filename);
+            }
+            g_object_set(session, "proxy-uri", proxy_uri, NULL);
         }
-        g_object_set(session, "proxy-uri", proxy_uri, NULL);
     }
 }
 
