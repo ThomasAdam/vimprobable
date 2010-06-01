@@ -6,6 +6,7 @@
 */
 
 #include "includes.h"
+#include "vimprobable.h"
 #include "main.h"
 #include "utilities.h"
 
@@ -54,4 +55,63 @@ void save_command_history(char *line)
 	if (lastcommand == COMMANDHISTSIZE)
 		lastcommand = 0;
 	commandpointer = lastcommand;
+}
+
+gboolean
+process_save_qmark(const char *bm, WebKitWebView *webview)
+{
+    FILE *fp;
+    const char *filename;
+    const char *uri = webkit_web_view_get_uri(webview);
+    char qmarks[10][101];
+    char buf[100];
+    int  i, mark, l=0;
+    Arg a;
+    mark = -1;
+    mark = atoi(bm);
+    if ( mark < 1 || mark > 9 ) 
+    {
+	    a.i = Error;
+	    a.s = g_strdup_printf("Invalid quickmark, only 1-9");
+	    echo(&a);
+	    g_free(a.s);
+	    return TRUE;
+    }	    
+    if ( uri == NULL ) return FALSE;
+    for( i=0; i < 9; ++i ) strcpy( qmarks[i], "");
+
+    filename = g_strdup_printf(QUICKMARK_FILE);
+
+    /* get current quickmarks */
+    
+    fp = fopen(filename, "r");
+    if (fp != NULL){
+       for( i=0; i < 10; ++i ) {
+           if (feof(fp)) {
+               break;
+           }
+           fgets(buf, 100, fp);
+	   l = 0;
+	   while (buf[l] && l < 100 && buf[l] != '\n') {
+		   qmarks[i][l]=buf[l]; 
+		   l++;
+	  }	   
+          qmarks[i][l]='\0';
+       }
+       fclose(fp);
+    }
+
+    /* save quickmarks */
+    strcpy( qmarks[mark-1], uri );
+    fp = fopen(filename, "w");
+    if (fp == NULL) return FALSE;
+    for( i=0; i < 10; ++i ) 
+        fprintf(fp, "%s\n", qmarks[i]);
+    fclose(fp);
+    a.i = Error;
+    a.s = g_strdup_printf("Saved as quickmark %d: %s", mark, uri);
+    echo(&a);
+    g_free(a.s);
+
+    return TRUE;
 }

@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.vimprobable.org/";
-char useragent[120]	                    = "Vimprobable2 0.8.1.4";
+char useragent[120]	                    = "Vimprobable2 0.8.2.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -54,9 +54,6 @@ static const char progressborderright   = ']';
 /* history */
 #define             HISTORY_MAX_ENTRIES         1000
 #define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
-
-/* quickmarks */
-#define             QUICKMARK_FILE              getenv("HOME"), "/.config/vimprobable/quickmarks"
 
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
@@ -251,4 +248,5 @@ static Setting browsersettings[] = {
     { "statuscolor",     statuscolor,        "",                            FALSE,          FALSE,           TRUE,           TRUE   },
     { "sslbgcolor",      sslbgcolor,         "",                            FALSE,          FALSE,           TRUE,           TRUE   },
     { "sslcolor",        sslcolor,           "",                            FALSE,          FALSE,           TRUE,           TRUE   },
+    { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
 };

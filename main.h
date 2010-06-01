@@ -8,3 +8,4 @@
 /* functions */
 void update_state(void);
 gboolean process_line(char *line);
+gboolean echo(const Arg *arg);

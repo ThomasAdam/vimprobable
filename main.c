@@ -41,7 +41,7 @@ static gboolean browser_settings(const Arg *arg);
 static gboolean commandhistoryfetch(const Arg *arg);
 static gboolean complete(const Arg *arg);
 static gboolean descend(const Arg *arg);
-static gboolean echo(const Arg *arg);
+gboolean echo(const Arg *arg);
 static gboolean focus_input(const Arg *arg);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
@@ -1183,7 +1183,7 @@ gboolean
 quickmark(const Arg *a) {
     int i, b;
     b = atoi(a->s);
-    char *fn = strcat(QUICKMARK_FILE);
+    char *fn = g_strdup_printf(QUICKMARK_FILE);
     FILE *fp;
     fp = fopen(fn, "r");
     char buf[100];
@@ -1198,7 +1198,15 @@ quickmark(const Arg *a) {
        char *ptr = strrchr(buf, '\n');
        *ptr = '\0';
        Arg x = { .s = buf };
-       return open(&x);
+       if ( strlen(buf)) return open(&x);
+       else  
+       {       
+           x.i = Error;
+           x.s = g_strdup_printf("Quickmark %d not defined", b);
+           echo(&x);
+           g_free(x.s);
+	   return false; 
+       }
     }
     else { return false; }
 }
@@ -1627,6 +1635,11 @@ process_set_line(char *line) {
             /* mandatory argument not provided */
             if (strlen(my_pair.value) == 0)
                 return FALSE;
+	    /* process quickmark? */
+	    if (strlen(my_pair.what)==5 && strncmp("qmark", my_pair.what, 5) == 0)
+	    {
+		    return( process_save_qmark(my_pair.value, webview ));
+	    }
             /* interpret boolean values */
             if (browsersettings[i].boolval) {
                 if (strncmp(my_pair.value, "on", 2) == 0 || strncmp(my_pair.value, "true", 4) == 0 || strncmp(my_pair.value, "ON", 2) == 0 || strncmp(my_pair.value, "TRUE", 4) == 0) {
