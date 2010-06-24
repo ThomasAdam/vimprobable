@@ -233,8 +233,9 @@ inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
 gboolean
 webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data) {
     const gchar *filename;
-    gchar *uri, *path, *html;
+    gchar *uri, *path;
     uint32_t size;
+    Arg a;
 
     filename = webkit_download_get_suggested_filename(download);
     if (filename == NULL || strlen(filename) == 0) {
@@ -245,17 +246,16 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     webkit_download_set_destination_uri(download, uri);
     g_free(uri);
     size = (uint32_t)webkit_download_get_total_size(download);
+    a.i = Info;
     if (size > 0)
-        html = g_strdup_printf("Download <b>%s</b> (expected size: %u bytes)...", filename, size);
+        a.s = g_strdup_printf("Download %s started (expected size: %u bytes)...", filename, size);
     else
-        html = g_strdup_printf("Download <b>%s</b> (unknown size)...", filename);
-    webkit_web_view_load_html_string(webview, html, webkit_download_get_uri(download));
+        a.s = g_strdup_printf("Download %s started (unknown size)...", filename);
+    echo(&a);
     activeDownload = download;
     g_signal_connect(activeDownload, "notify::progress", G_CALLBACK(download_progress), NULL);
     g_signal_connect(activeDownload, "notify::status", G_CALLBACK(download_progress), NULL);
-    webkit_download_start(activeDownload);
     update_state();
-    g_free(html);
     return TRUE;
 }
 
