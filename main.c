@@ -1053,6 +1053,13 @@ gboolean
 paste(const Arg *arg) {
     Arg a = { .i = arg->i & TargetNew, .s = NULL };
 
+    /* If we're over a link, open it in a new target. */
+    if (strlen(rememberedURI) > 0) {
+        Arg new_target = { .i = TargetNew, .s = arg->s };
+        open(&new_target);
+        return TRUE;
+    }
+
     if (arg->i & ClipboardPrimary)
         a.s = gtk_clipboard_wait_for_text(clipboards[0]);
     if (!a.s && arg->i & ClipboardGTK)
