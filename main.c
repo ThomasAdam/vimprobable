@@ -1911,7 +1911,6 @@ setup_gui() {
     gtk_window_set_default_size(GTK_WINDOW(window), 640, 480);
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
     inputbox = gtk_entry_new();
-    GtkWidget *viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
     webview = (WebKitWebView*)webkit_web_view_new();
     GtkBox *statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
     eventbox = gtk_event_box_new();
@@ -1929,11 +1928,23 @@ setup_gui() {
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
     gtk_widget_set_name(window, "Vimprobable2");
     gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &hints, GDK_HINT_MIN_SIZE);
+
 #ifdef DISABLE_SCROLLBAR
+    GtkWidget *viewport = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+#else
+    /* Ensure we still see scrollbars. */
+    GtkWidget *viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
 #endif
+
     setup_signals();
     gtk_container_add(GTK_CONTAINER(viewport), GTK_WIDGET(webview));
+
+    /* Ensure we set the scroll adjustments now, so that if we're not drawing
+     * titlebars, we can still scroll.
+     */
+    gtk_widget_set_scroll_adjustments(GTK_WIDGET(webview), adjust_h, adjust_v);
+
     font = pango_font_description_from_string(urlboxfont[0]);
     gtk_widget_modify_font(GTK_WIDGET(inputbox), font);
     pango_font_description_free(font);
