@@ -393,6 +393,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             a.i = Silent;
             script(&a);
             update_state();
+	    return TRUE;
         } else if ((CLEAN(event->state) == 0 && (event->keyval >= GDK_a && event->keyval <= GDK_z))
                 || (CLEAN(event->state) == GDK_SHIFT_MASK && (event->keyval >= GDK_A && event->keyval <= GDK_Z))) {
             /* update hints by link text */
@@ -409,6 +410,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 script(&a);
                 update_state();
             }
+	    return TRUE;
         } else if (CLEAN(event->state) == 0 && event->keyval == GDK_Return && count) {
             memset(inputBuffer, 0, 65);
             sprintf(inputBuffer, "%d", count);
@@ -418,6 +420,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             memset(inputBuffer, 0, 65);
             count = 0;
             update_state();
+	    return TRUE;
         } else if (CLEAN(event->state) == 0 && event->keyval == GDK_BackSpace) {
             if (count > 0) {
                 count = ((count >= 10) ? count/10 : 0);
@@ -437,6 +440,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 script(&a);
                 update_state();
             }
+	    return TRUE;
         }
         break;
     }
