@@ -53,6 +53,7 @@ static const char progressborderright   = ']';
 /* history */
 #define             HISTORY_MAX_ENTRIES         1000
 #define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
+#define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
 
 /* quickmarks */
 #define             QUICKMARK_FILE              getenv("HOME"), "/.config/vimprobable/quickmarks"
@@ -67,7 +68,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable/0.9.12.2"
+#define             USER_AGENT                  "Vimprobable/0.9.13.0"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -167,7 +168,9 @@ static Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
     { 0,                    0,              GDK_f,          set,        { .i = ModeHints, .s = "current" } },
     { GDK_SHIFT_MASK,       0,              GDK_F,          set,        { .i = ModeHints, .s = "new" } },
+
     { 0,                    GDK_g,          GDK_i,          focus_input,{} },
+    { 0,                    0,              GDK_u,          revive,     {} },
 
     { 0,                    0,              GDK_d,          quit,       {0} },
 
