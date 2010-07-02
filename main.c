@@ -50,6 +50,7 @@ static gboolean open(const Arg *arg);
 static gboolean paste(const Arg *arg);
 static gboolean quickmark(const Arg *arg);
 static gboolean quit(const Arg *arg);
+static gboolean revive(const Arg *arg);
 static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
 static gboolean script(const Arg *arg);
@@ -1075,8 +1076,39 @@ paste(const Arg *arg) {
 
 gboolean
 quit(const Arg *arg) {
+    FILE *f;
+    const char *filename;
+    const char *uri = webkit_web_view_get_uri(webview);
+    /* write last URL into status file for recreation with "u" */
+    filename = g_strdup_printf(CLOSED_URL_FILENAME);
+    f = fopen(filename, "w");
+    if (f != NULL) {
+        fprintf(f, "%s", uri);
+        fclose(f);
+    }
     gtk_main_quit();
     return TRUE;
+}
+
+gboolean
+revive(const Arg *arg) {
+    FILE *f;
+    const char *filename;
+    char buffer[512] = "";
+    Arg a = { .i = TargetNew, .s = NULL };
+    /* get the URL of the window which has been closed last */
+    filename = g_strdup_printf(CLOSED_URL_FILENAME);
+    f = fopen(filename, "r");
+    if (f != NULL) {
+        fgets(buffer, 512, f);
+        fclose(f);
+    }
+    if (strlen(buffer) > 0) {
+        a.s = buffer;
+        open(&a);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 gboolean

@@ -110,6 +110,9 @@ Insert URL from keyboard and load it
 .I "    " t
 Insert URL from keyboard and load it into new window
 
+.I "    " u
+Open a new window with the URL which has been closed last
+
 
 .IP Search
 
@@ -203,7 +206,7 @@ Recall quickmark 4
 .SH FILES
 
 Please make sure you create these files before running the browser. 
-Everything but the history and bookmarks files is optional. The cookies
+Everything but the history, bookmarks and closed files is optional. The cookies
 file is required if you want to use cookies.
 
 .I $HOME/.config/vimprobable/vimprobablerc
@@ -213,6 +216,8 @@ file is required if you want to use cookies.
 .I $HOME/.config/vimprobable/cookies
 
 .I $HOME/.config/vimprobable/history
+
+.I $HOME/.config/vimprobable/closed
 
 .I $HOME/.config/vimprobable/quickmarks
 

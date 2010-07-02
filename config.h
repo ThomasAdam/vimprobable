@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.vimprobable.org/";
-char useragent[120]	                    = "Vimprobable2/0.8.6.2";
+char useragent[120]	                    = "Vimprobable2/0.8.7.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -54,6 +54,7 @@ static const char progressborderright   = ']';
 /* history */
 #define             HISTORY_MAX_ENTRIES         1000
 #define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
+#define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
 
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
@@ -166,7 +167,9 @@ Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
     { 0,                    0,              GDK_f,          set,        { .i = ModeHints, .s = "current" } },
     { GDK_SHIFT_MASK,       0,              GDK_F,          set,        { .i = ModeHints, .s = "new" } },
+
     { 0,                    GDK_g,          GDK_i,          focus_input,{} },
+    { 0,                    0,              GDK_u,          revive,     {} },
 
     { 0,                    0,              GDK_d,          quit,       {0} },
 };
