@@ -50,14 +50,14 @@ uninstall:
 # pattern rule to inslall executabels
 $(DESTDIR)/$(BINDIR)/%: ./%
 	-[ -e '$(@D)' ] || mkdir -p '$(@D)' && chmod $(DMOD) '$(@D)'
-	cp -if '$<' '$@'
+	cp -f '$<' '$@'
 	-strip -s '$@'
 	chmod $(EXECMOD) '$@'
 
 # pattern rule to install manpages
 $(DESTDIR)/$(MANDIR)/man1/%: ./%
 	-[ -e '$(@D)' ] || mkdir -p '$(@D)' && chmod $(DMOD) '$(@D)'
-	cp -if '$<' '$@'
+	cp -f '$<' '$@'
 	chmod $(FMOD) '$@'
 
 %.o: %.c
