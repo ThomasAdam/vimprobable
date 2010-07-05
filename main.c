@@ -1461,7 +1461,7 @@ setup_gui() {
         window = gtk_plug_new(embed);
     } else {
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_wmclass(window, "vimprobable", "vimprobable");
+        gtk_window_set_wmclass(window, "vimprobable", "Vimprobable");
     }
     gtk_window_set_default_size(window, 640, 480);
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
