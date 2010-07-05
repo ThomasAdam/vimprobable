@@ -256,4 +256,5 @@ static Setting browsersettings[] = {
     { "sslcolor",        sslcolor,           "",                            FALSE,          FALSE,           TRUE,           TRUE   },
     { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
 };
