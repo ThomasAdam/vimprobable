@@ -831,6 +831,32 @@ input(const Arg *arg) {
     const char *url;
 
     update_state();
+
+    /* Set the colour and font back to the default, so that we don't still
+     * maintain a red colour from a warning from an end of search indicator,
+     * etc.
+     *
+     * XXX - unify this with echo() at some point.
+     */
+    {
+        GdkColor ibox_fg_color;
+        GdkColor ibox_bg_color;
+        PangoFontDescription *font;
+        int index = Info;
+
+        font = pango_font_description_from_string(urlboxfont[index]);
+        gtk_widget_modify_font(inputbox, font);
+        pango_font_description_free(font);
+
+        if (urlboxcolor[index])
+            gdk_color_parse(urlboxcolor[index], &ibox_fg_color);
+        if (urlboxbgcolor[index])
+            gdk_color_parse(urlboxbgcolor[index], &ibox_bg_color);
+
+        gtk_widget_modify_text(inputbox, GTK_STATE_NORMAL, urlboxcolor[index] ? &ibox_fg_color : NULL);
+        gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &ibox_bg_color : NULL);
+    }
+
     /* to avoid things like :open URL :open URL2  or :open :open URL */
     gtk_entry_set_text(GTK_ENTRY(inputbox), "");
     gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
