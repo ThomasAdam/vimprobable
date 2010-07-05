@@ -78,6 +78,7 @@ gboolean parse_colour(char *color);
 gboolean read_rcfile(void);
 void save_command_history(char *line);
 void toggle_proxy(gboolean onoff);
+void toggle_scrollbars(gboolean onoff);
 
 void make_keyslist(void);
 gboolean process_keypress(GdkEventKey *event);
@@ -89,7 +90,10 @@ GtkWidget * fill_eventbox(const char * completion_line);
 
 /* variables */
 static GtkWindow *window;
+static GtkWidget *viewport;
 static GtkBox *box;
+static GtkScrollbar *scroll_h;
+static GtkScrollbar *scroll_v;
 static GtkAdjustment *adjust_h;
 static GtkAdjustment *adjust_v;
 static GtkWidget *inputbox;
@@ -1750,6 +1754,11 @@ process_set_line(char *line) {
             if (strlen(my_pair.what) == 5 && strncmp("proxy", my_pair.what, 5) == 0) {
                 toggle_proxy(boolval);
             }
+
+	    /* Toggle scrollbars. */
+	    if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0)
+		    toggle_scrollbars(boolval);
+
             /* reload page? */
             if (browsersettings[i].reload)
                 webkit_web_view_reload(webview);
@@ -1880,6 +1889,21 @@ toggle_proxy(gboolean onoff) {
 }
 
 void
+toggle_scrollbars(gboolean onoff) {
+	if (onoff == TRUE) {
+		adjust_h = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(viewport));
+		adjust_v = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(viewport));
+	}
+	else {
+		adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
+		adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
+	}
+	gtk_widget_set_scroll_adjustments (GTK_WIDGET(webview), adjust_h, adjust_v);
+
+	return;
+}
+
+void
 update_url(const char *uri) {
     gboolean ssl = g_str_has_prefix(uri, "https://");
     GdkColor color;
@@ -1963,8 +1987,8 @@ setup_modkeys() {
 
 void
 setup_gui() {
-    GtkScrollbar *scroll_h = GTK_SCROLLBAR(gtk_hscrollbar_new(NULL));
-    GtkScrollbar *scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
+    scroll_h = GTK_SCROLLBAR(gtk_hscrollbar_new(NULL));
+    scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
     adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
     adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
     if (embed) {
@@ -1995,7 +2019,7 @@ setup_gui() {
     gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
 
 #ifdef DISABLE_SCROLLBAR
-    GtkWidget *viewport = gtk_scrolled_window_new(NULL, NULL);
+    viewport = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 #else
     /* Ensure we still see scrollbars. */
