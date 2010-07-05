@@ -1484,9 +1484,9 @@ setup_gui() {
     adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
     adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
     if (embed) {
-        window = gtk_plug_new(embed);
+        window = (GtkWindow *)gtk_plug_new(embed);
     } else {
-        window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        window = (GtkWindow *)gtk_window_new(GTK_WINDOW_TOPLEVEL);
         gtk_window_set_wmclass(window, "vimprobable", "Vimprobable");
     }
     gtk_window_set_default_size(window, 640, 480);
@@ -1506,8 +1506,8 @@ setup_gui() {
     setup_settings();
     gdk_color_parse(statusbgcolor, &bg);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
-    gtk_widget_set_name(window, "Vimprobable");
-    gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &hints, GDK_HINT_MIN_SIZE);
+    gtk_widget_set_name(GTK_WIDGET(window), "Vimprobable");
+    gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
 
 #ifdef DISABLE_SCROLLBAR
     GtkWidget *viewport = gtk_scrolled_window_new(NULL, NULL);
