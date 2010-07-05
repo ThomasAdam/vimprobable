@@ -221,7 +221,7 @@ inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
         inspector_window = gtk_plug_new(embed);
     } else {
         inspector_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_wmclass(window, "vimprobable2", "vimprobable2");
+        gtk_window_set_wmclass(window, "vimprobable2", "Vimprobable2");
     }
     gtk_window_set_title(GTK_WINDOW(inspector_window), inspector_title);
     g_free(inspector_title);
@@ -1945,7 +1945,7 @@ setup_gui() {
         window = (GtkWindow *)gtk_plug_new(embed);
     } else {
         window = (GtkWindow *)gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable2", "vimprobable2");
+        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable2", "Vimprobable2");
     }
     gtk_window_set_default_size(GTK_WINDOW(window), 640, 480);
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
