@@ -68,6 +68,8 @@ static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 static void download_progress(WebKitDownload *d, GParamSpec *pspec);
+static void set_widget_font_and_color(GtkWidget *widget, const char *font_str,
+		const char *bg_color_str, const char *fg_color_str);
 
 static gboolean history(void);
 static gboolean mappings(const Arg *arg);
@@ -446,6 +448,28 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         break;
     }
     return FALSE;
+}
+
+void
+set_widget_font_and_color(GtkWidget *widget, const char *font_str, const char *bg_color_str,
+		const char *fg_color_str) {
+	GdkColor fg_color;
+	GdkColor bg_color;
+	PangoFontDescription *font;
+
+	font = pango_font_description_from_string(font_str);
+	gtk_widget_modify_font(widget, font);
+	pango_font_description_free(font);
+
+	if (fg_color_str)
+		gdk_color_parse(fg_color_str, &fg_color);
+	if (bg_color_str)
+		gdk_color_parse(bg_color_str, &bg_color);
+
+	gtk_widget_modify_text(widget, GTK_STATE_NORMAL, fg_color_str ? &fg_color : NULL);
+	gtk_widget_modify_base(widget, GTK_STATE_NORMAL, bg_color_str ? &bg_color : NULL);
+
+	return;
 }
 
 void
@@ -905,16 +929,10 @@ echo(const Arg *arg) {
 
     if (index < Info || index > Error)
         return TRUE;
-    font = pango_font_description_from_string(urlboxfont[index]);
-    gtk_widget_modify_font(inputbox, font);
-    pango_font_description_free(font);
-    if (urlboxcolor[index])
-        gdk_color_parse(urlboxcolor[index], &color);
-    gtk_widget_modify_text(inputbox, GTK_STATE_NORMAL, urlboxcolor[index] ? &color : NULL);
-    if (urlboxbgcolor[index])
-        gdk_color_parse(urlboxbgcolor[index], &color);
-    gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &color : NULL);
+
+    set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
+
     return TRUE;
 }
 
@@ -923,33 +941,15 @@ input(const Arg *arg) {
     int pos = 0;
     count = 0;
     const char *url;
+    int index = Info;
 
     update_state();
 
     /* Set the colour and font back to the default, so that we don't still
      * maintain a red colour from a warning from an end of search indicator,
      * etc.
-     *
-     * XXX - unify this with echo() at some point.
      */
-    {
-        GdkColor ibox_fg_color;
-        GdkColor ibox_bg_color;
-        PangoFontDescription *font;
-        int index = Info;
-
-        font = pango_font_description_from_string(urlboxfont[index]);
-        gtk_widget_modify_font(inputbox, font);
-        pango_font_description_free(font);
-
-        if (urlboxcolor[index])
-            gdk_color_parse(urlboxcolor[index], &ibox_fg_color);
-        if (urlboxbgcolor[index])
-            gdk_color_parse(urlboxbgcolor[index], &ibox_bg_color);
-
-        gtk_widget_modify_text(inputbox, GTK_STATE_NORMAL, urlboxcolor[index] ? &ibox_fg_color : NULL);
-        gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &ibox_bg_color : NULL);
-    }
+    set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
 
     /* to avoid things like :open URL :open URL2  or :open :open URL */
     gtk_entry_set_text(GTK_ENTRY(inputbox), "");
