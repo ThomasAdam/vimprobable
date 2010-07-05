@@ -79,7 +79,7 @@ static void download_progress(WebKitDownload *d, GParamSpec *pspec);
 static void history(void);
 
 /* variables */
-static GtkWidget *window;
+static GtkWindow *window;
 static GtkBox *box;
 static GtkAdjustment *adjust_h;
 static GtkAdjustment *adjust_v;
@@ -121,7 +121,7 @@ window_destroyed_cb(GtkWidget *window, gpointer func_data) {
 
 void
 webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data) {
-    gtk_window_set_title(GTK_WINDOW(window), title);
+    gtk_window_set_title(window, title);
 }
 
 void
@@ -399,12 +399,15 @@ gboolean
 webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data) {
     Arg a;
 
-    if (!strcmp(message, "hintmode_off") || !strcmp(message, "insertmode_off")) {
-        a.i = ModeNormal;
-        return set(&a);
-    } else if (!strcmp(message, "insertmode_on")) {
-        a.i = ModeInsert;
-        return set(&a);
+    /* Don't change internal mode if the browser doesn't have focus to prevent inconsistent states */
+    if (gtk_window_has_toplevel_focus(window)) {
+        if (!strcmp(message, "hintmode_off") || !strcmp(message, "insertmode_off")) {
+            a.i = ModeNormal;
+            return set(&a);
+        } else if (!strcmp(message, "insertmode_on")) {
+            a.i = ModeInsert;
+            return set(&a);
+        }
     }
     return FALSE;
 }
@@ -748,7 +751,7 @@ complete(const Arg *arg) {
         gtk_box_pack_start(box, GTK_WIDGET(top_border), FALSE, FALSE, 0);
         gtk_container_add(GTK_CONTAINER(table), GTK_WIDGET(_table));
         gtk_box_pack_start(box, GTK_WIDGET(table), FALSE, FALSE, 0);
-        gtk_widget_show_all(window);
+        gtk_widget_show_all(GTK_WIDGET(window));
         if (!n)
             return TRUE;
         current = arg->i == DirectionPrev ? n - 1 : 0;
@@ -1458,9 +1461,9 @@ setup_gui() {
         window = gtk_plug_new(embed);
     } else {
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable", "vimprobable");
+        gtk_window_set_wmclass(window, "vimprobable", "vimprobable");
     }
-    gtk_window_set_default_size(GTK_WINDOW(window), 640, 480);
+    gtk_window_set_default_size(window, 640, 480);
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
     inputbox = gtk_entry_new();
     webview = (WebKitWebView*)webkit_web_view_new();
@@ -1511,7 +1514,7 @@ setup_gui() {
     gtk_box_pack_end(box, inputbox, FALSE, FALSE, 0);
     gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(box));
     gtk_widget_grab_focus(GTK_WIDGET(webview));
-    gtk_widget_show_all(window);
+    gtk_widget_show_all(GTK_WIDGET(window));
 }
 
 void
