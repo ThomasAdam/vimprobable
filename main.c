@@ -1112,12 +1112,14 @@ quit(const Arg *arg) {
     FILE *f;
     const char *filename;
     const char *uri = webkit_web_view_get_uri(webview);
-    /* write last URL into status file for recreation with "u" */
-    filename = g_strdup_printf(CLOSED_URL_FILENAME);
-    f = fopen(filename, "w");
-    if (f != NULL) {
-        fprintf(f, "%s", uri);
-        fclose(f);
+    if (uri != NULL) {
+        /* write last URL into status file for recreation with "u" */
+        filename = g_strdup_printf(CLOSED_URL_FILENAME);
+        f = fopen(filename, "w");
+        if (f != NULL) {
+            fprintf(f, "%s", uri);
+            fclose(f);
+        }
     }
     gtk_main_quit();
     return TRUE;
