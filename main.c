@@ -454,9 +454,14 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         webkit_web_view_set_highlight_text_matches(webview, TRUE);
 #endif
         count = 0;
+#ifndef ENABLE_INCREMENTAL_SEARCH
         a.s =& text[1];
         a.i = searchoptions | (forward ? DirectionForward : DirectionBackwards);
         search(&a);
+#else
+        search_direction = forward;
+        search_handle = g_strdup(&text[1]);
+#endif
     } else
         return;
     if (!echo_active)
