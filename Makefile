@@ -12,7 +12,7 @@ CLEAN = $(TARGET) $(OBJ) $(DEPS) hintingmode.h
 INSTALL = $(BINDIR)/$(TARGET) $(addprefix $(MANDIR)/man1/,$(MAN))
 
 CFLAGS += `pkg-config --cflags $(LIBS)`
-LDFLAGS += `pkg-config --libs $(LIBS)`
+LDFLAGS += `pkg-config --libs $(LIBS)` -g -ggdb
 
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
@@ -51,7 +51,6 @@ uninstall:
 $(DESTDIR)/$(BINDIR)/%: ./%
 	-[ -e '$(@D)' ] || mkdir -p '$(@D)' && chmod $(DMOD) '$(@D)'
 	cp -f '$<' '$@'
-	-strip -s '$@'
 	chmod $(EXECMOD) '$@'
 
 # pattern rule to install manpages
