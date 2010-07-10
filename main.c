@@ -1591,6 +1591,11 @@ setup_settings() {
 #endif
     /* proxy */
     filename = (char *)g_getenv("http_proxy");
+    /* Fallthrough to checking HTTP_PROXY as well, since this can also be
+     * defined.
+     */
+    if (filename == NULL)
+        filename = (char *)g_getenv("HTTP_PROXY");
     if (filename != NULL && 0 < (len = strlen(filename))) {
         if (strstr(filename, "://") == NULL) {
             /* prepend http:// */
