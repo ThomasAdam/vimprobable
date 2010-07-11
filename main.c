@@ -21,6 +21,7 @@
 /* callbacks here */
 static gboolean inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event);
+static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data);
 static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
 static gboolean webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data);
 static gboolean webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data);
@@ -1633,6 +1634,9 @@ setup_signals() {
         "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
         "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
         "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
+#ifdef ENABLE_INCREMENTAL_SEARCH
+        "signal::changed",                              (GCallback)inputbox_changed_cb,             NULL,
+#endif
     NULL);
 }
 
