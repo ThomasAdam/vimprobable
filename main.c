@@ -946,8 +946,6 @@ descend(const Arg *arg) {
 
 gboolean
 echo(const Arg *arg) {
-    PangoFontDescription *font;
-    GdkColor color;
     int index = !arg->s ? 0 : arg->i & (~NoAutoHide);
 
     if (index < Info || index > Error)
