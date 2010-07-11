@@ -518,22 +518,35 @@ notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
 static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
     guint16 length = gtk_entry_get_text_length(entry);
-#ifdef ENABLE_INCREMENTAL_SEARCH
-    char *text = (char*)gtk_entry_get_text(entry);
-    gboolean forward = FALSE;
-#endif
+
     if (!length) {
         a.i = HideCompletion;
         complete(&a);
         a.i = ModeNormal;
         return set(&a);
     }
-#ifdef ENABLE_INCREMENTAL_SEARCH
-    else if (length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
+    return FALSE;
+}
+
+static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
+    char *text = (char*)gtk_entry_get_text(GTK_ENTRY(entry));
+    guint16 length = gtk_entry_get_text_length(GTK_ENTRY(entry));
+    gboolean forward = FALSE;
+
+    /* Update incremental search if the user changes the search text.
+     *
+     * Note: gtk_widget_is_focus() is a poor way to check if the change comes
+     *       from the user. But if the entry is focused and the text is set
+     *       through gtk_entry_set_text() in some asyncrounous operation,
+     *       I would consider that a bug.
+     */
+
+    if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
         webkit_web_view_unmark_text_matches(webview);
         webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
+        return TRUE;
     }
-#endif
+
     return FALSE;
 }
 
