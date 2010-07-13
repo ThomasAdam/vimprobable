@@ -1883,7 +1883,7 @@ toggle_proxy(gboolean onoff) {
     int     len;
 
     if (onoff == FALSE)  {
-        g_object_set(session, "proxy-uri", NULL);
+        g_object_set(session, "proxy-uri", NULL, NULL);
         a.i = Info;
         a.s = "Proxy deactivated";
         echo(&a);
