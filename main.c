@@ -9,7 +9,7 @@
 #include "vimprobable.h"
 #include "utilities.h"
 #include "callbacks.h"
-#include "hintingmode.h"
+#include "javascript.h"
 
 /* remove numlock symbol from keymask */
 #define CLEAN(mask) (mask & ~(GDK_MOD2_MASK) & ~(GDK_BUTTON1_MASK) & ~(GDK_BUTTON2_MASK) & ~(GDK_BUTTON3_MASK) & ~(GDK_BUTTON4_MASK) & ~(GDK_BUTTON5_MASK))
@@ -171,14 +171,16 @@ ascii_bar(int total, int state, char *string) {
 
 void
 webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
+    Arg a = { .i = Silent, .s = JS_SETUP_HINTS };
     const char *uri = webkit_web_view_get_uri(webview);
 
     update_url(uri);
+    script(&a);
 }
 
 void
 webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
-    Arg a = { .i = Silent, .s = JS_SETUP };
+    Arg a = { .i = Silent, .s = JS_SETUP_INPUT_FOCUS };
 
     if (HISTORY_MAX_ENTRIES > 0)
         history();

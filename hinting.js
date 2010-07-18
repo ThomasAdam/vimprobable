@@ -9,34 +9,6 @@ function clearfocus() {
         document.activeElement.blur();
 }
 
-function v(e, y) {
-    t = e.nodeName.toLowerCase();
-    if((t == 'input' && /^(text|password|checkbox|radio)$/.test(e.type))
-    || /^(select|textarea)$/.test(t)
-    || e.contentEditable == 'true')
-        console.log('insertmode_'+(y=='focus'?'on':'off'));
-}
-
-if(document.activeElement)
-    v(document.activeElement,'focus');
-
-m=['focus','blur'];
-
-if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
-    for(i in m)
-        document.getElementsByTagName('body')[0].addEventListener(m[i], function(x) {
-            v(x.target,x.type);
-        }, true);
-
-    document.getElementsByTagName("body")[0].appendChild(document.createElement("style"));
-    document.styleSheets[0].addRule('.hinting_mode_hint', 'color: #000; background: #ff0;');
-    document.styleSheets[0].addRule('.hinting_mode_hint_focus', 'color: #000; background: #8f0;');
-}
-
-self.onunload = function() {
-    v(document.activeElement, '');
-};
-
 function show_hints(inputText) {
     if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
         var height = window.innerHeight;
@@ -59,10 +31,11 @@ function show_hints(inputText) {
             }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         div = document.createElement("div");
         /* due to the different XPath result type, we will need two counter variables */
-        j = 1;
+        j = 0;
         var i;
         a = [];
         colors = [];
+        backgrounds = [];
         for (i = 0; i < r.snapshotLength; i++)
         {
             var elem = r.snapshotItem(i);
@@ -91,8 +64,10 @@ function show_hints(inputText) {
             div.appendChild(hint);
             /* remember site-defined colour of this element */
             colors[j] = elem.style.color;
+            backgrounds[j] = elem.style.background;
             /* make the link black to ensure it's readable */
             elem.style.color = "#000";
+            elem.style.background = "#ff0";
             j++;
         }
         i = 0;
@@ -148,6 +123,7 @@ function cleanup()
             a[e].className = a[e].className.replace(/hinting_mode_hint/,'');
             /* reset to site-defined colour */
             a[e].style.color = colors[e];
+            a[e].style.background = backgrounds[e];
         }
     }
     div.parentNode.removeChild(div);
@@ -159,7 +135,7 @@ function clear()
     console.log("hintmode_off")
 }
 
-function update_hints(n) 
+function update_hints(n)
 {
     if(h != null)
         h.className = h.className.replace("_focus","");
@@ -167,8 +143,10 @@ function update_hints(n)
         /* return signal to follow the link */
         return "fire;" + n;
     } else
-        if (typeof(a[n - 1]) != "undefined")
+        if (typeof(a[n - 1]) != "undefined") {
             (h = a[n - 1]).className = a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+	    h.style.background = "8f0";
+	}
 }
 
 function focus_input()
@@ -202,7 +180,7 @@ function focus_input()
         if (j == 0) {
             /* no appropriate field found focused - focus the first one */
             if (first !== null) {
-            	first.focus();
+                first.focus();
                 var tag = elem.nodeName.toLowerCase();
                 if (tag == "textarea" || tag == "input")
                     console.log('insertmode_on');
