@@ -7,7 +7,7 @@ MAN = vimprobable.1
 # Used libraries to get needed CFLAGS and LDFLAGS form pkg-config
 LIBS = gtk+-2.0 webkit-1.0 libsoup-2.4
 # Files to removo by clean target
-CLEAN = $(TARGET) $(OBJ) $(DEPS) hintingmode.h
+CLEAN = $(TARGET) $(OBJ) $(DEPS) javascript.h
 # Files to install by install target or remove by uninstall target
 INSTALL = $(BINDIR)/$(TARGET) $(addprefix $(MANDIR)/man1/,$(MAN))
 
@@ -33,8 +33,8 @@ all: $(TARGET)
 
 -include $(DEPS)
 
-main.o: hintingmode.h
-hintingmode.h: input_hinting_mode.js
+main.o: javascript.h
+javascript.h: input-focus.js hinting.js
 	perl ./js-merge-helper.pl
 
 $(TARGET): $(OBJ)
