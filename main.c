@@ -817,7 +817,7 @@ descend(const Arg *arg) {
                                                    the char before the slash, so +1  */
     }
     len =  p - source + 1;                      /* new length = end - start + 1 */
-    new = malloc(len);
+    new = malloc(len + 1);
     memcpy(new, source, len);
     new[len] = '\0';
     webkit_web_view_load_uri(webview, new);
