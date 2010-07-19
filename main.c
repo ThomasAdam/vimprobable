@@ -1477,7 +1477,7 @@ history() {
                             strncat(new, buffer, 512);
                             i++;
                         }
-                        if (i >= HISTORY_MAX_ENTRIES) {
+                        if ((i + 1) >= HISTORY_MAX_ENTRIES) {
                             break;
                         }
                     }
