@@ -294,7 +294,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeInsert:
         if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
-            a.s = "clearfocus()";
+            a.s = "vimprobable_clearfocus()";
             script(&a);
             a.i = ModeNormal;
             return set(&a);
@@ -313,7 +313,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeHints:
         if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
-            a.s = "clear()";
+            a.s = "vimprobable_clear()";
             script(&a);
             a.i = ModeNormal;
             count = 0;
@@ -328,7 +328,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
             memset(inputBuffer, 0, 65);
             sprintf(inputBuffer, "%d", count);
-            a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
+            a.s = g_strconcat("vimprobable_update_hints(", inputBuffer, ")", NULL);
             a.i = Silent;
             script(&a);
             update_state();
@@ -342,9 +342,9 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 sprintf(inputKey, "%c", event->keyval);
                 strncat(inputBuffer, inputKey, 1);
                 a.i = Silent;
-                a.s = "cleanup()";
+                a.s = "vimprobable_cleanup()";
                 script(&a);
-                a.s = g_strconcat("show_hints('", inputBuffer, "')", NULL);
+                a.s = g_strconcat("vimprobable_show_hints('", inputBuffer, "')", NULL);
                 a.i = Silent;
                 script(&a);
                 update_state();
@@ -353,7 +353,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         } else if (CLEAN(event->state) == 0 && event->keyval == GDK_Return && count) {
             memset(inputBuffer, 0, 65);
             sprintf(inputBuffer, "%d", count);
-            a.s = g_strconcat("fire(", inputBuffer, ")", NULL);
+            a.s = g_strconcat("vimprobable_fire(", inputBuffer, ")", NULL);
             a.i = Silent;
             script(&a);
             memset(inputBuffer, 0, 65);
@@ -361,20 +361,21 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             update_state();
             return TRUE;
         } else if (CLEAN(event->state) == 0 && event->keyval == GDK_BackSpace) {
-            if (count > 0) {
-                count = ((count >= 10) ? count/10 : 0);
+            if (count > 9) {
+                count /= 10;
                 memset(inputBuffer, 0, 65);
                 sprintf(inputBuffer, "%d", count);
-                a.s = g_strconcat("update_hints(", inputBuffer, ")", NULL);
+                a.s = g_strconcat("vimprobable_update_hints(", inputBuffer, ")", NULL);
                 a.i = Silent;
                 script(&a);
                 update_state();
             } else if (strlen(inputBuffer) > 0) {
+                count = 0;
                 a.i = Silent;
-                a.s = "cleanup()";
+                a.s = "vimprobable_cleanup()";
                 script(&a);
                 strncpy((inputBuffer + strlen(inputBuffer) - 1), "\0", 1);
-                a.s = g_strconcat("show_hints('", inputBuffer, "')", NULL);
+                a.s = g_strconcat("vimprobable_show_hints('", inputBuffer, "')", NULL);
                 a.i = Silent;
                 script(&a);
                 update_state();
@@ -1141,7 +1142,7 @@ set(const Arg *arg) {
         memset(followTarget, 0, 8);
         strncpy(followTarget, arg->s, 8);
         a.i = Silent;
-        a.s = "show_hints()";
+        a.s = "vimprobable_show_hints()";
         script(&a);
         break;
     default:
@@ -1203,7 +1204,7 @@ script(const Arg *arg) {
     if (value) {
         if (strncmp(value, "fire;", 5) == 0) {
         	count = 0;
-            a.s = g_strconcat("fire(", (value + 5), ")", NULL);
+            a.s = g_strconcat("vimprobable_fire(", (value + 5), ")", NULL);
             a.i = Silent;
             script(&a);
         } else if (strncmp(value, "open;", 5) == 0) {
@@ -1411,7 +1412,7 @@ static gboolean
 focus_input(const Arg *arg) {
     static Arg a;
 
-    a.s = g_strconcat("focus_input()", NULL);
+    a.s = g_strconcat("vimprobable_focus_input()", NULL);
     a.i = Silent;
     script(&a);
     update_state();
