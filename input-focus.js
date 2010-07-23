@@ -4,7 +4,7 @@
     see LICENSE file
 */
 
-function v(e, y) {
+function vimprobable_v(e, y) {
     t = e.nodeName.toLowerCase();
     if((t == 'input' && /^(text|password|checkbox|radio)$/.test(e.type))
     || /^(select|textarea)$/.test(t)
@@ -13,17 +13,17 @@ function v(e, y) {
 }
 
 if(document.activeElement)
-    v(document.activeElement,'focus');
+    vimprobable_v(document.activeElement,'focus');
 
-m=['focus','blur'];
+vimprobable_m=['focus','blur'];
 
 if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
-    for(i in m)
-        document.getElementsByTagName('body')[0].addEventListener(m[i], function(x) {
-            v(x.target,x.type);
+    for(i in vimprobable_m)
+        document.getElementsByTagName('body')[0].addEventListener(vimprobable_m[i], function(x) {
+            vimprobable_v(x.target,x.type);
         }, true);
 }
 
 self.onunload = function() {
-    v(document.activeElement, '');
+    vimprobable_v(document.activeElement, '');
 };

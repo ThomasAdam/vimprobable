@@ -4,12 +4,12 @@
     see LICENSE file
 */
 
-function clearfocus() {
+function vimprobable_clearfocus() {
     if(document.activeElement && document.activeElement.blur)
         document.activeElement.blur();
 }
 
-function show_hints(inputText) {
+function vimprobable_show_hints(inputText) {
     if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
         var height = window.innerHeight;
         var width = window.innerWidth;
@@ -31,11 +31,11 @@ function show_hints(inputText) {
             }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         div = document.createElement("div");
         /* due to the different XPath result type, we will need two counter variables */
-        j = 0;
+        vimprobable_j = 0;
         var i;
-        a = [];
-        colors = [];
-        backgrounds = [];
+        vimprobable_a = [];
+        vimprobable_colors = [];
+        vimprobable_backgrounds = [];
         for (i = 0; i < r.snapshotLength; i++)
         {
             var elem = r.snapshotItem(i);
@@ -47,11 +47,11 @@ function show_hints(inputText) {
                 continue;
             var leftpos = Math.max((rect.left + scrollX), scrollX);
             var toppos = Math.max((rect.top + scrollY), scrollY);
-            a.push(elem);
+            vimprobable_a.push(elem);
             /* making this block DOM compliant */
             var hint = document.createElement("span");
             hint.setAttribute("class", "hinting_mode_hint");
-            hint.setAttribute("id", "vimprobablehint" + j);
+            hint.setAttribute("id", "vimprobablehint" + vimprobable_j);
             hint.style.position = "absolute";
             hint.style.left = leftpos + "px";
             hint.style.top =  toppos + "px";
@@ -59,38 +59,38 @@ function show_hints(inputText) {
             hint.style.color = "#fff";
             hint.style.font = "bold 10px monospace";
             hint.style.zIndex = "99";
-            var text = document.createTextNode(j);
+            var text = document.createTextNode(vimprobable_j + 1);
             hint.appendChild(text);
             div.appendChild(hint);
             /* remember site-defined colour of this element */
-            colors[j] = elem.style.color;
-            backgrounds[j] = elem.style.background;
+            vimprobable_colors[vimprobable_j] = elem.style.color;
+            vimprobable_backgrounds[vimprobable_j] = elem.style.background;
             /* make the link black to ensure it's readable */
             elem.style.color = "#000";
             elem.style.background = "#ff0";
-            j++;
+            vimprobable_j++;
         }
         i = 0;
-        while (typeof(a[i]) != "undefined") {
-            a[i].className += " hinting_mode_hint";
+        while (typeof(vimprobable_a[i]) != "undefined") {
+            vimprobable_a[i].className += " hinting_mode_hint";
             i++;
         }
         document.getElementsByTagName("body")[0].appendChild(div);
-        clearfocus();
-        h = null;
+        vimprobable_clearfocus();
+        vimprobable_h = null;
         if (i == 1) {
             /* just one hinted element - might as well follow it */
-            return fire(1);
+            return vimprobable_fire(1);
         }
     }
 }
-function fire(n)
+function vimprobable_fire(n)
 {
-    if (typeof(a[n - 1]) != "undefined") {
-        el = a[n - 1];
+    if (typeof(vimprobable_a[n - 1]) != "undefined") {
+        el = vimprobable_a[n - 1];
         tag = el.nodeName.toLowerCase();
-        clear();
-        if(tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio")) {
+        vimprobable_clear();
+        if(tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
             el.focus();
             if (tag == "textarea" || tag == "input")
                 console.log('insertmode_on');
@@ -116,40 +116,43 @@ function fire(n)
         }
     }
 }
-function cleanup()
+function vimprobable_cleanup()
 {
-    for(e in a) {
-        if (typeof(a[e].className) != "undefined") {
-            a[e].className = a[e].className.replace(/hinting_mode_hint/,'');
+    for(e in vimprobable_a) {
+        if (typeof(vimprobable_a[e].className) != "undefined") {
+            vimprobable_a[e].className = vimprobable_a[e].className.replace(/hinting_mode_hint/,'');
             /* reset to site-defined colour */
-            a[e].style.color = colors[e];
-            a[e].style.background = backgrounds[e];
+            vimprobable_a[e].style.color = vimprobable_colors[e];
+            vimprobable_a[e].style.background = vimprobable_backgrounds[e];
         }
     }
     div.parentNode.removeChild(div);
     window.onkeyup = null;
 }
-function clear()
+function vimprobable_clear()
 {
-    cleanup();
+    vimprobable_cleanup();
     console.log("hintmode_off")
 }
 
-function update_hints(n)
+function vimprobable_update_hints(n)
 {
-    if(h != null)
-        h.className = h.className.replace("_focus","");
-    if (j - 1 < n * 10 && typeof(a[n - 1]) != "undefined") {
+    if(vimprobable_h != null) {
+        vimprobable_h.className = vimprobable_h.className.replace("_focus","");
+        vimprobable_h.style.background = "#ff0";
+    }
+    if (vimprobable_j - 1 < n * 10 && typeof(vimprobable_a[n - 1]) != "undefined") {
         /* return signal to follow the link */
         return "fire;" + n;
-    } else
-        if (typeof(a[n - 1]) != "undefined") {
-            (h = a[n - 1]).className = a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-	    h.style.background = "8f0";
-	}
+    } else {
+        if (typeof(vimprobable_a[n - 1]) != "undefined") {
+            (vimprobable_h = vimprobable_a[n - 1]).className = vimprobable_a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+            vimprobable_h.style.background = "#8f0";
+        }
+    }
 }
 
-function focus_input()
+function vimprobable_focus_input()
 {
     if (document.getElementsByTagName("body")[0] !== null && typeof(document.getElementsByTagName("body")[0]) == "object") {
         /* prefixing html: will result in namespace error */
