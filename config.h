@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.vimprobable.org/";
-char useragent[120]	                    = "Vimprobable2/0.9.1.0";
+char useragent[120]	                    = "Vimprobable2/0.9.1.1";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -204,15 +204,18 @@ static Command commands[] = {
     { "source",                                        	view_source,      {0} },
     { "set",                                           	browser_settings, {0} },
     { "map",                                           	mappings,         {0} },
-    { "jumpleft",         	                            scroll,           {ScrollJumpTo   | DirectionLeft} },
-    { "jumpright",        	                            scroll,           {ScrollJumpTo   | DirectionRight} },
-    { "jumptop",          	                            scroll,           {ScrollJumpTo   | DirectionTop} },
-    { "jumpbottom",       	                            scroll,           {ScrollJumpTo   | DirectionBottom} },
-    { "pageup",           	                            scroll,           {ScrollMove     | DirectionTop      | UnitPage} },	
-    { "pagedown",         	                            scroll,           {ScrollMove     | DirectionBottom   | UnitPage} },
+    { "jumpleft",                                       scroll,           {ScrollJumpTo   | DirectionLeft} },
+    { "jumpright",                                      scroll,           {ScrollJumpTo   | DirectionRight} },
+    { "jumptop",                                        scroll,           {ScrollJumpTo   | DirectionTop} },
+    { "jumpbottom",                                     scroll,           {ScrollJumpTo   | DirectionBottom} },
+    { "pageup",                                         scroll,           {ScrollMove     | DirectionTop      | UnitPage} },	
+    { "pagedown",                                       scroll,           {ScrollMove     | DirectionBottom   | UnitPage} },
     { "navigationback",   	                            navigate,         {NavigationBack} },
     { "navigationforward",	                            navigate,         {NavigationForward} },
-    { "reload",           	                            navigate,         {NavigationReload} },
+    { "scrollleft",                                     scroll,           {ScrollMove     | DirectionLeft     | UnitLine} },
+    { "scrollright",                                    scroll,           {ScrollMove     | DirectionRight    | UnitLine} },
+    { "scrollup",                                       scroll,           {ScrollMove     | DirectionTop      | UnitLine} },
+    { "scrolldown",                                     scroll,           {ScrollMove     | DirectionBottom   | UnitLine} },
 };
 
 /* mouse bindings
