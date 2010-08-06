@@ -334,13 +334,26 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             update_state();
             return TRUE;
         } else if ((CLEAN(event->state) == 0 && (event->keyval >= GDK_a && event->keyval <= GDK_z))
-                || (CLEAN(event->state) == GDK_SHIFT_MASK && (event->keyval >= GDK_A && event->keyval <= GDK_Z))) {
+                || (CLEAN(event->state) == GDK_SHIFT_MASK && (event->keyval >= GDK_A && event->keyval <= GDK_Z))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_space && event->keyval <= GDK_slash))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_colon && event->keyval <= GDK_at))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_braceleft && event->keyval <= GDK_umacron))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Babovedot && event->keyval <= GDK_ycircumflex))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_OE && event->keyval <= GDK_Ydiaeresis))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_overline && event->keyval <= GDK_semivoicedsound))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Farsi_0 && event->keyval <= GDK_Arabic_9))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Arabic_semicolon && event->keyval <= GDK_Arabic_sukun))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Arabic_madda_above && event->keyval <= GDK_Arabic_heh_goal))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Cyrillic_GHE_bar && event->keyval <= GDK_Cyrillic_u_macron))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Serbian_dje && event->keyval <= GDK_Korean_Won))
+                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Armenian_ligature_ew && event->keyval <= GDK_braille_dots_12345678))) {
             /* update hints by link text */
             if (strlen(inputBuffer) < 65) {
                 count = 0;
                 memset(inputKey, 0, 5);
-                sprintf(inputKey, "%c", event->keyval);
-                strncat(inputBuffer, inputKey, 1);
+                /* support multibyte characters */
+                sprintf(inputKey, "%C", event->keyval);
+                strncat(inputBuffer, inputKey, 64 - strlen(inputBuffer));
                 a.i = Silent;
                 a.s = "vimprobable_cleanup()";
                 script(&a);
