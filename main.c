@@ -430,7 +430,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 /* remember the number of bytes of each character */
                 for (count = 0; count < 64; count++) {
                     if (strncmp((chars + count), "0", 1) == 0) {
-                        sprintf(inputKey, "%d", strlen(inputKey));
+                        sprintf(inputKey, "%d", (int)strlen(inputKey));
                         strncpy((chars + count), inputKey, 1);
                         break;
                     }
@@ -1369,6 +1369,8 @@ script(const Arg *arg) {
     if (value) {
         if (strncmp(value, "fire;", 5) == 0) {
             count = 0;
+            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000", 64);
+            memset(inputBuffer, 0, 65);
             a.s = g_strconcat("vimprobable_fire(", (value + 5), ")", NULL);
             a.i = Silent;
             script(&a);
