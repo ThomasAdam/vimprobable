@@ -109,6 +109,7 @@ static char *winid = NULL;
 static char rememberedURI[128] = "";
 static char inputKey[5];
 static char inputBuffer[65] = "";
+static char chars[65] = "0000000000000000000000000000000000000000000000000000000000000000\n";
 static char followTarget[8] = "";
 static WebKitDownload *activeDownload = NULL;
 
@@ -317,6 +318,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             script(&a);
             a.i = ModeNormal;
             count = 0;
+            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000\0", 65);
             return set(&a);
         } else if (CLEAN(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9) 
                 || (event->keyval >= GDK_KP_1 && event->keyval <= GDK_KP_9)
@@ -330,6 +332,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             sprintf(inputBuffer, "%d", count);
             a.s = g_strconcat("vimprobable_update_hints(", inputBuffer, ")", NULL);
             a.i = Silent;
+            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000\0", 65);
             script(&a);
             update_state();
             return TRUE;
@@ -349,11 +352,20 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Armenian_ligature_ew && event->keyval <= GDK_braille_dots_12345678))) {
             /* update hints by link text */
             if (strlen(inputBuffer) < 65) {
-                count = 0;
                 memset(inputKey, 0, 5);
                 /* support multibyte characters */
                 sprintf(inputKey, "%C", event->keyval);
                 strncat(inputBuffer, inputKey, 64 - strlen(inputBuffer));
+                /* remember the number of bytes of each character */
+                for (count = 0; count < 64; count++) {
+                    if (strncmp((chars + count), "0", 1) == 0) {
+                        sprintf(inputKey, "%d", strlen(inputKey));
+                        strncpy((chars + count), inputKey, 1);
+                        break;
+                    }
+                }
+                memset(inputKey, 0, 5);
+                count = 0;
                 a.i = Silent;
                 a.s = "vimprobable_cleanup()";
                 script(&a);
@@ -371,6 +383,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             script(&a);
             memset(inputBuffer, 0, 65);
             count = 0;
+            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000\0", 65);
             update_state();
             return TRUE;
         } else if (CLEAN(event->state) == 0 && event->keyval == GDK_BackSpace) {
@@ -383,11 +396,22 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 script(&a);
                 update_state();
             } else if (strlen(inputBuffer) > 0) {
-                count = 0;
                 a.i = Silent;
                 a.s = "vimprobable_cleanup()";
                 script(&a);
-                strncpy((inputBuffer + strlen(inputBuffer) - 1), "\0", 1);
+                /* check how many bytes the last character uses */
+                for (count = 0; count < 64; count++) {
+                    if (strncmp((chars + count), "0", 1) == 0) {
+                        break;
+                    }
+                }
+                memset(inputKey, 0, 5);
+                strncpy(inputKey, (chars + count - 1), 1);
+                strncpy((chars + count - 1), "0", 1);
+                count = atoi(inputKey);
+                /* remove the appropriate number of bytes from the string */
+                strncpy((inputBuffer + strlen(inputBuffer) - count), "\0", 1);
+                count = 0;
                 a.s = g_strconcat("vimprobable_show_hints('", inputBuffer, "')", NULL);
                 a.i = Silent;
                 script(&a);
@@ -1487,19 +1511,20 @@ update_state() {
         if (status == WEBKIT_DOWNLOAD_STATUS_STARTED || status == WEBKIT_DOWNLOAD_STATUS_CREATED) {
             progress = (gint)(webkit_download_get_progress(activeDownload) * 100);
             ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
-            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %c%s%c %s</span>",
-                statusfont, count, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
+            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %c%s%c %s</span>",
+                statusfont, count, current_modkey, inputBuffer, progressborderleft, progressbar, progressborderright, scroll_state);
         } else {
-            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);
+            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %s</span>", statusfont, count, current_modkey, inputBuffer, scroll_state);
         }
     } else if ((webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED) &&
 		(activeDownload != NULL)) {
         ascii_bar(progressbartick, (int)(progress * progressbartick), (char*)progressbar);
-        markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %c%s%c %s</span>",
-            statusfont, count, current_modkey, progressborderleft, progressbar, progressborderright, scroll_state);
+        markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %c%s%c %s</span>",
+            statusfont, count, current_modkey, inputBuffer, progressborderleft, progressbar, progressborderright, scroll_state);
     } else
 #endif
-    markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);
+    markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %s</span>", statusfont, count, current_modkey, inputBuffer, scroll_state);
+    /*markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);*/
     gtk_label_set_markup(GTK_LABEL(status_state), markup);
 }
 
