@@ -332,6 +332,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             sprintf(inputBuffer, "%d", count);
             a.s = g_strconcat("vimprobable_update_hints(", inputBuffer, ")", NULL);
             a.i = Silent;
+            memset(inputBuffer, 0, 65);
             strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000\0", 65);
             script(&a);
             update_state();
@@ -392,6 +393,17 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 memset(inputBuffer, 0, 65);
                 sprintf(inputBuffer, "%d", count);
                 a.s = g_strconcat("vimprobable_update_hints(", inputBuffer, ")", NULL);
+                a.i = Silent;
+                memset(inputBuffer, 0, 65);
+                script(&a);
+                update_state();
+            } else if (count > 0) {
+                count = 0;
+                memset(inputBuffer, 0, 65);
+                a.i = Silent;
+                a.s = "vimprobable_cleanup()";
+                script(&a);
+                a.s = g_strconcat("vimprobable_show_hints()", NULL);
                 a.i = Silent;
                 script(&a);
                 update_state();
@@ -1247,6 +1259,9 @@ script(const Arg *arg) {
             a.i = Silent;
             script(&a);
         } else if (strncmp(value, "open;", 5) == 0) {
+            count = 0;
+            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000", 64);
+            memset(inputBuffer, 0, 65);
             a.i = ModeNormal;
             set(&a);
             if (strncmp(followTarget, "new", 3) == 0)
