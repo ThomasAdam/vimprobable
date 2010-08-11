@@ -12,6 +12,8 @@
 
 extern char commandhistory[COMMANDHISTSIZE][255];
 extern int lastcommand, maxcommands, commandpointer;
+extern KeyList *keylistroot;
+extern Key keys[];
 
 gboolean read_rcfile(void)
 {
@@ -114,4 +116,29 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
     g_free(a.s);
 
     return TRUE;
+}
+
+void
+make_keyslist(void) 
+{
+    int i;
+    KeyList *ptr, *current;
+
+    ptr     = NULL;
+    current = NULL;
+    i       = 0;
+    while ( keys[i].key != 0 )
+    {
+        current = malloc(sizeof(KeyList));
+        if (current == NULL) {
+            printf("Not enough memory\n");
+            exit(-1);
+        }
+        current->Element = keys[i];
+        current->next = NULL;
+        if (keylistroot == NULL) keylistroot = current;
+        if (ptr != NULL) ptr->next = current;
+        ptr = current;
+        i++;
+    }
 }

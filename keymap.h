@@ -4,17 +4,24 @@
     (c) 2009, 2010 by Matto Fransen
     see LICENSE file
 */
+#ifndef _KEYMAP
 
-#include "main.h"
-
-void make_keyslist(void);
-extern char startpage[241];
+#define _KEYMAP
 
 /* key bindings for normal mode
     Note: GDK_VoidSymbol is a wildcard so it matches on every modkey
 */
 Key keys[] = {
     /* modmask,             modkey,         key,            function,   argument */
+    { 0,                    GDK_q,          GDK_1,          quickmark,  { .s = "1" } },
+    { 0,                    GDK_q,          GDK_2,          quickmark,  { .s = "2"  } },
+    { 0,                    GDK_q,          GDK_3,          quickmark,  { .s = "3" } },
+    { 0,                    GDK_q,          GDK_4,          quickmark,  { .s = "4" } },
+    { 0,                    GDK_q,          GDK_5,          quickmark,  { .s = "5" } },
+    { 0,                    GDK_q,          GDK_6,          quickmark,  { .s = "6" } },
+    { 0,                    GDK_q,          GDK_7,          quickmark,  { .s = "7" } },
+    { 0,                    GDK_q,          GDK_8,          quickmark,  { .s = "8" } },
+    { 0,                    GDK_q,          GDK_9,          quickmark,  { .s = "9" } },
     { 0,                    0,              GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
     { GDK_SHIFT_MASK,       0,              GDK_dollar,     scroll,     {ScrollJumpTo   | DirectionRight} },
     { 0,                    GDK_g,          GDK_g,          scroll,     {ScrollJumpTo   | DirectionTop} },
@@ -82,7 +89,12 @@ Key keys[] = {
     { 0,                    0,              GDK_f,          set,        { .i = ModeHints, .s = "current" } },
     { GDK_SHIFT_MASK,       0,              GDK_F,          set,        { .i = ModeHints, .s = "new" } },
 
-    { 0,                    0,              GDK_d,          &quit,       {0} },
+    { 0,                    GDK_g,          GDK_i,          focus_input,{} },
+    { 0,                    0,              GDK_u,          revive,     {} },
+
+    { 0,                    0,              GDK_d,          quit,       {0} },
+	/* leave this last line as last */
+    { 0,                    0,              0,              0,          {0} },
 };
 
-
+#endif

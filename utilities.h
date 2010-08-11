@@ -14,3 +14,4 @@
 gboolean read_rcfile(void);
 void save_command_history(char *line);
 gboolean process_save_qmark(const char *bm, WebKitWebView *webview);
+void make_keyslist(void);

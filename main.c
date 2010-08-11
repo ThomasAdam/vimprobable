@@ -83,7 +83,6 @@ void save_command_history(char *line);
 void toggle_proxy(gboolean onoff);
 void toggle_scrollbars(gboolean onoff);
 
-void make_keyslist(void);
 gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
 GtkWidget * fill_eventbox(const char * completion_line);
@@ -130,6 +129,7 @@ static char followTarget[8] = "";
 static WebKitDownload *activeDownload = NULL;
 
 #include "config.h"
+#include "keymap.h"
 
 char commandhistory[COMMANDHISTSIZE][255];
 int  lastcommand    = 0;
@@ -292,27 +292,6 @@ download_progress(WebKitDownload *d, GParamSpec *pspec) {
     }
 }
 
-
-void
-make_keyslist(void) {
-    int i;
-    KeyList *ptr, *current;
-
-    ptr     = NULL;
-    current = NULL;
-    for (i = 0; i < LENGTH(keys); i++) {
-        current = malloc(sizeof(KeyList));
-        if (current == NULL) {
-            printf("Not enough memory\n");
-            exit(-1);
-        }
-        current->Element = keys[i];
-        current->next = NULL;
-        if (keylistroot == NULL) keylistroot = current;
-        if (ptr != NULL) ptr->next = current;
-        ptr = current;
-    }
-}
 
 gboolean
 process_keypress(GdkEventKey *event) {
