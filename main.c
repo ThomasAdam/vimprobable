@@ -5,6 +5,7 @@
     see LICENSE file
 */
 
+#include <X11/Xlib.h>
 #include "includes.h"
 #include "vimprobable.h"
 #include "utilities.h"
@@ -59,6 +60,7 @@ static gboolean scroll(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
+static gboolean fake_key_event(const Arg *arg);
 
 static void update_url(const char *uri);
 static void setup_modkeys(void);
@@ -1416,6 +1418,60 @@ zoom(const Arg *arg) {
         (count ? (float)count / 100.0 : 1.0));
     return TRUE;
 }
+
+gboolean 
+fake_key_event(const Arg *a) {
+    if(!embed) {
+        return FALSE;
+    }
+    Arg err;
+    err.i = Error;
+    Display *xdpy;
+    if ( (xdpy = XOpenDisplay(NULL)) == NULL ) {
+        err.s = "Couldn't find the XDisplay.";
+        echo(&err);
+        return FALSE;
+    }
+       
+    XKeyEvent xk;
+    xk.display = xdpy;
+    xk.subwindow = None;
+    xk.time = CurrentTime;
+    xk.same_screen = True;
+    xk.x = xk.y = xk.x_root = xk.y_root = 1;
+    xk.window = embed;
+    xk.state =  a->i;
+
+    if( ! a->s ) {
+        err.s = "Zero pointer as argument! Check your config.h";
+        echo(&err);
+        return FALSE;
+    }
+
+    KeySym keysym;
+    if( (keysym = XStringToKeysym(a->s)) == NoSymbol ) {
+        err.s = g_strdup_printf("Couldn't translate %s to keysym", a->s );
+        echo(&err);
+        return FALSE;
+    }
+    
+    if( (xk.keycode = XKeysymToKeycode(xdpy, keysym)) == NoSymbol ) {
+        err.s = "Couldn't translate keysym to keycode";
+        echo(&err);
+        return FALSE;
+    }
+   
+    xk.type = KeyPress;
+    if( !XSendEvent(xdpy, embed, True, KeyPressMask, (XEvent *)&xk) ) {
+        err.s = "XSendEvent failed";
+        echo(&err);
+        return FALSE;
+    }
+    XFlush(xdpy);
+
+    return TRUE;
+}
+
 
 gboolean
 commandhistoryfetch(const Arg *arg) {

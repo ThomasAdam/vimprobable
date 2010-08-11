@@ -39,6 +39,9 @@ Key keys[] = {
     { GDK_CONTROL_MASK,     0,              GDK_e,          scroll,     {ScrollMove     | DirectionBottom   | UnitLine} },
     { GDK_CONTROL_MASK,     0,              GDK_y,          scroll,     {ScrollMove     | DirectionTop      | UnitLine} },
 
+    { 0,                    GDK_g,          GDK_t,          fake_key_event,   { .s = "l", .i = ShiftMask + ControlMask   } },
+    { GDK_SHIFT_MASK,       GDK_g,          GDK_T,          fake_key_event,   { .s = "h", .i = ShiftMask + ControlMask  } },
+
     { GDK_CONTROL_MASK,     0,              GDK_i,          navigate,   {NavigationBack} },
     { GDK_CONTROL_MASK,     0,              GDK_o,          navigate,   {NavigationForward} },
     { GDK_SHIFT_MASK,       0,              GDK_H,          navigate,   {NavigationBack} },
