@@ -68,7 +68,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable/0.9.15.4"
+#define             USER_AGENT                  "Vimprobable/0.9.16.0"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -104,6 +104,8 @@ static Key keys[] = {
     { 0,                    GDK_q,          GDK_9,          quickmark,  { .s = "9" } },
     { 0,                    0,              GDK_0,          scroll,     {ScrollJumpTo   | DirectionLeft} },
     { GDK_SHIFT_MASK,       0,              GDK_dollar,     scroll,     {ScrollJumpTo   | DirectionRight} },
+    { 0,                    GDK_g,          GDK_t,          fake_key_event,   { .s = "l", .i = ShiftMask + ControlMask  }},
+    { GDK_SHIFT_MASK,       GDK_g,          GDK_T,          fake_key_event,   { .s = "h", .i = ShiftMask + ControlMask  }},
     { 0,                    GDK_g,          GDK_g,          scroll,     {ScrollJumpTo   | DirectionTop} },
     { GDK_SHIFT_MASK,       0,              GDK_G,          scroll,     {ScrollJumpTo   | DirectionBottom} },
     { 0,                    0,              GDK_h,          scroll,     {ScrollMove     | DirectionLeft     | UnitLine} },
