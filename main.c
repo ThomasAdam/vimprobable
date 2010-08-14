@@ -1092,7 +1092,9 @@ quit(const Arg *arg) {
         filename = g_strdup_printf(CLOSED_URL_FILENAME);
         f = fopen(filename, "w");
         if (f != NULL) {
+	    flockfile(f);
             fprintf(f, "%s", uri);
+	    funlockfile(f);
             fclose(f);
         }
     }
@@ -1110,8 +1112,10 @@ revive(const Arg *arg) {
     filename = g_strdup_printf(CLOSED_URL_FILENAME);
     f = fopen(filename, "r");
     if (f != NULL) {
+	flockfile(f);
         fgets(buffer, 512, f);
-        fclose(f);
+	funlockfile(f);
+	fclose(f);
     }
     if (strlen(buffer) > 0) {
         a.s = buffer;
