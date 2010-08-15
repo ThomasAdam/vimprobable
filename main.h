@@ -11,8 +11,44 @@
 #define INPUTKEY_LEN 5
 #define INPUTBUF_LEN 65
 #define TARGET_LEN 8
+#define SCROLL_STATE 4
+#define COMMANDHISTSIZE 50
 
 /* Structure definitions. */
+
+typedef struct _gui_actions
+{
+	char rememberedURI[URI_LEN];
+	char inputKey[INPUTKEY_LEN];
+	char inputBuffer[INPUTBUF_LEN];
+	char followTarget[TARGET_LEN];
+	char scroll_state[SCROLL_STATE];
+	char commandhistory[COMMANDHISTSIZE][255];
+	int  lastcommand;
+	int  maxcommands;
+	int  commandpointer;
+	KeyList *keylistroot;
+
+} GUIActions;
+
+typedef struct _cookie_handling
+{
+	SoupSession *session;
+} Cookies;
+
+typedef struct _webkit_data
+{
+	WebKitWebView *webview;
+	WebKitWebInspector *inspector;
+	WebKitDownload *active_download;
+	GtkWidget* inspector_window;
+	GtkWidget* inspector_view;
+
+	float zoomstep;
+
+	Cookies *cookie_data;
+} WebKitData;
+
 typedef struct _gui
 {
 	GtkWindow *window;
@@ -26,7 +62,7 @@ typedef struct _gui
 	GtkWidget *eventbox;
 	GtkWidget *status_url;
 	GtkWidget *status_state;
-	GtkNativeWindow *embed;
+	GdkNativeWindow *embed;
 	char *winid;
 	SoupSession *session;
 	GtkClipboard *clipboards[CLIPBOARDS];
@@ -34,26 +70,11 @@ typedef struct _gui
 	GUIActions *gui_actions;
 } GUI;
 
-typedef struct _webkit_data
+typedef struct _vimprobable
 {
-	WebKitWebView *webview;
-	WebKitInspector *inspector;
-	WebKitDownliad *active_download;
-	float zoomstep;
-} WebkitData;
-
-typedef struct _cookie_handling
-{
-	SoupSession *session;
-} Cookies;
-
-typedef struct _gui_actions
-{
-	char rememberedURI[URI_LEN] = "";
-	char inputKey[INPUTKEY_LEN];
-	char inputBuffer[INPUTBUF_LEN] = "";
-	char followTarget[TARGET_LEN] = "";
-} GUIActions;
+	GUI *gui;
+	WebKitData *webkit_data;
+} Vimprobable;
 
 /* functions */
 void update_state(void);
