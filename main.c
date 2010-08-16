@@ -75,12 +75,7 @@ static void set_widget_font_and_color(GtkWidget *widget, const char *font_str,
                 const char *bg_color_str, const char *fg_color_str);
 
 static gboolean history(void);
-static gboolean mappings(const Arg *arg);
-char * search_word(int whichword);
 static gboolean process_set_line(char *line);
-static gboolean process_map_line(char *line);
-gboolean parse_colour(char *color);
-gboolean read_rcfile(void);
 void save_command_history(char *line);
 void toggle_proxy(gboolean onoff);
 void toggle_scrollbars(gboolean onoff);
@@ -1600,19 +1595,6 @@ view_source(const Arg * arg) {
 }
 
 static gboolean
-mappings(const Arg *arg) {
-    char line[255];
-
-    if ( !arg->s )
-        return FALSE;
-    strncpy(line, arg->s, 254);
-    if (process_map_line(line))
-        return TRUE;
-    else
-        return FALSE;
-}
-
-static gboolean
 focus_input(const Arg *arg) {
     static Arg a;
 
@@ -1623,135 +1605,6 @@ focus_input(const Arg *arg) {
     return TRUE;
 }
 
-static gboolean
-changemapping(Key * search_key, int maprecord) {
-    KeyList *current, *newkey;
-
-    current = keylistroot;
-
-    if (current)
-        while (current->next != NULL) {
-            if (
-                current->Element.mask   == search_key->mask &&
-                current->Element.modkey == search_key->modkey &&
-                current->Element.key    == search_key->key
-               ) {
-                current->Element.func = commands[maprecord].func;
-                current->Element.arg  =  commands[maprecord].arg;
-                return TRUE;
-            }
-            current = current->next;
-        }
-    newkey = malloc(sizeof(KeyList));
-    if (newkey == NULL) {
-        printf("Not enough memory\n");
-        exit (-1);
-    }
-    newkey->Element.mask   = search_key->mask;
-    newkey->Element.modkey = search_key->modkey;
-    newkey->Element.key    = search_key->key;
-    newkey->Element.func   = commands[maprecord].func;
-    newkey->Element.arg    = commands[maprecord].arg;
-    newkey->next           = NULL;
-
-    if (keylistroot == NULL) keylistroot = newkey;
-
-    if (current != NULL) current->next = newkey;
-
-    return TRUE;
-}
-
-static gboolean
-process_mapping(char * keystring, int maprecord) {
-    Key search_key;
-
-    search_key.mask   = 0;
-    search_key.modkey = 0;
-    search_key.key    = 0;
-
-    if (strlen(keystring) == 1) {
-        search_key.key = keystring[0];
-    }
-
-    if (strlen(keystring) == 2) {
-        search_key.modkey= keystring[0];
-        search_key.key = keystring[1];
-    }
-
-    /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v
-       or stuff like <S-v>a for Shift-v,a or <C-v>a for Ctrl-v,a
-    */
-    if ((strlen(keystring) == 5 ||  strlen(keystring) == 6)  && keystring[0] == '<'  && keystring[4] == '>') {
-        switch (toupper(keystring[1])) {
-            case 'S':
-                search_key.mask = GDK_SHIFT_MASK;
-                if (strlen(keystring) == 5) {
-                    keystring[3] = toupper(keystring[3]);
-                } else {
-                    keystring[3] = tolower(keystring[3]);
-                    keystring[5] = toupper(keystring[5]);
-                }
-            break;
-            case 'C':
-                search_key.mask = GDK_CONTROL_MASK;
-            break;
-        }
-        if (!search_key.mask)
-            return FALSE;
-        if (strlen(keystring) == 5) {
-            search_key.key = keystring[3];
-        } else {
-            search_key.modkey= keystring[3];
-            search_key.key = keystring[5];
-        }
-    }
-
-    /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v
-       or  stuff like a<S-v> for a,Shift-v or a<C-v> for a,Ctrl-v
-    */
-    if (strlen(keystring) == 6 && keystring[1] == '<' && keystring[5] == '>') {
-        switch (toupper(keystring[2])) {
-            case 'S':
-                search_key.mask = GDK_SHIFT_MASK;
-                keystring[4] = toupper(keystring[4]);
-            break;
-            case 'C':
-                search_key.mask = GDK_CONTROL_MASK;
-            break;
-        }
-        if (!search_key.mask)
-            return FALSE;
-        search_key.modkey= keystring[0];
-        search_key.key = keystring[4];
-    }
-    return (changemapping(&search_key, maprecord));
-}
-
-static gboolean
-process_map_line(char *line) {
-    int listlen, i;
-    char *c;
-    my_pair.line = line;
-    c = search_word (0);
-
-    if (!strlen (my_pair.what))
-        return FALSE;
-    while (isspace (*c) && *c)
-        c++;
-
-    if (*c == ':' || *c == '=')
-        c++;
-    my_pair.line = c;
-    c = search_word (1);
-    if (!strlen (my_pair.value))
-        return FALSE;
-    listlen = LENGTH(commands);
-    for (i = 0; i < listlen; i++) {
-        if (strlen(commands[i].cmd) == strlen(my_pair.value) && strncmp(commands[i].cmd, my_pair.value, strlen(my_pair.value)) == 0)
-            return process_mapping(my_pair.what, i);
-    }
-    return FALSE;
-}
 static gboolean
 browser_settings(const Arg *arg) {
     char line[255];
@@ -1877,75 +1730,6 @@ process_set_line(char *line) {
         }
     }
     return FALSE;
-}
-
-gboolean
-parse_colour(char *color) {
-    char goodcolor[8];
-    int colorlen;
-
-    colorlen = (int)strlen(color);
-
-    goodcolor[0] = '#';
-    goodcolor[7] = '\0';
-
-    /* help the user a bit by making string like
-       #a10 and strings like ffffff full 6digit
-       strings with # in front :)
-     */
-
-    if (color[0] == '#') {
-        switch (colorlen) {
-            case 7:
-                strncpy(goodcolor, color, 7);
-            break;
-            case 4:
-                goodcolor[1] = color[1];
-                goodcolor[2] = color[1];
-                goodcolor[3] = color[2];
-                goodcolor[4] = color[2];
-                goodcolor[5] = color[3];
-                goodcolor[6] = color[3];
-            break;
-            case 2:
-                goodcolor[1] = color[1];
-                goodcolor[2] = color[1];
-                goodcolor[3] = color[1];
-                goodcolor[4] = color[1];
-                goodcolor[5] = color[1];
-                goodcolor[6] = color[1];
-            break;
-        }
-    } else {
-        switch (colorlen) {
-            case 6:
-                strncpy(&goodcolor[1], color, 6);
-            break;
-            case 3:
-                goodcolor[1] = color[0];
-                goodcolor[2] = color[0];
-                goodcolor[3] = color[1];
-                goodcolor[4] = color[1];
-                goodcolor[5] = color[2];
-                goodcolor[6] = color[2];
-            break;
-            case 1:
-                goodcolor[1] = color[0];
-                goodcolor[2] = color[0];
-                goodcolor[3] = color[0];
-                goodcolor[4] = color[0];
-                goodcolor[5] = color[0];
-                goodcolor[6] = color[0];
-            break;
-        }
-    }
-
-    if (strlen (goodcolor) != 7) {
-        return FALSE;
-    } else {
-        strncpy(color, goodcolor, 8);
-        return TRUE;
-    }
 }
 
 gboolean

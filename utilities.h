@@ -15,3 +15,11 @@ gboolean read_rcfile(void);
 void save_command_history(char *line);
 gboolean process_save_qmark(const char *bm, WebKitWebView *webview);
 void make_keyslist(void);
+gboolean parse_colour(char *color);
+gboolean mappings(const Arg *arg);
+gboolean process_mapping(char * keystring, int maprecord);
+gboolean process_map_line(char *line);
+gboolean changemapping(Key * search_key, int maprecord);
+gboolean mappings(const Arg *arg);
+
+

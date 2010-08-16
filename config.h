@@ -88,7 +88,7 @@ static Searchengine searchengines[] = {
 static Searchengine *defsearch = &searchengines[0];
 
 /* command mapping */
-static Command commands[] = {
+Command commands[] = {
     /* command,                                        	function,         argument */
     { "ba",                                            	navigate,         {NavigationBack} },
     { "back",                                          	navigate,         {NavigationBack} },
