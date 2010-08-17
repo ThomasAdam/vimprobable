@@ -101,7 +101,6 @@ static char **args;
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
 static float zoomstep;
-static char scroll_state[4] = "\0";
 static char *modkeys;
 static char current_modkey;
 static char *search_handle;
@@ -116,7 +115,8 @@ static char inputKey[5];
 static char inputBuffer[65] = "";
 static char chars[65] = "0000000000000000000000000000000000000000000000000000000000000000\n";
 static char followTarget[8] = "";
-static WebKitDownload *activeDownload = NULL;
+
+GList *activeDownloads;
 
 #include "config.h"
 
@@ -230,33 +230,31 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     else
         a.s = g_strdup_printf("Download %s started (unknown size)...", filename);
     echo(&a);
-    activeDownload = download;
-    g_signal_connect(activeDownload, "notify::progress", G_CALLBACK(download_progress), NULL);
-    g_signal_connect(activeDownload, "notify::status", G_CALLBACK(download_progress), NULL);
+    activeDownloads = g_list_prepend(activeDownloads, download);
+    g_signal_connect(download, "notify::progress", G_CALLBACK(download_progress), NULL);
+    g_signal_connect(download, "notify::status", G_CALLBACK(download_progress), NULL);
     update_state();
     return TRUE;
 }
 
 void
 download_progress(WebKitDownload *d, GParamSpec *pspec) {
-    WebKitDownloadStatus status;
     Arg a;
+    WebKitDownloadStatus status = webkit_download_get_status(d);
 
-    if (activeDownload != NULL) {
-        status = webkit_download_get_status(activeDownload);
-        if (status != WEBKIT_DOWNLOAD_STATUS_STARTED && status != WEBKIT_DOWNLOAD_STATUS_CREATED) {
-            if (status != WEBKIT_DOWNLOAD_STATUS_FINISHED) {
-                a.i = Error;
-                echo(&a);
-            } else {
-                a.i = Info;
-                a.s = g_strdup_printf("Download finished");
-                echo(&a);
-            }
-            activeDownload = NULL;
+    if (status != WEBKIT_DOWNLOAD_STATUS_STARTED && status != WEBKIT_DOWNLOAD_STATUS_CREATED) {
+        if (status != WEBKIT_DOWNLOAD_STATUS_FINISHED) {
+            a.i = Error;
+            a.s = g_strdup_printf("Error while downloading %s", webkit_download_get_suggested_filename(d));
+            echo(&a);
+        } else {
+            a.i = Info;
+            a.s = g_strdup_printf("Download %s finished", webkit_download_get_suggested_filename(d));
+            echo(&a);
         }
-        update_state();
+        activeDownloads = g_list_remove(activeDownloads, d);
     }
+    update_state();
 }
 
 gboolean
@@ -1656,46 +1654,73 @@ update_url(const char *uri) {
 
 void
 update_state() {
-    int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
-    int val = (int)(gtk_adjustment_get_value(adjust_v) / max * 100);
     char *markup;
-#ifdef ENABLE_WGET_PROGRESS_BAR
-    double progress;
-    char progressbar[progressbartick + 1];
-    WebKitDownloadStatus status;
+    int download_count = g_list_length(activeDownloads);
+    GString *status = g_string_new("");
 
-    g_object_get((GObject*)webview, "progress", &progress, NULL);
-#endif
+    /* construct the status line */
 
-    if (max == 0)
-        sprintf(&scroll_state[0], "All");
-    else if (val == 0)
-        sprintf(&scroll_state[0], "Top");
-    else if (val == 100)
-        sprintf(&scroll_state[0], "Bot");
-    else
-        sprintf(&scroll_state[0], "%d%%", val);
+    /* count, modkey and input buffer */
+    g_string_append_printf(status, "%.0d", count);
+    if (current_modkey) g_string_append_c(status, current_modkey);
+    if (inputBuffer[0]) g_string_append_printf(status, " %s", inputBuffer);
+
+    /* the number of active downloads */
+    if (activeDownloads) {
+        g_string_append_printf(status, " %d active %s", download_count,
+                (download_count == 1) ? "download" : "downloads");
+    }
+
 #ifdef ENABLE_WGET_PROGRESS_BAR
-    if (activeDownload != NULL) {
-        status = webkit_download_get_status(activeDownload);
-        if (status == WEBKIT_DOWNLOAD_STATUS_STARTED || status == WEBKIT_DOWNLOAD_STATUS_CREATED) {
-            progress = (gint)(webkit_download_get_progress(activeDownload) * 100);
-            ascii_bar(progressbartick, (int)(progress * progressbartick / 100), (char*)progressbar);
-            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %c%s%c %s</span>",
-                statusfont, count, current_modkey, inputBuffer, progressborderleft, progressbar, progressborderright, scroll_state);
-        } else {
-            markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %s</span>", statusfont, count, current_modkey, inputBuffer, scroll_state);
+    /* the progressbar */
+    {
+        int progress = -1;
+        char progressbar[progressbartick + 1];
+
+        if (activeDownloads) {
+            progress = 0;
+            GList *ptr;
+
+            for (ptr = activeDownloads; ptr; ptr = g_list_next(ptr)) {
+                progress += 100 * webkit_download_get_progress(ptr->data);
+            }
+
+            progress /= download_count;
+
+        } else if (webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED
+                && webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FAILED) {
+
+            progress = webkit_web_view_get_progress(webview) * 100;
         }
-    } else if ((webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED) &&
-		(activeDownload != NULL)) {
-        ascii_bar(progressbartick, (int)(progress * progressbartick), (char*)progressbar);
-        markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %c%s%c %s</span>",
-            statusfont, count, current_modkey, inputBuffer, progressborderleft, progressbar, progressborderright, scroll_state);
-    } else
+
+        if (progress >= 0) {
+            ascii_bar(progressbartick, progress * progressbartick / 100, progressbar);
+            g_string_append_printf(status, " %c%s%c",
+                    progressborderleft, progressbar, progressborderright);
+        }
+    }
 #endif
-    markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s %s</span>", statusfont, count, current_modkey, inputBuffer, scroll_state);
-    /*markup = (char*)g_markup_printf_escaped("<span font=\"%s\">%.0d%c %s</span>", statusfont, count, current_modkey, scroll_state);*/
+
+    /* and the current scroll position */
+    {
+        int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
+        int val = (int)(gtk_adjustment_get_value(adjust_v) / max * 100);
+
+        if (max == 0)
+            g_string_append(status, " All");
+        else if (val == 0)
+            g_string_append(status, " Top");
+        else if (val == 100)
+            g_string_append(status, " Bot");
+        else
+            g_string_append_printf(status, " %d%%", val);
+    }
+
+
+    markup = g_markup_printf_escaped("<span font=\"%s\">%s</span>", statusfont, status->str);
     gtk_label_set_markup(GTK_LABEL(status_state), markup);
+
+    g_string_free(status, TRUE);
 }
 
 void
