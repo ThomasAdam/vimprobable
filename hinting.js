@@ -163,13 +163,18 @@ function vimprobable_focus_input()
             }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         var i;
         var j = 0;
+        var k = 0;
         var first = null;
         for (i = 0; i < r.snapshotLength; i++) {
             var elem = r.snapshotItem(i);
-            if (i == 0) {
-                first = elem;
+            if (k == 0) {
+                if (elem.style.display != "none" && elem.style.visibility != "hidden") {
+                    first = elem;
+                } else {
+                    k--;
+                }
             }
-            if (j == 1) {
+            if (j == 1 && elem.style.display != "none" && elem.style.visibility != "hidden") {
                 elem.focus();
                 var tag = elem.nodeName.toLowerCase();
                 if (tag == "textarea" || tag == "input")
@@ -179,6 +184,7 @@ function vimprobable_focus_input()
                 if (elem == document.activeElement)
                     j = 1;
             }
+            k++;
         }
         if (j == 0) {
             /* no appropriate field found focused - focus the first one */
