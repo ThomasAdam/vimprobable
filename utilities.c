@@ -355,3 +355,31 @@ process_map_line(char *line) {
     }
     return FALSE;
 }
+
+gboolean
+build_taglist(const Arg *arg, FILE *f) {
+    int k = 0, in_tag = 0;
+    int t, marker;
+    char foundtab[MAXTAGSIZE+1];
+    while (arg->s[k]) {
+        if (!isspace(arg->s[k]) && !in_tag) {
+            in_tag = 1;
+            marker = k;
+        }
+        if (isspace(arg->s[k]) && in_tag) {
+            /* found a tag */
+            t = 0;
+            while (marker < k && t < MAXTAGSIZE) foundtab[t++] = arg->s[marker++];
+            foundtab[t] = '\0';
+            fprintf(f, " [%s]", foundtab);
+            in_tag = 0;
+        }
+        k++;
+    }
+    if (in_tag) {
+        while (marker < strlen(arg->s) && t < MAXTAGSIZE) foundtab[t++] = arg->s[marker++];
+        foundtab[t] = '\0';
+        fprintf(f, " [%s]", foundtab );
+    }
+    return TRUE;
+}

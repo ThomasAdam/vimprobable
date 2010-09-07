@@ -21,5 +21,4 @@ gboolean process_mapping(char * keystring, int maprecord);
 gboolean process_map_line(char *line);
 gboolean changemapping(Key * search_key, int maprecord);
 gboolean mappings(const Arg *arg);
-
-
+gboolean build_taglist(const Arg *arg, FILE *f);

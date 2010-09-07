@@ -7,7 +7,7 @@
 
 /* general settings */
 char startpage[241]                     = "http://www.vimprobable.org/";
-char useragent[120]	                    = "Vimprobable2/0.9.2.1";
+char useragent[120]	                    = "Vimprobable2/0.9.3.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
@@ -108,6 +108,7 @@ Command commands[] = {
     { "re!",                                           	navigate,         {NavigationForceReload} },
     { "reload",                                        	navigate,         {NavigationReload} },
     { "reload!",                                       	navigate,         {NavigationForceReload} },
+    { "qt",                                             search_tag,       {0} },
     { "st",                                            	navigate,         {NavigationCancel} },
     { "stop",                                          	navigate,         {NavigationCancel} },
     { "t",                                             	open,             {TargetNew} },

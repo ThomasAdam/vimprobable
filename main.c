@@ -1,3 +1,4 @@
+
 /*
     (c) 2009 by Leon Winter
     (c) 2009, 2010 by Hannes Schueller
@@ -57,6 +58,7 @@ static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
 static gboolean script(const Arg *arg);
 static gboolean scroll(const Arg *arg);
+static gboolean search_tag(const Arg *arg);
 static gboolean yank(const Arg *arg);
 static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
@@ -1162,9 +1164,7 @@ quit(const Arg *arg) {
         filename = g_strdup_printf(CLOSED_URL_FILENAME);
         f = fopen(filename, "w");
         if (f != NULL) {
-	    flockfile(f);
             fprintf(f, "%s", uri);
-	    funlockfile(f);
             fclose(f);
         }
     }
@@ -1182,10 +1182,8 @@ revive(const Arg *arg) {
     filename = g_strdup_printf(CLOSED_URL_FILENAME);
     f = fopen(filename, "r");
     if (f != NULL) {
-	flockfile(f);
         fgets(buffer, 512, f);
-	funlockfile(f);
-	fclose(f);
+        fclose(f);
     }
     if (strlen(buffer) > 0) {
         a.s = buffer;
@@ -1507,6 +1505,9 @@ bookmark(const Arg *arg) {
             fprintf(f, "%s", " ");
             fprintf(f, "%s", title);
         }
+        if (strlen(arg->s)) { 
+            build_taglist(arg, f);
+        }
         fprintf(f, "%s", "\n");
         fclose(f);
         return TRUE;
@@ -1753,6 +1754,60 @@ process_line(char *line) {
         return process_set_line(c);
     }
     return FALSE;
+}
+
+static gboolean
+search_tag(const Arg * a) {
+    FILE *f;
+    const char *filename;
+    const char *tag = a->s;
+    char s[BUFFERSIZE], foundtag[40], url[BUFFERSIZE];
+    int t, i, intag, k;
+
+    if (strlen(tag) > MAXTAGSIZE) return FALSE;
+
+    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    f = fopen(filename, "r");
+    if (f == NULL)
+        return TRUE;
+    while (fgets(s, BUFFERSIZE-1, f)) {
+        intag = 0;
+        t = strlen(s) - 1;
+        while (isspace(s[t]))
+            t--;
+        if (s[t] != ']') continue;      
+        while (t > 0) {
+            if (s[t] == ']') {
+                if (!intag)
+                    intag = t;
+                else
+                    intag = 0;
+            } else {
+                if (s[t] == '[') {
+                    if (intag) {
+                        i = 0;
+                        k = t + 1;
+                        while (k < intag)
+                            foundtag[i++] = s[k++];
+                        foundtag[i] = '\0';
+                        /* foundtag now contains the tag */	
+                        if (strlen(foundtag) < MAXTAGSIZE && strcmp(tag, foundtag) == 0) {
+                            i = 0;
+                            while (isspace(s[i])) i++;
+                            k = 0;
+                            while (s[i] && !isspace(s[i])) url[k++] = s[i++];
+                            url[k] = '\0';
+                            Arg x = { .i = TargetNew, .s = url };
+                           open (&x);
+                        }
+                    }
+                    intag = 0;
+                }
+            }
+            t--;
+        }
+    }
+    return TRUE;
 }
 
 void

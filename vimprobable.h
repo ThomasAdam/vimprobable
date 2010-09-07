@@ -147,6 +147,8 @@ struct map_pair {
 #define MOUSE_BUTTON_3 3
 #define MOUSE_BUTTON_4 4
 #define MOUSE_BUTTON_5 5
+#define BUFFERSIZE 255
+#define MAXTAGSIZE 200
 
 /* quickmarks */
 #define             QUICKMARK_FILE               "%s/.config/vimprobable/quickmarks", getenv("HOME")
