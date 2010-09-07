@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <webkit/webkit.h>
@@ -60,6 +61,7 @@ static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
 static gboolean script(const Arg *arg);
 static gboolean scroll(const Arg *arg);
+static gboolean search_tag(const Arg *arg);
 static gboolean toggle_images(const Arg *arg);
 static gboolean toggle_plugins(const Arg *arg);
 static gboolean yank(const Arg *arg);
@@ -78,6 +80,7 @@ static void ascii_bar(int total, int state, char *string);
 static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 static void download_progress(WebKitDownload *d, GParamSpec *pspec);
+gboolean build_taglist(const Arg *arg, FILE *f);
 
 static void history(void);
 
@@ -1092,9 +1095,7 @@ quit(const Arg *arg) {
         filename = g_strdup_printf(CLOSED_URL_FILENAME);
         f = fopen(filename, "w");
         if (f != NULL) {
-	    flockfile(f);
             fprintf(f, "%s", uri);
-	    funlockfile(f);
             fclose(f);
         }
     }
@@ -1112,10 +1113,8 @@ revive(const Arg *arg) {
     filename = g_strdup_printf(CLOSED_URL_FILENAME);
     f = fopen(filename, "r");
     if (f != NULL) {
-	flockfile(f);
         fgets(buffer, 512, f);
-	funlockfile(f);
-	fclose(f);
+        fclose(f);
     }
     if (strlen(buffer) > 0) {
         a.s = buffer;
@@ -1432,6 +1431,9 @@ bookmark(const Arg *arg) {
             fprintf(f, "%s", " ");
             fprintf(f, "%s", title);
         }
+        if (strlen(arg->s)) { 
+            build_taglist(arg, f);
+        }
         fprintf(f, "%s", "\n");
         fclose(f);
         return TRUE;
@@ -1529,6 +1531,88 @@ focus_input(const Arg *arg) {
     a.i = Silent;
     script(&a);
     update_state();
+    return TRUE;
+}
+
+static gboolean
+search_tag(const Arg * a) {
+    FILE *f;
+    const char *filename;
+    const char *tag = a->s;
+    char s[BUFFERSIZE], foundtag[40], url[BUFFERSIZE];
+    int t, i, intag, k;
+
+    if (strlen(tag) > MAXTAGSIZE) return FALSE;
+
+    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    f = fopen(filename, "r");
+    if (f == NULL)
+        return TRUE;
+    while (fgets(s, BUFFERSIZE-1, f)) {
+        intag = 0;
+        t = strlen(s) - 1;
+        while (isspace(s[t]))
+            t--;
+        if (s[t] != ']') continue;      
+        while (t > 0) {
+            if (s[t] == ']') {
+                if (!intag)
+                    intag = t;
+                else
+                    intag = 0;
+            } else {
+                if (s[t] == '[') {
+                    if (intag) {
+                        i = 0;
+                        k = t + 1;
+                        while (k < intag)
+                            foundtag[i++] = s[k++];
+                        foundtag[i] = '\0';
+                        /* foundtag now contains the tag */	
+                        if (strlen(foundtag) < MAXTAGSIZE && strcmp(tag, foundtag) == 0) {
+                            i = 0;
+                            while (isspace(s[i])) i++;
+                            k = 0;
+                            while (s[i] && !isspace(s[i])) url[k++] = s[i++];
+                            url[k] = '\0';
+                            Arg x = { .i = TargetNew, .s = url };
+                           open (&x);
+                        }
+                    }
+                    intag = 0;
+                }
+            }
+            t--;
+        }
+    }
+    return TRUE;
+}
+
+gboolean
+build_taglist(const Arg *arg, FILE *f) {
+    int k = 0, in_tag = 0;
+    int t, marker;
+    char foundtab[MAXTAGSIZE+1];
+    while (arg->s[k]) {
+        if (!isspace(arg->s[k]) && !in_tag) {
+            in_tag = 1;
+            marker = k;
+        }
+        if (isspace(arg->s[k]) && in_tag) {
+            /* found a tag */
+            t = 0;
+            while (marker < k && t < MAXTAGSIZE) foundtab[t++] = arg->s[marker++];
+            foundtab[t] = '\0';
+            fprintf(f, " [%s]", foundtab);
+            in_tag = 0;
+        }
+        k++;
+    }
+    if (in_tag) {
+        while (marker < strlen(arg->s) && t < MAXTAGSIZE) foundtab[t++] = arg->s[marker++];
+        foundtab[t] = '\0';
+        fprintf(f, " [%s]", foundtab );
+    }
     return TRUE;
 }
 

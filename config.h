@@ -68,7 +68,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* user agent */
-#define             USER_AGENT                  "Vimprobable/0.9.16.1"
+#define             USER_AGENT                  "Vimprobable/0.9.17.0"
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
@@ -213,6 +213,7 @@ static Command commands[] = {
     { "re!",                                                navigate,    {NavigationForceReload} },
     { "reload",                                             navigate,    {NavigationReload} },
     { "reload!",                                            navigate,    {NavigationForceReload} },
+    { "qt",                                                 search_tag,  {0} },
     { "st",                                                 navigate,    {NavigationCancel} },
     { "stop",                                               navigate,    {NavigationCancel} },
     { "t",                                                  open,        {TargetNew} },
