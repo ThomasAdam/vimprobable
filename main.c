@@ -1591,7 +1591,7 @@ search_tag(const Arg * a) {
 gboolean
 build_taglist(const Arg *arg, FILE *f) {
     int k = 0, in_tag = 0;
-    int t, marker;
+    int t = 0, marker = 0;
     char foundtab[MAXTAGSIZE+1];
     while (arg->s[k]) {
         if (!isspace(arg->s[k]) && !in_tag) {
