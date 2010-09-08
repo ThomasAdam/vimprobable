@@ -24,12 +24,12 @@ char sslbgcolor[]                       = "#b0ff00";            /* background co
 char sslcolor[]                         = "#000000";            /* color for status bar with SSL url */
 
                                         /*  normal,                 warning,                error       */
-static const char *urlboxfont[]         = { "monospace normal 8",   "monospace normal 8",   "monospace bold 8"};
+static const char *urlboxfont[]         = { "Fixed  11",            "Fixed 11",             "Fixed  11"};
 static const char *urlboxcolor[]        = { NULL,                   "#ff0000",              "#ffffff" };
 static const char *urlboxbgcolor[]      = { NULL,                   NULL,                   "#ff0000" };
 
                                         /*  normal,                 error               */
-static const char *completionfont[]     = { "monospace normal 8",   "monospace bold 8" };
+static const char *completionfont[]     = { "Fixed 11",   "Fixed 11" };
                                                                                         /* topborder color */
 static const char *completioncolor[]    = { "#000000",              "#ff00ff",              "#000000" };
                                                                                         /* current row background */
@@ -38,7 +38,7 @@ static const char *completionbgcolor[]  = { "#ffffff",              "#ffffff",  
 #define             COMPLETION_TAG_OPEN     "<b>"
 #define             COMPLETION_TAG_CLOSE    "</b>"
 
-static const char statusfont[]          = "monospace bold 8";   /* font for status bar */
+static const char statusfont[]          = "Fixed 11";   /* font for status bar */
 #define             ENABLE_HISTORY_INDICATOR
 #define             ENABLE_INCREMENTAL_SEARCH
 #define             ENABLE_GTK_PROGRESS_BAR
@@ -79,8 +79,7 @@ gboolean complete_case_sensitive        = TRUE;
 
 /* search engines */
 static Searchengine searchengines[] = {
-    { "i",          "http://ixquick.com/do/metasearch.pl?query=%s" },
-    { "s",          "https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s" },
+    { "g",          "http://www.google.com/search?q=%s&hl=all" },
     { "w",          "https://secure.wikimedia.org/wikipedia/en/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
     { "wd",         "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
 };
