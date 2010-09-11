@@ -1542,6 +1542,16 @@ search_tag(const Arg * a) {
     char s[BUFFERSIZE], foundtag[40], url[BUFFERSIZE];
     int t, i, intag, k;
 
+    if (!tag) {
+	    /* The user must give us something to load up. */
+	    Arg usage;
+	    usage.i = Error;
+	    usage.s = "Bookmark tag required with this option.";
+	    echo(&usage);
+
+	    return TRUE;
+    }
+
     if (strlen(tag) > MAXTAGSIZE) return FALSE;
 
     filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
