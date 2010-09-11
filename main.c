@@ -1431,7 +1431,7 @@ bookmark(const Arg *arg) {
             fprintf(f, "%s", " ");
             fprintf(f, "%s", title);
         }
-        if (strlen(arg->s)) { 
+        if (arg->s && strlen(arg->s)) {
             build_taglist(arg, f);
         }
         fprintf(f, "%s", "\n");
