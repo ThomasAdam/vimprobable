@@ -16,7 +16,7 @@ LDFLAGS += `pkg-config --libs $(LIBS)`
 
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
-MANDIR ?= $(PREFIX)/man
+MANDIR ?= $(PREFIX)/share/man
 # Mode bits for normal not executable files
 FMOD ?= 0644
 # Mode bits for directories
