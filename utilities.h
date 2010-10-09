@@ -11,7 +11,7 @@
 /* max entries in command history */
 #define COMMANDHISTSIZE 50
 
-gboolean read_rcfile(void);
+gboolean read_rcfile(const char *config);
 void save_command_history(char *line);
 gboolean process_save_qmark(const char *bm, WebKitWebView *webview);
 void make_keyslist(void);

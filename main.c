@@ -117,6 +117,7 @@ static gboolean echo_active = TRUE;
 WebKitWebInspector *inspector;
 
 static GdkNativeWindow embed = 0;
+static char *configfile = NULL;
 static char *winid = NULL;
 
 static char rememberedURI[128] = "";
@@ -2139,9 +2140,11 @@ main(int argc, char *argv[]) {
     static Arg a;
     static char url[256] = "";
     static gboolean ver = false;
+    static const char *cfile = NULL;
     static GOptionEntry opts[] = {
             { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
             { "embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "embedded", NULL },
+	    { "configfile", 'c', 0, G_OPTION_ARG_STRING, &cfile, "config file", NULL },
             { NULL }
     };
     static GError *err;
@@ -2159,6 +2162,11 @@ main(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
 
+    if (cfile)
+	    configfile = g_strdup_printf(cfile);
+    else
+	    configfile = g_strdup_printf(RCFILE);
+
     if (!g_thread_supported())
         g_thread_init(NULL);
 
@@ -2170,7 +2178,8 @@ main(int argc, char *argv[]) {
     setup_gui();
 
     /* read config file */
-    if (!read_rcfile()) {
+    if (!read_rcfile(configfile)) {
+	free(configfile);
         a.i = Error;
         a.s = g_strdup_printf("Error in config file");
         echo(&a);

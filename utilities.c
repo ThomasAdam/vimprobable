@@ -16,17 +16,15 @@ extern int lastcommand, maxcommands, commandpointer;
 extern KeyList *keylistroot;
 extern Key keys[];
 
-gboolean read_rcfile(void)
+gboolean read_rcfile(const char *config)
 {
 	int t;
 	char s[255];
-	const char *rcfile;
 	FILE *fpin;
 	gboolean returnval = TRUE;
 
-	rcfile = g_strdup_printf(RCFILE);
-	if ((fpin = fopen(rcfile, "r")) == NULL)
-		return TRUE;
+	if ((fpin = fopen(config, "r")) == NULL)
+		return FALSE;
 	while (fgets(s, 254, fpin)) {
 		/*
 		 * ignore lines that begin with #, / and such 
