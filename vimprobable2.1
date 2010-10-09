@@ -4,6 +4,30 @@
 .TH VIMPROBABLE2 1 "JANUARY 2010" "Linux User Manuals"
 .SH NAME
 Vimprobable \- A WWW browser based on webkit with keybindings inspired by vim, the great editor.
+
+.SH SYNOPSIS
+.B vimprobable2
+.OP \fL\-c|\-\-config
+.OP \fL\-e|\-\-embed
+.OP \fL\-h|\-\-help
+.OP \fL\-v|\-\-version
+.OP URI
+
+.SH OPTIONS
+.TP
+.BI -c " config file"
+Use the specified config file.  If none found, defaults to
+.I $HOME/.config/vimprobable/vimprobablerc
+.TP
+.BI -e " windowid"
+Given the windowid of an XEmbed-aware application, Vimprobable will use that as its parent.
+.TP
+.BI -h
+Prints out a short usage summary.
+.TP
+.BI -v
+Prints the version of Vimprobable.
+
 .SH DESCRIPTION
 Vimprobable is a WWW browser that is build around the webkit library. Vimprobable is fast. 
 Vimprobable comes without buttons and other graphic widgets. It is aimed at being controlled 
