@@ -2063,6 +2063,7 @@ setup_settings() {
     g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
     g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
     g_object_set((GObject*)settings, "enable-plugins", enablePlugins, NULL);
+    g_object_set((GObject*)settings, "enable-java-applet", enableJava, NULL);
     filename = g_strdup_printf(USER_STYLESHEET);
     filename = g_strdup_printf("file://%s", filename);
     g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);

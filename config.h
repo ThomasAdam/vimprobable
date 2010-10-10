@@ -9,6 +9,7 @@
 char startpage[241]                     = "http://www.vimprobable.org/";
 char useragent[120]	                    = "Vimprobable2/0.9.4.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
+static const gboolean enableJava        = TRUE; /* FALSE disables Java applets */
 
 /* appearance */
 char statusbgcolor[]                    = "#000000";            /* background color for status bar */
@@ -148,6 +149,7 @@ static Setting browsersettings[] = {
     { "useragent",       useragent,          "user-agent",                  FALSE,          FALSE,           FALSE,          FALSE  },
     { "scripts",         NULL,               "enable-scripts",              FALSE,          TRUE,            FALSE,          FALSE  },
     { "plugins",         NULL,               "enable-plugins",              FALSE,          TRUE,            FALSE,          FALSE  },
+    { "java",            NULL,               "enable-java-applet",          FALSE,          TRUE,            FALSE,          FALSE  },
     { "images",          NULL,               "auto-load-images",            FALSE,          TRUE,            FALSE,          FALSE  },
     { "shrinkimages",    NULL,               "auto-shrink-images",          FALSE,          TRUE,            FALSE,          FALSE  },
     { "cursivefont",     NULL,               "cursive-font-family",         FALSE,          FALSE,           FALSE,          FALSE  },
