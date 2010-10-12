@@ -57,6 +57,7 @@ static gboolean open(const Arg *arg);
 static gboolean paste(const Arg *arg);
 static gboolean quit(const Arg *arg);
 static gboolean revive(const Arg *arg);
+static gboolean print_frame(const Arg *arg);
 static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
 static gboolean script(const Arg *arg);
@@ -1133,6 +1134,14 @@ revive(const Arg *arg) {
         return TRUE;
     }
     return FALSE;
+}
+
+static 
+gboolean print_frame(const Arg *arg)
+{
+    WebKitWebFrame *frame = webkit_web_view_get_main_frame(webview);
+    webkit_web_frame_print (frame);
+    return TRUE;
 }
 
 gboolean

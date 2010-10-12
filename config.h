@@ -218,6 +218,7 @@ static Command commands[] = {
     { "stop",                                               navigate,    {NavigationCancel} },
     { "t",                                                  open,        {TargetNew} },
     { "tabopen",                                            open,        {TargetNew} },
+    { "print",                                         	    print_frame, {0} },
     { "bma",                                                bookmark,    {0} },
     { "bookmark",                                           bookmark,    {0} },
     { "source",                                             view_source, {0} },
