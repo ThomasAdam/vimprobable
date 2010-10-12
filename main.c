@@ -1127,16 +1127,14 @@ open(const Arg *arg) {
 
 gboolean
 yank(const Arg *arg) {
-    const char *url;
-    Arg a = { .i = Info };
+    const char *url, *feedback;
 
     if (arg->i & SourceURL) {
         url = webkit_web_view_get_uri(webview);
         if (!url)
             return TRUE;
-        a.s = g_strdup_printf("Yanked %s", url);
-        echo(&a);
-        g_free(a.s);
+        feedback = g_strconcat("Yanked ", url, NULL);
+        give_feedback(feedback);
         if (arg->i & ClipboardPrimary)
             gtk_clipboard_set_text(clipboards[0], url, -1);
         if (arg->i & ClipboardGTK)
@@ -1526,6 +1524,7 @@ bookmark(const Arg *arg) {
         }
         fprintf(f, "%s", "\n");
         fclose(f);
+        give_feedback( "Bookmark saved" );
         return TRUE;
     } else {
     	set_error("Bookmarks file not found.");
@@ -1845,15 +1844,12 @@ search_tag(const Arg * a) {
 void
 toggle_proxy(gboolean onoff) {
     SoupURI *proxy_uri;
-    Arg     a;
     char    *filename, *new;
     int     len;
 
     if (onoff == FALSE)  {
         g_object_set(session, "proxy-uri", NULL, NULL);
-        a.i = Info;
-        a.s = "Proxy deactivated";
-        echo(&a);
+        give_feedback("Proxy deactivated");
     } else  {
         filename = (char *)g_getenv("http_proxy");
 
@@ -1874,9 +1870,7 @@ toggle_proxy(gboolean onoff) {
                 proxy_uri = soup_uri_new(filename);
             }
             g_object_set(session, "proxy-uri", proxy_uri, NULL);
-            a.i = Info;
-            a.s = "Proxy activated";
-            echo(&a);
+            give_feedback("Proxy activated");
         } 
     }
 }

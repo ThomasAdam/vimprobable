@@ -396,3 +396,13 @@ set_error(const char *error) {
         error_msg = g_strdup_printf("%s", error);
     }
 }
+
+void 
+give_feedback(const char *feedback) 
+{ 
+    Arg a = { .i = Info };
+
+    a.s = g_strdup_printf(feedback);
+    echo(&a);
+    g_free(a.s);
+}

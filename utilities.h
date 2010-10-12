@@ -23,3 +23,5 @@ gboolean changemapping(Key * search_key, int maprecord);
 gboolean mappings(const Arg *arg);
 gboolean build_taglist(const Arg *arg, FILE *f);
 void set_error(const char *error);
+void give_feedback(const char *feedback);
+
