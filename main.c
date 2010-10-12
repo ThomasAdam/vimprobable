@@ -82,6 +82,7 @@ static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **me
 static void download_progress(WebKitDownload *d, GParamSpec *pspec);
 gboolean build_taglist(const Arg *arg, FILE *f);
 void set_error(const char *error);
+void give_feedback(const char *feedback);
 
 static void history(void);
 
@@ -1058,16 +1059,14 @@ open(const Arg *arg) {
 
 gboolean
 yank(const Arg *arg) {
-    const char *url;
-    Arg a = { .i = Info };
+    const char *url, *feedback;
 
     if (arg->i & SourceURL) {
         url = webkit_web_view_get_uri(webview);
         if (!url)
             return TRUE;
-        a.s = g_strdup_printf("Yanked %s", url);
-        echo(&a);
-        g_free(a.s);
+        feedback = g_strconcat("Yanked ", url, NULL);
+        give_feedback(feedback);
         if (arg->i & ClipboardPrimary)
             gtk_clipboard_set_text(clipboards[0], url, -1);
         if (arg->i & ClipboardGTK)
@@ -1452,6 +1451,7 @@ bookmark(const Arg *arg) {
         }
         fprintf(f, "%s", "\n");
         fclose(f);
+        give_feedback( "Bookmark saved" );
         return TRUE;
     } else {
     	set_error("Bookmarks file not found.");
@@ -1652,6 +1652,15 @@ set_error(const char *error) {
     if (error_msg == NULL) {
         error_msg = g_strdup_printf("%s", error);
     }
+}
+
+void 
+give_feedback(const char *feedback) { 
+    Arg a = { .i = Info };
+
+    a.s = g_strdup_printf(feedback);
+    echo(&a);
+    g_free(a.s);
 }
 
 void
