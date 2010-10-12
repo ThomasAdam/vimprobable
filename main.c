@@ -54,6 +54,7 @@ static gboolean paste(const Arg *arg);
 static gboolean quickmark(const Arg *arg);
 static gboolean quit(const Arg *arg);
 static gboolean revive(const Arg *arg);
+static gboolean print_frame(const Arg *arg);
 static gboolean search(const Arg *arg);
 static gboolean set(const Arg *arg);
 static gboolean script(const Arg *arg);
@@ -1203,6 +1204,14 @@ revive(const Arg *arg) {
     return FALSE;
 }
 
+static 
+gboolean print_frame(const Arg *arg)
+{
+    WebKitWebFrame *frame = webkit_web_view_get_main_frame(webview);
+    webkit_web_frame_print (frame);
+    return TRUE;
+}
+
 gboolean
 search(const Arg *arg) {
     count = count ? count : 1;
@@ -1742,6 +1751,11 @@ process_set_line(char *line) {
             /* toggle proxy usage? */
             if (strlen(my_pair.what) == 5 && strncmp("proxy", my_pair.what, 5) == 0) {
                 toggle_proxy(boolval);
+            }
+
+            /* print */
+            if (strlen(my_pair.what) == 5 && strncmp("print", my_pair.what, 5) == 0) {
+                print_frame(NULL);
             }
 
 	    /* Toggle scrollbars. */
