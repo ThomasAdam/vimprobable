@@ -81,6 +81,7 @@ static gchar *jsapi_ref_to_string(JSContextRef context, JSValueRef ref);
 static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message);
 static void download_progress(WebKitDownload *d, GParamSpec *pspec);
 gboolean build_taglist(const Arg *arg, FILE *f);
+void set_error(const char *error);
 
 static void history(void);
 
@@ -115,6 +116,7 @@ static char inputKey[5];
 static char inputBuffer[65] = "";
 static char chars[65] = "0000000000000000000000000000000000000000000000000000000000000000\n";
 static char followTarget[8] = "";
+char *error_msg = NULL;
 
 GList *activeDownloads;
 
@@ -480,7 +482,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     Arg a;
     int i;
     size_t len;
-    gboolean success = FALSE, forward = FALSE;
+    gboolean success = FALSE, forward = FALSE, found = FALSE;
 
     a.i = HideCompletion;
     complete(&a);
@@ -491,15 +493,27 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         for (i = 0; i < LENGTH(commands); i++) {
             len = strlen(commands[i].cmd);
             if (length >= len && !strncmp(&text[1], commands[i].cmd, len) && (text[len + 1] == ' ' || !text[len + 1])) {
+                found = TRUE;
                 a.i = commands[i].arg.i;
                 a.s = length > len + 2 ? &text[len + 2] : commands[i].arg.s;
-                if ((success = commands[i].func(&a)))
-                    break;
+                success = commands[i].func(&a);
+                break;
             }
         }
-        if (!success) {
+        if (!found) {
             a.i = Error;
             a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
+            echo(&a);
+            g_free(a.s);
+        } else if (!success) {
+            a.i = Error;
+            if (error_msg != NULL) {
+                a.s = g_strdup_printf("%s", error_msg);
+                g_free(error_msg);
+                error_msg = NULL;
+            } else {
+                a.s = g_strdup_printf("Unknown error. Please file a bug report!");
+            }
             echo(&a);
             g_free(a.s);
         }
@@ -1239,14 +1253,14 @@ script(const Arg *arg) {
     gchar *value = NULL, *message = NULL;
     Arg a;
 
-    if (!arg->s)
-        return TRUE;
+    if (!arg->s) {
+        set_error("Missing argument.");
+        return FALSE;
+    }
     jsapi_evaluate_script(arg->s, &value, &message);
     if (message) {
-        a.i = Error;
-        a.s = message;
-        echo(&a);
-        g_free(message);
+        set_error(message);
+        return FALSE;
     }
     if (arg->i != Silent && value) {
         a.i = arg->i;
@@ -1423,7 +1437,11 @@ bookmark(const Arg *arg) {
     const char *title = webkit_web_view_get_title(webview);
     filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
     f = fopen(filename, "a");
-    if (f != NULL && uri != NULL) {
+    if (uri == NULL || strlen(uri) == 0) {
+        set_error("No URI found to bookmark.");
+        return FALSE;
+    }
+    if (f != NULL) {
         fprintf(f, "%s", uri);
         if (title != NULL) {
             fprintf(f, "%s", " ");
@@ -1436,7 +1454,8 @@ bookmark(const Arg *arg) {
         fclose(f);
         return TRUE;
     } else {
-       return FALSE;
+    	set_error("Bookmarks file not found.");
+        return FALSE;
     }
 }
 
@@ -1542,20 +1561,21 @@ search_tag(const Arg * a) {
 
     if (!tag) {
 	    /* The user must give us something to load up. */
-	    Arg usage;
-	    usage.i = Error;
-	    usage.s = "Bookmark tag required with this option.";
-	    echo(&usage);
-
-	    return TRUE;
+	    set_error("Bookmark tag required with this option.");
+	    return FALSE;
     }
 
-    if (strlen(tag) > MAXTAGSIZE) return FALSE;
+    if (strlen(tag) > MAXTAGSIZE) {
+        set_error("Tag too long.");
+        return FALSE;
+    }
 
     filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
     f = fopen(filename, "r");
-    if (f == NULL)
-        return TRUE;
+    if (f == NULL) {
+        set_error("Couldn't open bookmarks file.");
+        return FALSE;
+    }
     while (fgets(s, BUFFERSIZE-1, f)) {
         intag = 0;
         t = strlen(s) - 1;
@@ -1622,6 +1642,16 @@ build_taglist(const Arg *arg, FILE *f) {
         fprintf(f, " [%s]", foundtab );
     }
     return TRUE;
+}
+
+void
+set_error(const char *error) {
+    /* it should never happen that set_error is called more than once, 
+     * but to avoid any potential memory leaks, we ignore any subsequent 
+     * error if the current one has not been shown */
+    if (error_msg == NULL) {
+        error_msg = g_strdup_printf("%s", error);
+    }
 }
 
 void
