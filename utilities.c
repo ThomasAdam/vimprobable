@@ -15,6 +15,7 @@ extern Command *commands;
 extern int lastcommand, maxcommands, commandpointer;
 extern KeyList *keylistroot;
 extern Key keys[];
+extern char *error_msg;
 
 gboolean read_rcfile(const char *config)
 {
@@ -253,13 +254,17 @@ gboolean
 mappings(const Arg *arg) {
     char line[255];
 
-    if ( !arg->s )
+    if ( !arg->s ) {
+        set_error("Missing argument.");
         return FALSE;
+    }
     strncpy(line, arg->s, 254);
     if (process_map_line(line))
         return TRUE;
-    else
+    else {
+        set_error("Invalid mapping.");
         return FALSE;
+    }
 }
 
 gboolean
@@ -380,4 +385,14 @@ build_taglist(const Arg *arg, FILE *f) {
         fprintf(f, " [%s]", foundtab );
     }
     return TRUE;
+}
+
+void
+set_error(const char *error) {
+    /* it should never happen that set_error is called more than once, 
+     * but to avoid any potential memory leaks, we ignore any subsequent 
+     * error if the current one has not been shown */
+    if (error_msg == NULL) {
+        error_msg = g_strdup_printf("%s", error);
+    }
 }
