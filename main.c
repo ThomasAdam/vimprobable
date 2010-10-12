@@ -1753,14 +1753,9 @@ process_set_line(char *line) {
                 toggle_proxy(boolval);
             }
 
-            /* print */
-            if (strlen(my_pair.what) == 5 && strncmp("print", my_pair.what, 5) == 0) {
-                print_frame(NULL);
-            }
-
-	    /* Toggle scrollbars. */
-	    if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0)
-		    toggle_scrollbars(boolval);
+            /* Toggle scrollbars. */
+            if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0)
+                toggle_scrollbars(boolval);
 
             /* reload page? */
             if (browsersettings[i].reload)
