@@ -86,7 +86,7 @@ void toggle_scrollbars(gboolean onoff);
 gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
 GtkWidget * fill_eventbox(const char * completion_line);
-
+static void mop_up(void);
 
 #include "main.h"
 
@@ -2254,6 +2254,14 @@ set_single_cookie(SoupCookie *cookie) {
 }
 #endif
 
+void
+mop_up(void) {
+	/* Free up any nasty globals before exiting. */
+	if (cookie_store)
+		g_free(cookie_store);
+
+	return;
+}
 
 int
 main(int argc, char *argv[]) {
@@ -2317,6 +2325,8 @@ main(int argc, char *argv[]) {
     a.s = url;
     open_arg(&a);
     gtk_main();
+
+    mop_up();
 
     return EXIT_SUCCESS;
 }
