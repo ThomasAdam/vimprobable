@@ -2175,6 +2175,86 @@ setup_signals() {
         "inspect-web-view",                             (GCallback)inspector_inspect_web_view_cb,   NULL);
 }
 
+#ifdef ENABLE_COOKIE_SUPPORT
+/* TA:  XXX - we should be using this callback for any header-requests we
+ *      receive (hence the name "new_generic_request" -- but for now, its use
+ *      is limited to handling cookies.
+ */
+void
+new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused) {
+	SoupMessageHeaders *soup_msg_h;
+	SoupURI *uri;
+	const char *cookie_str;
+
+	soup_msg_h = soup_msg->request_headers;
+	soup_message_headers_remove(soup_msg_h, "Cookie");
+	uri = soup_message_get_uri(soup_msg);
+	if( (cookie_str = get_cookies(uri)) )
+		soup_message_headers_append(soup_msg_h, "Cookie", cookie_str);
+
+	g_signal_connect_after(G_OBJECT(soup_msg), "got-headers", G_CALLBACK(handle_cookie_request), NULL);
+}
+
+const char *
+get_cookies(SoupURI *soup_uri) {
+	const char *cookie_str;
+	SoupCookieJar *jar = soup_cookie_jar_text_new(cookie_store, TRUE);
+	cookie_str = soup_cookie_jar_get_cookies(jar, soup_uri, TRUE);
+	g_object_unref(jar);
+	return cookie_str;
+}
+
+void
+handle_cookie_request(SoupMessage *soup_msg, gpointer unused) {
+	GSList *resp_cookie;
+
+	for(resp_cookie = soup_cookies_from_response(soup_msg);
+		resp_cookie;
+		resp_cookie = g_slist_next(resp_cookie))
+	{
+		set_single_cookie((SoupCookie *)resp_cookie->data);
+	}
+}
+
+void
+set_single_cookie(SoupCookie *cookie) {
+	int lock;
+
+	if (!cookie)
+	{
+		/* TA:  Then what?  This shouldn't happen. */
+		{
+			Arg arg_error;
+			arg_error.i = Error;
+			arg_error.s = g_strdup("Invalid cookie from header");
+			echo(&arg_error);
+			g_free(arg_error.s);
+		}
+
+		return;
+	}
+
+	lock = open(cookie_store, 0);
+	flock(lock, LOCK_EX);
+
+	SoupDate *soup_date;
+	SoupCookieJar *jar = soup_cookie_jar_text_new(cookie_store, FALSE);
+	cookie = soup_cookie_copy(cookie);
+
+	if (cookie_timeout && cookie->expires == NULL) {
+		soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout);
+		soup_cookie_set_expires(cookie, soup_date);
+	}
+
+	soup_cookie_jar_add_cookie(jar, cookie);
+	g_object_unref(jar);
+
+	flock(lock, LOCK_UN);
+	close(lock);
+}
+#endif
+
+
 int
 main(int argc, char *argv[]) {
     static Arg a;
