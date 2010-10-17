@@ -150,6 +150,17 @@ Start backward search
 Next search result
 
 
+.IP Hinting
+
+.I "    " f
+Follow link
+
+.I "    " F
+Follow link in new window
+
+.I "    " gi
+Focus next input field
+
 
 .SH COLON COMMANDS
 
@@ -218,6 +229,21 @@ Shortcut: d
 .IP ":print"
 
 Print the current URL
+
+.SH MODES
+
+Vimprobable is a modal browser. By default, it is in command mode, meaning that
+any keystroke will be interpreted by the internal command engine. INSERT mode
+is automatically activated if an input field on a website becomes focused.
+Should this not work (due to limitations of the Webkit-GTK engine and the faulty
+HTML code of some websites, this is possible), you can manually switch the
+browser to PASSTHROUGH mode instead (Ctrl+Z). In INSERT and PASSTHROUGH modes,
+keystrokes will not be interpreted by the browser, but passed to the underlying
+engine/website.
+
+In addition, there is HINT mode. This is activated with the "f" key by default.
+Enter a the number of a link to follow it. Alternatively, you can enter the
+link text (case sensitive) to narrow down your choices.
 
 .SH QUICKMARKS
 
