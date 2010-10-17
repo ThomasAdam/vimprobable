@@ -49,7 +49,7 @@ static gboolean focus_input(const Arg *arg);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
-static gboolean open(const Arg *arg);
+static gboolean open_arg(const Arg *arg);
 static gboolean paste(const Arg *arg);
 static gboolean quickmark(const Arg *arg);
 static gboolean quit(const Arg *arg);
@@ -197,7 +197,7 @@ webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpo
     if (strlen(rememberedURI) > 0) {
         a.s = rememberedURI;
     }
-    open(&a);
+    open_arg(&a);
     return FALSE;
 }
 
@@ -205,7 +205,7 @@ gboolean
 webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data) {
     Arg a = { .i = TargetNew, .s = (char*)webkit_network_request_get_uri(request) };
-    open(&a);
+    open_arg(&a);
     webkit_web_policy_decision_ignore(decision);
     return TRUE;
 }
@@ -1065,7 +1065,7 @@ number(const Arg *arg) {
 }
 
 gboolean
-open(const Arg *arg) {
+open_arg(const Arg *arg) {
     char *argv[6];
     char *s = arg->s, *p, *new;
     Arg a = { .i = NavigationReload };
@@ -1152,7 +1152,7 @@ paste(const Arg *arg) {
     /* If we're over a link, open it in a new target. */
     if (strlen(rememberedURI) > 0) {
         Arg new_target = { .i = TargetNew, .s = arg->s };
-        open(&new_target);
+        open_arg(&new_target);
         return TRUE;
     }
 
@@ -1161,7 +1161,7 @@ paste(const Arg *arg) {
     if (!a.s && arg->i & ClipboardGTK)
         a.s = gtk_clipboard_wait_for_text(clipboards[1]);
     if (a.s)
-        open(&a);
+        open_arg(&a);
     return TRUE;
 }
 
@@ -1198,7 +1198,7 @@ revive(const Arg *arg) {
     }
     if (strlen(buffer) > 0) {
         a.s = buffer;
-        open(&a);
+        open_arg(&a);
         return TRUE;
     }
     return FALSE;
@@ -1343,7 +1343,7 @@ quickmark(const Arg *a) {
        char *ptr = strrchr(buf, '\n');
        *ptr = '\0';
        Arg x = { .s = buf };
-       if ( strlen(buf)) return open(&x);
+       if ( strlen(buf)) return open_arg(&x);
        else  
        {       
            x.i = Error;
@@ -1395,7 +1395,7 @@ script(const Arg *arg) {
                 a.i = TargetCurrent;
             memset(followTarget, 0, 8);
             a.s = (value + 5);
-            open(&a);
+            open_arg(&a);
         }
     }
     g_free(value);
@@ -1838,7 +1838,7 @@ search_tag(const Arg * a) {
                             while (s[i] && !isspace(s[i])) url[k++] = s[i++];
                             url[k] = '\0';
                             Arg x = { .i = TargetNew, .s = url };
-                           open (&x);
+                           open_arg(&x);
                         }
                     }
                     intag = 0;
@@ -2221,7 +2221,7 @@ main(int argc, char *argv[]) {
 
     a.i = TargetCurrent;
     a.s = url;
-    open(&a);
+    open_arg(&a);
     gtk_main();
 
     return EXIT_SUCCESS;
