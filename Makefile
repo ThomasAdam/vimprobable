@@ -11,8 +11,17 @@ CLEAN = $(TARGET) $(OBJ) $(DEPS) javascript.h
 # Files to install by install target or remove by uninstall target
 INSTALL = $(BINDIR)/$(TARGET) $(addprefix $(MANDIR)/man1/,$(MAN))
 
+# DEBUG build?  Off by default
+V_DEBUG = 0
+
 CFLAGS += `pkg-config --cflags $(LIBS)`
 LDFLAGS += `pkg-config --libs $(LIBS)`
+
+# TA:  This is a pretty stringent list of warnings to bail on!
+ifeq ($(V_DEBUG),1)
+CFLAGS += -g -ggdb
+CFLAGS += -Wno-long-long -Wall -Wmissing-declarations
+endif
 
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
