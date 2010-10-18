@@ -381,6 +381,7 @@ build_taglist(const Arg *arg, FILE *f) {
         k++;
     }
     if (in_tag) {
+        t = 0;
         while (marker < strlen(arg->s) && t < MAXTAGSIZE) foundtab[t++] = arg->s[marker++];
         foundtab[t] = '\0';
         fprintf(f, " [%s]", foundtab );
