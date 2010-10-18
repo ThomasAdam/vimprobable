@@ -144,6 +144,7 @@ KeyList *keylistroot = NULL;
  * Note that this cannot be surrounded by #ifdef blocks for
  * ENABLE_COOKIE_SUPPORT
  */
+static SoupCookieJar *cookie_jar = NULL;
 static time_t cookie_timeout = 4800;
 static char *cookie_store;
 static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
@@ -2109,6 +2110,7 @@ setup_settings() {
     webkit_web_view_set_settings(webview, settings);
 #ifdef ENABLE_COOKIE_SUPPORT
     cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
+    cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
     soup_session_remove_feature_by_type(session, soup_cookie_get_type());
     soup_session_remove_feature_by_type(session, soup_cookie_jar_get_type());
 #endif
@@ -2198,9 +2200,7 @@ new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused
 const char *
 get_cookies(SoupURI *soup_uri) {
 	const char *cookie_str;
-	SoupCookieJar *jar = soup_cookie_jar_text_new(cookie_store, TRUE);
-	cookie_str = soup_cookie_jar_get_cookies(jar, soup_uri, TRUE);
-	g_object_unref(jar);
+	cookie_str = soup_cookie_jar_get_cookies(cookie_jar, soup_uri, TRUE);
 	return cookie_str;
 }
 
@@ -2238,7 +2238,6 @@ set_single_cookie(SoupCookie *cookie) {
 	flock(lock, LOCK_EX);
 
 	SoupDate *soup_date;
-	SoupCookieJar *jar = soup_cookie_jar_text_new(cookie_store, FALSE);
 	cookie = soup_cookie_copy(cookie);
 
 	if (cookie_timeout && cookie->expires == NULL) {
@@ -2246,8 +2245,7 @@ set_single_cookie(SoupCookie *cookie) {
 		soup_cookie_set_expires(cookie, soup_date);
 	}
 
-	soup_cookie_jar_add_cookie(jar, cookie);
-	g_object_unref(jar);
+	soup_cookie_jar_add_cookie(cookie_jar, cookie);
 
 	flock(lock, LOCK_UN);
 	close(lock);
