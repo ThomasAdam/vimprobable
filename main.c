@@ -1105,7 +1105,23 @@ open(const Arg *arg) {
                     ++s;
                 }
                 *p = '\0';
-            } else if (strcspn(arg->s, "/") == 0 || strcspn(arg->s, "./") == 0) {  /* prepend "file://" */
+
+		/* TA:  This isn't ideal, but because a URL entered as:
+		 *
+		 * ftp://example.com
+		 *
+		 * Would already have been caught by the strstr() check above,
+		 * we have to check for this here.
+		 */
+		if (g_str_has_prefix(arg->s, "ftp://")) {
+		    /* Remove the "ftp://" prefix, and prepend it with
+		     * "http://"
+		     */
+		    new = g_strjoinv("http://", g_strsplit(arg->s, "ftp://", -1));
+		}
+	    } else if (g_str_has_prefix(arg->s, "ftp.")) {
+		    new = g_strdup_printf("http://%s", arg->s);
+	    } else if (strcspn(arg->s, "/") == 0 || strcspn(arg->s, "./") == 0) {  /* prepend "file://" */
                 new = g_malloc(sizeof("file://") + len);
                 strcpy(new, "file://");
                 memcpy(&new[sizeof("file://") - 1], arg->s, len + 1);
