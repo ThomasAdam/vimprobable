@@ -78,7 +78,6 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
 	    a.i = Error;
 	    a.s = g_strdup_printf("Invalid quickmark, only 1-9");
 	    echo(&a);
-	    g_free(a.s);
 	    return TRUE;
     }	    
     if ( uri == NULL ) return FALSE;
@@ -115,7 +114,6 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
     a.i = Error;
     a.s = g_strdup_printf("Saved as quickmark %d: %s", mark, uri);
     echo(&a);
-    g_free(a.s);
 
     return TRUE;
 }
@@ -406,5 +404,4 @@ give_feedback(const char *feedback)
 
     a.s = g_strdup_printf(feedback);
     echo(&a);
-    g_free(a.s);
 }
