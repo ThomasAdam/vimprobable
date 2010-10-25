@@ -2095,9 +2095,7 @@ setup_settings() {
     SoupURI *proxy_uri;
     char *filename, *new;
     int  len;
-#ifdef ENABLE_COOKIE_SUPPORT
-    SoupCookieJar *cookiejar;
-#endif
+
     session = webkit_get_default_session();
     g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
     g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
@@ -2110,11 +2108,11 @@ setup_settings() {
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
 #ifdef ENABLE_COOKIE_SUPPORT
-    filename = g_strdup_printf(COOKIES_STORAGE_FILENAME);
-    cookiejar = soup_cookie_jar_text_new(filename, COOKIES_STORAGE_READONLY);
-    g_free(filename);
-    soup_session_add_feature(session, (SoupSessionFeature*)cookiejar);
+    cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
+    soup_session_remove_feature_by_type(session, soup_cookie_get_type());
+    soup_session_remove_feature_by_type(session, soup_cookie_jar_get_type());
 #endif
+
     /* proxy */
     if (use_proxy == TRUE) {
         filename = (char *)g_getenv("http_proxy");
@@ -2135,6 +2133,10 @@ setup_settings() {
 
 void
 setup_signals() {
+#ifdef ENABLE_COOKIE_SUPPORT
+    /* Headers. */
+    g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
+#endif
     /* window */
     g_object_connect((GObject*)window,
         "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
