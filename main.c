@@ -139,6 +139,18 @@ int  maxcommands    = 0;
 int  commandpointer = 0;
 KeyList *keylistroot = NULL;
 
+/* Cookie-related information.
+ *
+ * Note that this cannot be surrounded by #ifdef blocks for
+ * ENABLE_COOKIE_SUPPORT
+ */
+static time_t cookie_timeout = 4800;
+static char *cookie_store;
+static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
+static const char *get_cookies(SoupURI *soup_uri);
+static void set_single_cookie(SoupCookie *cookie);
+static void new_generic_request(SoupSession *soup_ses, SoupMessage *soup_msg, gpointer unused);
+
 /* callbacks */
 void
 window_destroyed_cb(GtkWidget *window, gpointer func_data) {
