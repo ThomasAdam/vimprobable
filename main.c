@@ -139,19 +139,21 @@ int  maxcommands    = 0;
 int  commandpointer = 0;
 KeyList *keylistroot = NULL;
 
-/* Cookie-related information.
- *
- * Note that this cannot be surrounded by #ifdef blocks for
- * ENABLE_COOKIE_SUPPORT
- */
-static SoupCookieJar *cookie_jar = NULL;
+/* Cookie support. */
+#ifdef ENABLE_COOKIE_SUPPORT
+static SoupCookieJar *session_cookie_jar = NULL;
+static SoupCookieJar *file_cookie_jar = NULL;
 static time_t cookie_timeout = 4800;
 static char *cookie_store;
-static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
+static void setup_cookies(void);
 static const char *get_cookies(SoupURI *soup_uri);
-static void set_single_cookie(SoupCookie *cookie);
+static void load_all_cookies(void);
+static void save_all_cookies(void);
 static void new_generic_request(SoupSession *soup_ses, SoupMessage *soup_msg, gpointer unused);
-
+static void update_cookie_jar(SoupCookie *new);
+static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
+static int lock;
+#endif
 /* callbacks */
 void
 window_destroyed_cb(GtkWidget *window, gpointer func_data) {
@@ -2108,12 +2110,6 @@ setup_settings() {
     g_object_set((GObject*)settings, "user-agent", useragent, NULL);
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
-#ifdef ENABLE_COOKIE_SUPPORT
-    cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
-    cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
-    soup_session_remove_feature_by_type(session, soup_cookie_get_type());
-    soup_session_remove_feature_by_type(session, soup_cookie_jar_get_type());
-#endif
 
     /* proxy */
     if (use_proxy == TRUE) {
@@ -2178,6 +2174,32 @@ setup_signals() {
 }
 
 #ifdef ENABLE_COOKIE_SUPPORT
+void
+setup_cookies()
+{
+	if (file_cookie_jar)
+		g_object_unref(file_cookie_jar);
+
+	if (session_cookie_jar)
+		g_object_unref(session_cookie_jar);
+
+	session_cookie_jar = soup_cookie_jar_new();
+	cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
+
+	lock = open(cookie_store, 0);
+	flock(lock, LOCK_EX);
+
+	load_all_cookies();
+
+	flock(lock, LOCK_UN);
+	close(lock);
+
+	soup_session_add_feature(session, SOUP_SESSION_FEATURE(session_cookie_jar));
+	soup_session_add_feature(session, SOUP_SESSION_FEATURE(file_cookie_jar));
+
+	return;
+}
+
 /* TA:  XXX - we should be using this callback for any header-requests we
  *      receive (hence the name "new_generic_request" -- but for now, its use
  *      is limited to handling cookies.
@@ -2195,69 +2217,127 @@ new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused
 		soup_message_headers_append(soup_msg_h, "Cookie", cookie_str);
 
 	g_signal_connect_after(G_OBJECT(soup_msg), "got-headers", G_CALLBACK(handle_cookie_request), NULL);
+
+	return;
 }
 
 const char *
 get_cookies(SoupURI *soup_uri) {
 	const char *cookie_str;
-	cookie_str = soup_cookie_jar_get_cookies(cookie_jar, soup_uri, TRUE);
+
+	cookie_str = soup_cookie_jar_get_cookies(session_cookie_jar, soup_uri, TRUE);
+
 	return cookie_str;
 }
 
 void
-handle_cookie_request(SoupMessage *soup_msg, gpointer unused) {
-	GSList *resp_cookie;
+handle_cookie_request(SoupMessage *soup_msg, gpointer unused)
+{
+	GSList *resp_cookie = NULL;
+	SoupCookie *cookie;
 
 	for(resp_cookie = soup_cookies_from_response(soup_msg);
 		resp_cookie;
 		resp_cookie = g_slist_next(resp_cookie))
 	{
-		set_single_cookie((SoupCookie *)resp_cookie->data);
+		SoupDate *soup_date;
+		cookie = soup_cookie_copy((SoupCookie *)resp_cookie->data);
+
+		if (cookie_timeout && cookie->expires == NULL) {
+			soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout * 10);
+			soup_cookie_set_expires(cookie, soup_date);
+		}
+		soup_cookie_jar_add_cookie(session_cookie_jar, cookie);
+		update_cookie_jar(cookie);
 	}
+
+	return;
 }
 
 void
-set_single_cookie(SoupCookie *cookie) {
-	int lock;
-
-	if (!cookie)
-	{
-		/* TA:  Then what?  This shouldn't happen. */
-		{
-			Arg arg_error;
-			arg_error.i = Error;
-			arg_error.s = g_strdup("Invalid cookie from header");
-			echo(&arg_error);
-			g_free(arg_error.s);
-		}
-
+update_cookie_jar(SoupCookie *new)
+{
+	if (!new) {
+		/* Nothing to do. */
 		return;
 	}
 
+	/* TA:  Note that this locking is merely advisory -- because there's
+	 * no linking between different vimprobable processes, the cookie jar,
+	 * when being written to here, *WILL* be truncated and overwritten
+	 * with cookie contents from the specific session saving its cookies
+	 * at that time.
+	 *
+	 * This may or may not contain cookies stored in other Vimprobable
+	 * instances, although when those instances save their cookies,
+	 * they'll just replace the cookie store's contents.
+	 *
+	 * The locking should probably be changed to be fcntl() based one day
+	 * -- but the caveat with that is all Vimprobable instances would then
+	 * block waiting for the cookie file to become availabe.  The
+	 * advisory locking used here so far seems to work OK, but if we run
+	 * into problems in the future, we'll know where to look.
+	 *
+	 * Ideally, if Vimprobable were ever to want to do this cleanly,
+	 * something like using libunique to pass messages between registered
+	 * sessions.
+	 */
 	lock = open(cookie_store, 0);
 	flock(lock, LOCK_EX);
 
-	SoupDate *soup_date;
-	cookie = soup_cookie_copy(cookie);
-
-	if (cookie_timeout && cookie->expires == NULL) {
-		soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout);
-		soup_cookie_set_expires(cookie, soup_date);
-	}
-
-	soup_cookie_jar_add_cookie(cookie_jar, cookie);
+	save_all_cookies();
+	load_all_cookies();
 
 	flock(lock, LOCK_UN);
 	close(lock);
+
+	return;
 }
+
+void
+save_all_cookies()
+{
+	GSList *session_cookie_list = soup_cookie_jar_all_cookies(session_cookie_jar);
+
+	 for (; session_cookie_list;
+		session_cookie_list = session_cookie_list->next)
+	 {
+		soup_cookie_jar_add_cookie(file_cookie_jar, session_cookie_list->data);
+	 }
+
+	 soup_cookies_free(session_cookie_list);
+
+	 return;
+}
+
+void
+load_all_cookies()
+{
+	file_cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
+
+	/* Put them back in the session store. */
+	GSList *cookies_from_file = soup_cookie_jar_all_cookies(file_cookie_jar);
+
+	for (; cookies_from_file;
+	       cookies_from_file = cookies_from_file->next)
+	{
+		soup_cookie_jar_add_cookie(session_cookie_jar, cookies_from_file->data);
+	}
+
+	soup_cookies_free(cookies_from_file);
+
+	return;
+}
+
 #endif
 
 void
 mop_up(void) {
 	/* Free up any nasty globals before exiting. */
+#ifdef ENABLE_COOKIE_SUPPORT
 	if (cookie_store)
 		g_free(cookie_store);
-
+#endif
 	return;
 }
 
@@ -2302,6 +2382,9 @@ main(int argc, char *argv[]) {
     setup_modkeys();
     make_keyslist();
     setup_gui();
+#ifdef ENABLE_COOKIE_SUPPORT
+    setup_cookies();
+#endif
 
     /* read config file */
     if (!read_rcfile(configfile)) {
