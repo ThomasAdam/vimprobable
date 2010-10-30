@@ -39,6 +39,9 @@ static gboolean webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebF
 static void webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data);
 static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
 static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
+static gboolean webview_unblock_cb(GtkWidget *widget, GdkEventButton *button_event, gpointer data);
+static GtkWidget *webview_block_plugin_cb(WebKitWebView *webview, gchar *mimetype, gchar *uri,
+			GHashTable *unused_param, gpointer data);
 
 /* functions */
 static gboolean bookmark(const Arg *arg);
@@ -131,6 +134,7 @@ static char followTarget[8] = "";
 char *error_msg = NULL;
 
 GList *activeDownloads;
+GSList *unblocked_urls = NULL;
 
 #include "config.h"
 #include "keymap.h"
@@ -237,6 +241,71 @@ webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetwork
         return FALSE;
     }
 }
+
+GtkWidget *webview_block_plugin_cb(WebKitWebView *webview, gchar *mimetype, gchar *uri,
+			GHashTable *unused_param, gpointer data)
+{
+	GSList *le;
+	GdkColor bg_color;
+
+	/* Don't do this if plugins aren't enabled. */
+	if (!enablePlugins)
+		return NULL;
+
+	/* Also, don't do this if we're not a flash object. */
+	/* XXX - we could have a list of valid mimetypes */
+	if (strstr(mimetype, "flash") == NULL)
+		return NULL;
+
+	for(le = unblocked_urls; le; le = g_slist_next(le))
+	{
+		if (strcmp((gchar *)le->data, uri) == 0) {
+			unblocked_urls = g_slist_delete_link(unblocked_urls, le);
+			return NULL;
+		}
+	}
+
+	Canvas *canvas = g_malloc( sizeof(Canvas) );
+	memset(canvas, '\0', sizeof(Canvas));
+
+	canvas->image = gtk_image_new_from_stock(GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_LARGE_TOOLBAR);
+	canvas->cover = gtk_event_box_new();
+	canvas->url = g_strdup(uri);
+
+	/* Set the background colour of the eventbox. */
+	gdk_color_parse("#5EC75E", &bg_color);
+	gtk_widget_modify_bg(canvas->cover, GTK_STATE_NORMAL, &bg_color);
+
+	gtk_container_add (GTK_CONTAINER(canvas->cover), canvas->image);
+	g_signal_connect(G_OBJECT(canvas->cover), "button-press-event", G_CALLBACK(webview_unblock_cb), canvas);
+
+	gtk_widget_show_all(canvas->cover);
+	update_state();
+
+	return canvas->cover;
+}
+
+gboolean
+webview_unblock_cb(GtkWidget *widget, GdkEventButton *button_event, gpointer data)
+{
+	Canvas *canvas = (Canvas*)data;
+
+	GtkWidget *parent = gtk_widget_get_parent(canvas->cover);
+	gtk_container_remove(GTK_CONTAINER(parent), canvas->cover);
+
+	unblocked_urls = g_slist_append(unblocked_urls, g_strdup(canvas->url));
+
+	if (canvas->url)
+		g_free(canvas->url);
+
+	g_free(canvas);
+
+	/* reload */
+	webkit_web_view_reload(WEBKIT_WEB_VIEW(parent));
+
+	return TRUE;
+}
+
 
 static WebKitWebView*
 inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
@@ -2116,6 +2185,7 @@ setup_signals() {
         "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
         "signal::create-web-view",                      (GCallback)webview_open_in_new_window_cb,   NULL,
         "signal::event",                                (GCallback)notify_event_cb,                 NULL,
+	"signal::create-plugin-widget",                 (GCallback)webview_block_plugin_cb,         NULL,
     NULL);
     /* webview adjustment */
     g_object_connect((GObject*)adjust_v,
@@ -2300,6 +2370,14 @@ mop_up(void) {
 	if (cookie_store)
 		g_free(cookie_store);
 #endif
+	{
+		GSList *list;
+		for(list = unblocked_urls; list; list = g_slist_next(list))
+			g_free(list->data);
+
+		g_slist_free(unblocked_urls);
+	}
+
 	return;
 }
 

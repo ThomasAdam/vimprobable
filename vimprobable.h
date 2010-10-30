@@ -148,6 +148,12 @@ typedef struct {
     char element[255];
 } Listelement;
 
+typedef struct {
+    GtkWidget *cover;
+	GtkWidget *image;
+	gchar *url;
+} Canvas;
+
 /* constants */
 #define MOUSE_BUTTON_1 1
 #define MOUSE_BUTTON_2 2
