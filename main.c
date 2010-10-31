@@ -1792,6 +1792,7 @@ search_tag(const Arg * a) {
     const char *tag = a->s;
     char s[BUFFERSIZE], foundtag[40], url[BUFFERSIZE];
     int t, i, intag, k;
+    gboolean foundtagname = FALSE;
 
     if (!tag) {
 	    /* The user must give us something to load up. */
@@ -1838,8 +1839,11 @@ search_tag(const Arg * a) {
                             while (s[i] && !isspace(s[i])) url[k++] = s[i++];
                             url[k] = '\0';
                             Arg x = { .i = TargetNew, .s = url };
-                           open (&x);
-                        }
+			    open (&x);
+
+			    foundtagname = TRUE;
+                        } else
+				foundtagname = FALSE;
                     }
                     intag = 0;
                 }
@@ -1847,7 +1851,7 @@ search_tag(const Arg * a) {
             t--;
         }
     }
-    return TRUE;
+    return foundtagname;
 }
 
 void
@@ -2167,10 +2171,13 @@ main(int argc, char *argv[]) {
     static char url[256] = "";
     static gboolean ver = false;
     static const char *cfile = NULL;
+    static const char *bmarktag = NULL;
+    static gboolean skip_url_opening = false;
     static GOptionEntry opts[] = {
             { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
             { "embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "embedded", NULL },
 	    { "configfile", 'c', 0, G_OPTION_ARG_STRING, &cfile, "config file", NULL },
+	    { "bookmarktag", 'b', 0, G_OPTION_ARG_STRING, &bmarktag, "bookmark tag", NULL },
             { NULL }
     };
     static GError *err;
@@ -2186,6 +2193,19 @@ main(int argc, char *argv[]) {
     if (ver) {
         printf("%s\n", useragent);
         return EXIT_SUCCESS;
+    }
+
+    if (bmarktag) {
+	    /* Then try and open the windows associated with bmarktag. */
+	    a.s = g_strdup(bmarktag);
+
+	    if (!search_tag(&a))
+		    give_feedback(
+			g_strdup_printf("Couldn't open bookmark tag \"%s\"", bmarktag));
+	    else
+		    skip_url_opening = TRUE;
+
+	    g_free(a.s);
     }
 
     if (cfile)
@@ -2213,15 +2233,21 @@ main(int argc, char *argv[]) {
     }
 
     /* command line argument: URL */
-    if (argc > 1) {
-        strncpy(url, argv[argc - 1], 255);
-    } else {
-        strncpy(url, startpage, 255);
-    }
+    /* Some options, such as bookmarktag (-b) should always override anything
+     * else on the command-line, such as a URL, so if skip_url_opening is set
+     * to TRUE, we never do anything with a potential URL.
+     */
+    if (!skip_url_opening) {
+	    if (argc > 1) {
+		strncpy(url, argv[argc - 1], 255);
+	    } else {
+		strncpy(url, startpage, 255);
+	    }
 
-    a.i = TargetCurrent;
-    a.s = url;
-    open(&a);
+	    a.i = TargetCurrent;
+	    a.s = url;
+	    open(&a);
+    }
     gtk_main();
 
     return EXIT_SUCCESS;
