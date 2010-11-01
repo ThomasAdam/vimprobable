@@ -292,7 +292,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             memset(inputBuffer, 0, 65);
             if (event->keyval == GDK_Escape) {
                 a.i = Info;
-                a.s = "";
+                a.s = g_strdup("");
                 echo(&a);
             } else if (current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                     || (event->keyval == GDK_0 && count))) {
@@ -526,7 +526,6 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
             a.i = Error;
             a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
             echo(&a);
-            g_free(a.s);
         } else if (!success) {
             a.i = Error;
             if (error_msg != NULL) {
@@ -537,7 +536,6 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
                 a.s = g_strdup_printf("Unknown error. Please file a bug report!");
             }
             echo(&a);
-            g_free(a.s);
         }
     } else if ((forward = text[0] == '/') || text[0] == '?') {
         webkit_web_view_unmark_text_matches(webview);
@@ -931,6 +929,11 @@ echo(const Arg *arg) {
         gdk_color_parse(urlboxbgcolor[index], &color);
     gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &color : NULL);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
+	/* TA:  Always free arg->s here, rather than relying on the caller to do
+	 * this.
+	 */
+    if (arg->s)
+        g_free(arg->s);
     return TRUE;
 }
 
@@ -1191,7 +1194,6 @@ search(const Arg *arg) {
                             direction ? "BOTTOM" : "TOP",
                             direction ? "TOP" : "BOTTOM");
                     echo(&a);
-                    g_free(a.s);
                 } else
                     break;
             } else
@@ -1202,7 +1204,6 @@ search(const Arg *arg) {
         a.i = Error;
         a.s = g_strdup_printf("Pattern not found: %s", search_handle);
         echo(&a);
-        g_free(a.s);
     }
     return TRUE;
 }
@@ -1221,15 +1222,15 @@ set(const Arg *arg) {
         gtk_widget_grab_focus(GTK_WIDGET(webview));
         break;
     case ModePassThrough:
-        a.s = "-- PASS THROUGH --";
+        a.s = g_strdup("-- PASS THROUGH --");
         echo(&a);
         break;
     case ModeSendKey:
-        a.s = "-- PASS TROUGH (next) --";
+        a.s = g_strdup("-- PASS TROUGH (next) --");
         echo(&a);
         break;
     case ModeInsert: /* should not be called manually but automatically */
-        a.s = "-- INSERT --";
+        a.s = g_strdup("-- INSERT --");
         echo(&a);
         break;
     case ModeHints:
@@ -1292,7 +1293,7 @@ script(const Arg *arg) {
     }
     if (arg->i != Silent && value) {
         a.i = arg->i;
-        a.s = value;
+        a.s = g_strdup(value);
         echo(&a);
     }
     if (value) {
@@ -1388,7 +1389,7 @@ fake_key_event(const Arg *a) {
     err.i = Error;
     Display *xdpy;
     if ( (xdpy = XOpenDisplay(NULL)) == NULL ) {
-        err.s = "Couldn't find the XDisplay.";
+        err.s = g_strdup("Couldn't find the XDisplay.");
         echo(&err);
         return FALSE;
     }
@@ -1403,7 +1404,7 @@ fake_key_event(const Arg *a) {
     xk.state =  a->i;
 
     if( ! a->s ) {
-        err.s = "Zero pointer as argument! Check your config.h";
+        err.s = g_strdup("Zero pointer as argument! Check your config.h");
         echo(&err);
         return FALSE;
     }
@@ -1416,14 +1417,14 @@ fake_key_event(const Arg *a) {
     }
     
     if( (xk.keycode = XKeysymToKeycode(xdpy, keysym)) == NoSymbol ) {
-        err.s = "Couldn't translate keysym to keycode";
+        err.s = g_strdup("Couldn't translate keysym to keycode");
         echo(&err);
         return FALSE;
     }
    
     xk.type = KeyPress;
     if( !XSendEvent(xdpy, embed, True, KeyPressMask, (XEvent *)&xk) ) {
-        err.s = "XSendEvent failed";
+        err.s = g_strdup("XSendEvent failed");
         echo(&err);
         return FALSE;
     }
@@ -1689,7 +1690,6 @@ give_feedback(const char *feedback) {
 
     a.s = g_strdup_printf(feedback);
     echo(&a);
-    g_free(a.s);
 }
 
 void
