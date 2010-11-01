@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/file.h>
+#include <unistd.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <webkit/webkit.h>
@@ -53,7 +55,7 @@ static gboolean focus_input(const Arg *arg);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
-static gboolean open(const Arg *arg);
+static gboolean open_arg(const Arg *arg);
 static gboolean paste(const Arg *arg);
 static gboolean quit(const Arg *arg);
 static gboolean revive(const Arg *arg);
@@ -86,6 +88,7 @@ void set_error(const char *error);
 void give_feedback(const char *feedback);
 
 static void history(void);
+static void mop_up(void);
 
 /* variables */
 static GtkWindow *window;
@@ -124,6 +127,21 @@ GList *activeDownloads;
 
 #include "config.h"
 
+/* Cookie support. */
+#ifdef ENABLE_COOKIE_SUPPORT
+static SoupCookieJar *session_cookie_jar = NULL;
+static SoupCookieJar *file_cookie_jar = NULL;
+static time_t cookie_timeout = 4800;
+static char *cookie_store;
+static void setup_cookies(void);
+static const char *get_cookies(SoupURI *soup_uri);
+static void load_all_cookies(void);
+static void save_all_cookies(void);
+static void new_generic_request(SoupSession *soup_ses, SoupMessage *soup_msg, gpointer unused);
+static void update_cookie_jar(SoupCookie *new);
+static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
+static int lock;
+#endif
 /* callbacks */
 void
 window_destroyed_cb(GtkWidget *window, gpointer func_data) {
@@ -188,7 +206,7 @@ webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpo
     if (strlen(rememberedURI) > 0) {
         a.s = rememberedURI;
     }
-    open(&a);
+    open_arg(&a);
     return FALSE;
 }
 
@@ -196,7 +214,7 @@ gboolean
 webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data) {
     Arg a = { .i = TargetNew, .s = (char*)webkit_network_request_get_uri(request) };
-    open(&a);
+    open_arg(&a);
     webkit_web_policy_decision_ignore(decision);
     return TRUE;
 }
@@ -997,7 +1015,7 @@ number(const Arg *arg) {
 }
 
 gboolean
-open(const Arg *arg) {
+open_arg(const Arg *arg) {
     char *argv[6];
     char *s = arg->s, *p, *new;
     Arg a = { .i = NavigationReload };
@@ -1084,7 +1102,7 @@ paste(const Arg *arg) {
     /* If we're over a link, open it in a new target. */
     if (strlen(rememberedURI) > 0) {
         Arg new_target = { .i = TargetNew, .s = arg->s };
-        open(&new_target);
+        open_arg(&new_target);
         return TRUE;
     }
 
@@ -1093,7 +1111,7 @@ paste(const Arg *arg) {
     if (!a.s && arg->i & ClipboardGTK)
         a.s = gtk_clipboard_wait_for_text(clipboards[1]);
     if (a.s)
-        open(&a);
+        open_arg(&a);
     return TRUE;
 }
 
@@ -1130,7 +1148,7 @@ revive(const Arg *arg) {
     }
     if (strlen(buffer) > 0) {
         a.s = buffer;
-        open(&a);
+        open_arg(&a);
         return TRUE;
     }
     return FALSE;
@@ -1295,7 +1313,7 @@ script(const Arg *arg) {
                 a.i = TargetCurrent;
             memset(followTarget, 0, 8);
             a.s = (value + 5);
-            open(&a);
+            open_arg(&a);
         }
     }
     g_free(value);
@@ -1354,7 +1372,7 @@ quickmark(const Arg *a) {
        char *ptr = strrchr(buf, '\n');
        *ptr = '\0';
        Arg x = { .s = buf };
-       return open(&x);
+       return open_arg(&x);
     }
     else { return false; }
 }
@@ -1613,7 +1631,7 @@ search_tag(const Arg * a) {
                             while (s[i] && !isspace(s[i])) url[k++] = s[i++];
                             url[k] = '\0';
                             Arg x = { .i = TargetNew, .s = url };
-                           open (&x);
+                           open_arg(&x);
                         }
                     }
                     intag = 0;
@@ -1855,9 +1873,7 @@ setup_settings() {
     SoupURI *proxy_uri;
     char *filename, *new;
     int  len;
-#ifdef ENABLE_COOKIE_SUPPORT
-    SoupCookieJar *cookiejar;
-#endif
+
     session = webkit_get_default_session();
     g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
     g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
@@ -1868,12 +1884,7 @@ setup_settings() {
     g_object_set((GObject*)settings, "user-agent", USER_AGENT, NULL);
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
-#ifdef ENABLE_COOKIE_SUPPORT
-    filename = g_strdup_printf(COOKIES_STORAGE_FILENAME);
-    cookiejar = soup_cookie_jar_text_new(filename, COOKIES_STORAGE_READONLY);
-    g_free(filename);
-    soup_session_add_feature(session, (SoupSessionFeature*)cookiejar);
-#endif
+
     /* proxy */
     filename = (char *)g_getenv("http_proxy");
     /* Fallthrough to checking HTTP_PROXY as well, since this can also be
@@ -1897,6 +1908,10 @@ setup_settings() {
 
 void
 setup_signals() {
+#ifdef ENABLE_COOKIE_SUPPORT
+    /* Headers. */
+    g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
+#endif
     /* window */
     g_object_connect((GObject*)window,
         "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
@@ -1930,6 +1945,174 @@ setup_signals() {
         "signal::changed",                              (GCallback)inputbox_changed_cb,             NULL,
 #endif
     NULL);
+}
+
+#ifdef ENABLE_COOKIE_SUPPORT
+void
+setup_cookies()
+{
+	if (file_cookie_jar)
+		g_object_unref(file_cookie_jar);
+
+	if (session_cookie_jar)
+		g_object_unref(session_cookie_jar);
+
+	session_cookie_jar = soup_cookie_jar_new();
+	cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
+
+	lock = open(cookie_store, 0);
+	flock(lock, LOCK_EX);
+
+	load_all_cookies();
+
+	flock(lock, LOCK_UN);
+	close(lock);
+
+	soup_session_add_feature(session, SOUP_SESSION_FEATURE(session_cookie_jar));
+	soup_session_add_feature(session, SOUP_SESSION_FEATURE(file_cookie_jar));
+
+	return;
+}
+
+/* TA:  XXX - we should be using this callback for any header-requests we
+ *      receive (hence the name "new_generic_request" -- but for now, its use
+ *      is limited to handling cookies.
+ */
+void
+new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused) {
+	SoupMessageHeaders *soup_msg_h;
+	SoupURI *uri;
+	const char *cookie_str;
+
+	soup_msg_h = soup_msg->request_headers;
+	soup_message_headers_remove(soup_msg_h, "Cookie");
+	uri = soup_message_get_uri(soup_msg);
+	if( (cookie_str = get_cookies(uri)) )
+		soup_message_headers_append(soup_msg_h, "Cookie", cookie_str);
+
+	g_signal_connect_after(G_OBJECT(soup_msg), "got-headers", G_CALLBACK(handle_cookie_request), NULL);
+
+	return;
+}
+
+const char *
+get_cookies(SoupURI *soup_uri) {
+	const char *cookie_str;
+
+	cookie_str = soup_cookie_jar_get_cookies(session_cookie_jar, soup_uri, TRUE);
+
+	return cookie_str;
+}
+
+void
+handle_cookie_request(SoupMessage *soup_msg, gpointer unused)
+{
+	GSList *resp_cookie = NULL;
+	SoupCookie *cookie;
+
+	for(resp_cookie = soup_cookies_from_response(soup_msg);
+		resp_cookie;
+		resp_cookie = g_slist_next(resp_cookie))
+	{
+		SoupDate *soup_date;
+		cookie = soup_cookie_copy((SoupCookie *)resp_cookie->data);
+
+		if (cookie_timeout && cookie->expires == NULL) {
+			soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout * 10);
+			soup_cookie_set_expires(cookie, soup_date);
+		}
+		soup_cookie_jar_add_cookie(session_cookie_jar, cookie);
+		update_cookie_jar(cookie);
+	}
+
+	return;
+}
+
+void
+update_cookie_jar(SoupCookie *new)
+{
+	if (!new) {
+		/* Nothing to do. */
+		return;
+	}
+
+	/* TA:  Note that this locking is merely advisory -- because there's
+	 * no linking between different vimprobable processes, the cookie jar,
+	 * when being written to here, *WILL* be truncated and overwritten
+	 * with cookie contents from the specific session saving its cookies
+	 * at that time.
+	 *
+	 * This may or may not contain cookies stored in other Vimprobable
+	 * instances, although when those instances save their cookies,
+	 * they'll just replace the cookie store's contents.
+	 *
+	 * The locking should probably be changed to be fcntl() based one day
+	 * -- but the caveat with that is all Vimprobable instances would then
+	 * block waiting for the cookie file to become availabe.  The
+	 * advisory locking used here so far seems to work OK, but if we run
+	 * into problems in the future, we'll know where to look.
+	 *
+	 * Ideally, if Vimprobable were ever to want to do this cleanly,
+	 * something like using libunique to pass messages between registered
+	 * sessions.
+	 */
+	lock = open(cookie_store, 0);
+	flock(lock, LOCK_EX);
+
+	save_all_cookies();
+	load_all_cookies();
+
+	flock(lock, LOCK_UN);
+	close(lock);
+
+	return;
+}
+
+void
+save_all_cookies()
+{
+	GSList *session_cookie_list = soup_cookie_jar_all_cookies(session_cookie_jar);
+
+	 for (; session_cookie_list;
+		session_cookie_list = session_cookie_list->next)
+	 {
+		soup_cookie_jar_add_cookie(file_cookie_jar, session_cookie_list->data);
+	 }
+
+	 soup_cookies_free(session_cookie_list);
+
+	 return;
+}
+
+void
+load_all_cookies()
+{
+	file_cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
+
+	/* Put them back in the session store. */
+	GSList *cookies_from_file = soup_cookie_jar_all_cookies(file_cookie_jar);
+
+	for (; cookies_from_file;
+	       cookies_from_file = cookies_from_file->next)
+	{
+		soup_cookie_jar_add_cookie(session_cookie_jar, cookies_from_file->data);
+	}
+
+	soup_cookies_free(cookies_from_file);
+
+	return;
+}
+
+#endif
+
+void
+mop_up(void) {
+	/* Free up any nasty globals before exiting. */
+#ifdef ENABLE_COOKIE_SUPPORT
+	if (cookie_store)
+		g_free(cookie_store);
+#endif
+	return;
 }
 
 int
@@ -1970,10 +2153,15 @@ main(int argc, char *argv[]) {
 
     setup_modkeys();
     setup_gui();
+#ifdef ENABLE_COOKIE_SUPPORT
+    setup_cookies();
+#endif
     a.i = TargetCurrent;
     a.s = url;
-    open(&a);
+    open_arg(&a);
     gtk_main();
+
+    mop_up();
 
     return EXIT_SUCCESS;
 }

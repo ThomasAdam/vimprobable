@@ -156,8 +156,8 @@ static Key keys[] = {
     { 0,                    GDK_g,          GDK_u,          descend,    {NthSubdir} },
     { GDK_SHIFT_MASK,       GDK_g,          GDK_U,          descend,    {Rootdir} },
 
-    { 0,                    GDK_g,          GDK_h,          open,       {TargetCurrent, startpage} },
-    { GDK_SHIFT_MASK,       GDK_g,          GDK_H,          open,       {TargetNew,     startpage} },
+    { 0,                    GDK_g,          GDK_h,          open_arg,   {TargetCurrent, startpage} },
+    { GDK_SHIFT_MASK,       GDK_g,          GDK_H,          open_arg,   {TargetNew,     startpage} },
 
     { 0,                    0,              GDK_p,          paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK} },
     { GDK_SHIFT_MASK,       0,              GDK_P,          paste,      {TargetNew      | ClipboardPrimary  | ClipboardGTK} },
@@ -205,8 +205,8 @@ static Command commands[] = {
     { "fo",                                                 navigate,    {NavigationForward} },
     { "forward",                                            navigate,    {NavigationForward} },
     { "javascript",                                         script,      {Silent} },
-    { "o",                                                  open,        {TargetCurrent} },
-    { "open",                                               open,        {TargetCurrent} },
+    { "o",                                                  open_arg,    {TargetCurrent} },
+    { "open",                                               open_arg,    {TargetCurrent} },
     { "q",                                                  quit,        {0} },
     { "quit",                                               quit,        {0} },
     { "re",                                                 navigate,    {NavigationReload} },
@@ -216,8 +216,8 @@ static Command commands[] = {
     { "qt",                                                 search_tag,  {0} },
     { "st",                                                 navigate,    {NavigationCancel} },
     { "stop",                                               navigate,    {NavigationCancel} },
-    { "t",                                                  open,        {TargetNew} },
-    { "tabopen",                                            open,        {TargetNew} },
+    { "t",                                                  open_arg,    {TargetNew} },
+    { "tabopen",                                            open_arg,    {TargetNew} },
     { "print",                                         	    print_frame, {0} },
     { "bma",                                                bookmark,    {0} },
     { "bookmark",                                           bookmark,    {0} },
@@ -231,5 +231,5 @@ static Mouse mouse[] = {
     /* modmask,             modkey,         button,            function,   argument */
     { 0,                    0,              MOUSE_BUTTON_2,    paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK, rememberedURI} },
     { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,      {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
-    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open,       {TargetNew, rememberedURI} },
+    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open_arg,   {TargetNew, rememberedURI} },
 };
