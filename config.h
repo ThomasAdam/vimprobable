@@ -80,6 +80,7 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 /* searching */
 #define             ENABLE_MATCH_HIGHLITING
 static const int searchoptions          = CaseInsensitive | Wrapping;
+static const gboolean complete_case_sensitive = TRUE;
 
 /* search engines */
 static Searchengine searchengines[] = {

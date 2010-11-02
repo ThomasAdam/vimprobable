@@ -736,6 +736,11 @@ complete(const Arg *arg) {
                 if (suggurls != NULL) {
                     spacepos = strcspn(str, " ");
                     searchfor = (str + spacepos + 1);
+                    s = g_strdup(searchfor);
+                    if (!complete_case_sensitive) {
+                        /* turn argument into lowercase for case-insensitive search */
+                        g_strdown(s);
+                    }
                     strncpy(command, (str + 1), spacepos - 1);
                     filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
                     f = fopen(filename, "r");
@@ -750,7 +755,10 @@ complete(const Arg *arg) {
                                 finished = TRUE;
                                 continue;
                             }
-                            if (strstr(entry, searchfor) != NULL) {
+                            if (!complete_case_sensitive) {
+                                g_strdown(entry);
+                            }
+                            if (strstr(entry, s) != NULL) {
                                 /* found in bookmarks */
                                 memset(suggline, 0, 512);
                                 strncpy(suggline, command, 512);
@@ -798,7 +806,7 @@ complete(const Arg *arg) {
                                         finished = TRUE;
                                         continue;
                                     }
-                                    if (strstr(entry, searchfor) != NULL) {
+                                    if (strstr(entry, s) != NULL) {
                                         /* found in history */
                                         memset(suggline, 0, 512);
                                         strncpy(suggline, command, 512);
@@ -833,6 +841,7 @@ complete(const Arg *arg) {
                             }
                         }
                     }
+                    g_free(s);
                     if (suggurls != NULL) {
                         free(suggurls);
                         suggurls = NULL;
