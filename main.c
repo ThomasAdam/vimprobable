@@ -851,6 +851,11 @@ complete(const Arg *arg) {
                         }
                     } else {
                         /* URL completion using the current command */
+                        s = g_strdup(searchfor);
+                        if (!complete_case_sensitive) {
+                            /* turn argument into lowercase for case-insensitive search */
+                            g_strdown(s);
+                        }
                         filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
                         f = fopen(filename, "r");
                         if (f != NULL) {
@@ -864,7 +869,10 @@ complete(const Arg *arg) {
                                     finished = TRUE;
                                     continue;
                                 }
-                                if (strstr(entry, searchfor) != NULL) {
+                                if (!complete_case_sensitive) {
+                                    g_strdown(entry);
+                                }
+                                if (strstr(entry, s) != NULL) {
                                     /* found in bookmarks */
                                     if (strchr(entry, ' ') != NULL) {
                                         url = strtok(entry, " ");
@@ -884,6 +892,7 @@ complete(const Arg *arg) {
                                 }
                             }
                             fclose(f);
+                            g_free(s);
                             /* history */
                             if (n < listlen) {
                                 filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
@@ -1774,6 +1783,10 @@ process_set_line(char *line) {
             /* Toggle scrollbars. */
             if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0)
                 toggle_scrollbars(boolval);
+
+            /* case sensitivity of completion */
+            if (strlen(my_pair.what) == 14 && strncmp("completioncase", my_pair.what, 14) == 0)
+                complete_case_sensitive = boolval;
 
             /* reload page? */
             if (browsersettings[i].reload)

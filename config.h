@@ -80,6 +80,7 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 /* searching */
 #define             ENABLE_MATCH_HIGHLITING
 static const int searchoptions          = CaseInsensitive | Wrapping;
+gboolean complete_case_sensitive        = TRUE;
 
 /* search engines */
 static Searchengine searchengines[] = {
@@ -179,4 +180,5 @@ static Setting browsersettings[] = {
     { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "completioncase",  NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
 };
