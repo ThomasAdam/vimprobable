@@ -26,4 +26,6 @@ gboolean mappings(const Arg *arg);
 gboolean build_taglist(const Arg *arg, FILE *f);
 void set_error(const char *error);
 void give_feedback(const char *feedback);
-
+Tagelement * complete_tags(const char *searchfor);
+Tagelement * addtag(const char *tag, Tagelement *taglist);
+void free_taglist(Tagelement *taglist);

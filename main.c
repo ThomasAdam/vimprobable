@@ -745,6 +745,7 @@ complete(const Arg *arg) {
     char *str, *s, *p, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", *url, **suggurls;
     size_t listlen, len, cmdlen;
     int i, spacepos;
+    Tagelement *taglist, *tagpointer;
     gboolean highlight = FALSE, finished = FALSE;
     GtkBox *row;
     GtkWidget *row_eventbox, *el;
@@ -849,6 +850,28 @@ complete(const Arg *arg) {
                             }
 
                         }
+                    } else if (strlen (command) == 2 && strncmp(command, "qt", 2) == 0) {
+                        /* completion on tags */
+                        spacepos = strcspn (str, " ");
+                        searchfor = (str + spacepos + 1);
+                        s = g_strdup(searchfor);
+                        if (!complete_case_sensitive) {
+                            /* turn argument into lowercase for case-insensitive search */
+                            g_strdown(s);
+                        }
+                        taglist = (complete_tags(s));
+                        tagpointer = taglist;
+                        while (tagpointer != NULL) {
+                            fill_suggline(suggline, command, tagpointer->tag);
+                            suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                            strncpy(suggurls[n], suggline, 512);
+                            suggestions[n] = suggurls[n];
+                            row_eventbox = fill_eventbox(suggline);
+                            gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                            widgets[n++] = row_eventbox;
+                            tagpointer = tagpointer->next;
+                        }
+                        free_taglist(taglist);
                     } else {
                         /* URL completion using the current command */
                         s = g_strdup(searchfor);

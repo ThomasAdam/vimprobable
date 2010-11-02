@@ -18,6 +18,7 @@ extern int lastcommand, maxcommands, commandpointer;
 extern KeyList *keylistroot;
 extern Key keys[];
 extern char *error_msg;
+extern gboolean complete_case_sensitive;
 
 gboolean read_rcfile(const char *config)
 {
@@ -404,4 +405,91 @@ give_feedback(const char *feedback)
 
     a.s = g_strdup_printf(feedback);
     echo(&a);
+}
+
+Tagelement *
+complete_tags(const char *searchfor)
+{
+    FILE *f;
+    const char *filename;
+    Tagelement *taglist;
+    char s[255], readtag[MAXTAGSIZE + 1];
+    int i, t;
+
+    taglist = NULL;
+
+    /* look for tags in bookmarkfile */
+    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    f = fopen(filename, "r");
+    if (f == NULL) {
+        g_free((gpointer)filename);
+        return (NULL);
+    }
+
+    while (fgets(s, 254, f)) {
+        i = 0;
+        while (s[i] && i < 254) {
+            while (s[i] != '[' && s[i])
+                i++;
+            if (s[i] != '[')
+                continue;
+            i++;
+            t = 0;
+            while (s[i] != ']' && s[i] && t < MAXTAGSIZE)
+                readtag[t++] = s[i++];
+            readtag[t] = '\0';
+            if (!complete_case_sensitive) {
+                g_strdown(readtag);
+            }
+            if (!strlen(searchfor) || strstr(readtag, searchfor) != NULL)
+                taglist = addtag(readtag, taglist);
+            i++;
+        }
+    }
+    g_free((gpointer)filename);
+    return (taglist);
+}
+
+Tagelement *
+addtag(const char *tag, Tagelement *taglist)
+{
+    int n;
+    Tagelement *newtag, *tagpointer, *lasttag;
+
+    if (taglist == NULL) { /* first element */
+        newtag = malloc(sizeof(Tagelement));
+        if (newtag == NULL) return (NULL);
+        strcpy(newtag->tag, tag);
+        newtag->next = NULL;
+        return (newtag);
+    }
+    tagpointer = taglist;
+    n = strlen(tag);
+
+    /* check if tag is allready in taglist */
+    while (tagpointer != NULL) {
+        if (strncmp(tagpointer->tag, tag, n) == 0) return (taglist);
+        lasttag = tagpointer;
+        tagpointer = tagpointer->next;
+    }
+    /* add to list */
+    newtag = malloc(sizeof(Tagelement));
+    if (newtag == NULL)
+        return (taglist);
+    lasttag->next = newtag;
+    strcpy(newtag->tag, tag);
+    newtag->next = NULL;
+    return (taglist);
+}
+
+void
+free_taglist(Tagelement *taglist)
+{
+    Tagelement *tagpointer;
+
+    while (taglist != NULL) {
+        tagpointer = taglist->next;
+        free(taglist);
+        taglist = tagpointer;
+    }
 }

@@ -51,9 +51,6 @@ static const char progressborderright   = ']';
 #define             COOKIES_STORAGE_FILENAME    "%s/.config/vimprobable/cookies", getenv("HOME")
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
 
-/* bookmarks */
-#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimprobable/bookmarks", getenv("HOME")
-
 /* history */
 #define             HISTORY_MAX_ENTRIES         1000
 #define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")

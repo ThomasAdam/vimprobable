@@ -143,6 +143,11 @@ struct map_pair {
 	char value[240];
 } my_pair;
 
+typedef struct {
+    void *next;
+    char tag[255];
+} Tagelement;
+
 /* constants */
 #define MOUSE_BUTTON_1 1
 #define MOUSE_BUTTON_2 2
@@ -152,6 +157,9 @@ struct map_pair {
 #define BUFFERSIZE 255
 #define MAXTAGSIZE 200
 
+/* bookmarks */
+#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimprobable/bookmarks", getenv("HOME")
+
 /* quickmarks */
-#define             QUICKMARK_FILE               "%s/.config/vimprobable/quickmarks", getenv("HOME")
+#define             QUICKMARK_FILE              "%s/.config/vimprobable/quickmarks", getenv("HOME")
 
