@@ -806,6 +806,9 @@ complete(const Arg *arg) {
                                         finished = TRUE;
                                         continue;
                                     }
+                                    if (!complete_case_sensitive) {
+                                        g_strdown(entry);
+                                    }
                                     if (strstr(entry, s) != NULL) {
                                         /* found in history */
                                         memset(suggline, 0, 512);
