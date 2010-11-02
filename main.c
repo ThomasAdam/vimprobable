@@ -892,7 +892,6 @@ complete(const Arg *arg) {
                                 }
                             }
                             fclose(f);
-                            g_free(s);
                             /* history */
                             if (n < listlen) {
                                 filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
@@ -909,7 +908,10 @@ complete(const Arg *arg) {
                                             finished = TRUE;
                                             continue;
                                         }
-                                        if (strstr(entry, searchfor) != NULL) {
+                                        if (!complete_case_sensitive) {
+                                            g_strdown(entry);
+                                        }
+                                        if (strstr(entry, s) != NULL) {
                                             /* found in history */
                                             if (strchr(entry, ' ') != NULL) {
                                                 url = strtok(entry, " ");
@@ -933,6 +935,7 @@ complete(const Arg *arg) {
                             }
                         }
                     }
+                    g_free(s);
                     if (suggurls != NULL) {
                         free(suggurls);
                         suggurls = NULL;
