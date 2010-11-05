@@ -88,6 +88,12 @@ static void download_progress(WebKitDownload *d, GParamSpec *pspec);
 gboolean build_taglist(const Arg *arg, FILE *f);
 void set_error(const char *error);
 void give_feedback(const char *feedback);
+Listelement * complete_list(const char *searchfor, const int mode, Listelement *elementlist);
+Listelement * add_list(const char *element, Listelement *elementlist);
+int count_list(Listelement *elementlist);
+void free_list(Listelement *elementlist);
+void fill_suggline(char * suggline, const char * command, const char *fill_with);
+GtkWidget * fill_eventbox(const char * completion_line);
 
 static void history(void);
 static void mop_up(void);
@@ -641,21 +647,48 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
 }
 
 /* funcs here */
+void fill_suggline(char * suggline, const char * command,  const char *fill_with) {
+    memset(suggline, 0, 512);
+    strncpy(suggline, command, 512);
+    strncat(suggline, " ", 1);
+    strncat(suggline, fill_with, 512 - strlen(suggline) - 1);
+}
+
+GtkWidget * fill_eventbox(const char * completion_line) {
+    GtkBox    * row;
+    GtkWidget *row_eventbox, *el;
+    GdkColor  color;
+    char      * markup;
+
+    row = GTK_BOX(gtk_hbox_new(FALSE, 0));
+    row_eventbox = gtk_event_box_new();
+    gdk_color_parse(completionbgcolor[0], &color);
+    gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
+    el = gtk_label_new(NULL);
+    markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">",
+        g_markup_escape_text(completion_line, strlen(completion_line)), "</span>", NULL);
+    gtk_label_set_markup(GTK_LABEL(el), markup);
+    g_free(markup);
+    gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
+    gtk_box_pack_start(row, el, TRUE, TRUE, 2);
+    gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
+    return row_eventbox;
+}
+
 gboolean
 complete(const Arg *arg) {
-    FILE *f;
-    const char *filename;
-    char *str, *s, *p, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", *url, **suggurls;
-    size_t listlen, len, cmdlen;
+    char *str, *p, *s, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", **suggurls = NULL;
+    size_t len, cmdlen;
     int i, spacepos;
-    gboolean highlight = FALSE, finished = FALSE;
+    Listelement *elementlist = NULL, *elementpointer;
+    gboolean highlight = FALSE;
     GtkBox *row;
     GtkWidget *row_eventbox, *el;
     GtkBox *_table;
     GdkColor color;
     static GtkWidget *table, **widgets, *top_border;
     static char **suggestions, *prefix;
-    static int n = 0, current = -1;
+    static int n = 0, m, current = -1;
 
     str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
     len = strlen(str);
@@ -688,9 +721,8 @@ complete(const Arg *arg) {
         return TRUE;
     if (!widgets) {
         prefix = g_strdup_printf(str);
-        listlen = LENGTH(commands);
-        widgets = malloc(sizeof(GtkWidget*) * listlen);
-        suggestions = malloc(sizeof(char*) * listlen);
+        widgets = malloc(sizeof(GtkWidget*) * MAX_LIST_SIZE);
+        suggestions = malloc(sizeof(char*) * MAX_LIST_SIZE);
         top_border = gtk_event_box_new();
         gtk_widget_set_size_request(GTK_WIDGET(top_border), 0, 1);
         gdk_color_parse(completioncolor[2], &color);
@@ -700,7 +732,8 @@ complete(const Arg *arg) {
         _table = GTK_BOX(gtk_vbox_new(FALSE, 0));
         highlight = len > 1;
         if (strchr(str, ' ') == NULL) {
-            for(i = 0; i < listlen; i++) {
+            /* command completion */
+            for (i = 0; i < MAX_LIST_SIZE; i++) {
                 cmdlen = strlen(commands[i].cmd);
                 if (!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
                     p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
@@ -728,132 +761,49 @@ complete(const Arg *arg) {
                 }
             }
         } else {
-            /* URL completion using the current command */
             entry = (char *)malloc(512 * sizeof(char));
+            if (entry == NULL) {
+                return FALSE;
+            }
+            memset(entry, 0, 512);
+            suggurls = malloc(sizeof(char*) * MAX_LIST_SIZE);
+            if (suggurls == NULL) {
+                return FALSE;
+            }
+            spacepos = strcspn(str, " ");
+            searchfor = (str + spacepos + 1);
+            strncpy(command, (str + 1), spacepos - 1);
+            if (strlen(command) == 2 && strncmp(command, "qt", 2) == 0) {
+                /* completion on tags */
+                spacepos = strcspn(str, " ");
+                searchfor = (str + spacepos + 1);
+                elementlist = complete_list(searchfor, 1, elementlist);
+            } else {
+                /* URL completion: bookmarks */
+                elementlist = complete_list(searchfor, 0, elementlist);
+                m = count_list(elementlist);
+                if (m < MAX_LIST_SIZE) {
+                    /* URL completion: history */
+                    elementlist = complete_list(searchfor, 2, elementlist);
+                }
+            }
+            elementpointer = elementlist;
+            while (elementpointer != NULL) {
+                fill_suggline(suggline, command, elementpointer->element);
+                suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                strncpy(suggurls[n], suggline, 512);
+                suggestions[n] = suggurls[n];
+                row_eventbox = fill_eventbox(suggline);
+                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                widgets[n++] = row_eventbox;
+                elementpointer = elementpointer->next;
+                if (n >= MAX_LIST_SIZE)
+                    break;
+            }
+            free_list(elementlist);
             if (entry != NULL) {
-                memset(entry, 0, 512);
-                suggurls = malloc(sizeof(char*) * listlen);
-                if (suggurls != NULL) {
-                    spacepos = strcspn(str, " ");
-                    searchfor = (str + spacepos + 1);
-                    s = g_strdup(searchfor);
-                    if (!complete_case_sensitive) {
-                        /* turn argument into lowercase for case-insensitive search */
-                        g_strdown(s);
-                    }
-                    strncpy(command, (str + 1), spacepos - 1);
-                    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
-                    f = fopen(filename, "r");
-                    if (f != NULL) {
-                        while (finished != TRUE) {
-                            if ((char *)NULL == fgets(entry, 512, f)) {
-                                /* check if end of file was reached / error occured */
-                                if (!feof(f)) {
-                                    break;
-                                }
-                                /* end of file reached */
-                                finished = TRUE;
-                                continue;
-                            }
-                            if (!complete_case_sensitive) {
-                                g_strdown(entry);
-                            }
-                            if (strstr(entry, s) != NULL) {
-                                /* found in bookmarks */
-                                memset(suggline, 0, 512);
-                                strncpy(suggline, command, 512);
-                                strncat(suggline, " ", 1);
-                                if (strchr(entry, ' ') != NULL) {
-                                    url = strtok(entry, " ");
-                                } else {
-                                    url = strtok(entry, "\n");
-                                }
-                                strncat(suggline, url, 512 - strlen(suggline) - 1);
-                                suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                strncpy(suggurls[n], suggline, 512);
-                                suggestions[n] = suggurls[n];
-                                row = GTK_BOX(gtk_hbox_new(FALSE, 0));
-                                row_eventbox = gtk_event_box_new();
-                                gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
-                                el = gtk_label_new(NULL);
-                                markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
-                                gtk_label_set_markup(GTK_LABEL(el), markup);
-                                g_free(markup);
-                                gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
-                                gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                                gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
-                                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                widgets[n++] = row_eventbox;
-                            }
-                            if (n >= listlen) {
-                                break;
-                            }
-                        }
-                        fclose(f);
-                        /* history */
-                        if (n < listlen) {
-                            filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
-                            f = fopen(filename, "r");
-                            if (f != NULL) {
-                            	finished = FALSE;
-                                while (finished != TRUE) {
-                                    if ((char *)NULL == fgets(entry, 512, f)) {
-                                        /* check if end of file was reached / error occured */
-                                        if (!feof(f)) {
-                                            break;
-                                        }
-                                        /* end of file reached */
-                                        finished = TRUE;
-                                        continue;
-                                    }
-                                    if (!complete_case_sensitive) {
-                                        g_strdown(entry);
-                                    }
-                                    if (strstr(entry, s) != NULL) {
-                                        /* found in history */
-                                        memset(suggline, 0, 512);
-                                        strncpy(suggline, command, 512);
-                                        strncat(suggline, " ", 1);
-                                        if (strchr(entry, ' ') != NULL) {
-                                            url = strtok(entry, " ");
-                                        } else {
-                                            url = strtok(entry, "\n");
-                                        }
-                                        strncat(suggline, url, 512 - strlen(suggline) - 1);
-                                        suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                        strncpy(suggurls[n], suggline, 512);
-                                        suggestions[n] = suggurls[n];
-                                        row = GTK_BOX(gtk_hbox_new(FALSE, 0));
-                                        row_eventbox = gtk_event_box_new();
-                                        gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
-                                        el = gtk_label_new(NULL);
-                                        markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">", g_markup_escape_text(suggline, strlen(suggline)), "</span>", NULL);
-                                        gtk_label_set_markup(GTK_LABEL(el), markup);
-                                        g_free(markup);
-                                        gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
-                                        gtk_box_pack_start(row, el, TRUE, TRUE, 2);
-                                        gtk_container_add(GTK_CONTAINER(row_eventbox), GTK_WIDGET(row));
-                                        gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                        widgets[n++] = row_eventbox;
-                                    }
-                                    if (n >= listlen) {
-                                        break;
-                                    }
-                                }
-                                fclose(f);
-                            }
-                        }
-                    }
-                    g_free(s);
-                    if (suggurls != NULL) {
-                        free(suggurls);
-                        suggurls = NULL;
-                    }
-                }
-                if (entry != NULL) {
-                    free(entry);
-                    entry = NULL;
-                }
+                free(entry);
+                entry = NULL;
             }
         }
         widgets = realloc(widgets, sizeof(GtkWidget*) * n);
@@ -885,6 +835,15 @@ complete(const Arg *arg) {
     } else
         gtk_entry_set_text(GTK_ENTRY(inputbox), prefix);
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
+    if (suggurls != NULL) {
+        m = 0;
+        while (suggurls[m]) {
+            free(suggurls[m]);
+            suggurls[m] = NULL;
+        }
+        free(suggurls);
+        suggurls = NULL;
+    }
     return TRUE;
 }
 
@@ -2127,6 +2086,141 @@ mop_up(void) {
 		g_free(cookie_store);
 #endif
 	return;
+}
+
+Listelement *
+complete_list(const char *searchfor, const int mode, Listelement *elementlist)
+{
+    FILE *f;
+    const char *filename;
+    Listelement *candidatelist = NULL, *candidatepointer = NULL;
+    char s[255] = "", readelement[MAXTAGSIZE + 1] = "";
+    int i, t, n = 0;
+
+    if (mode == 2) {
+        /* open in history file */
+        filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
+    } else {
+        /* open in bookmark file (for tags and bookmarks) */
+        filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    }
+    f = fopen(filename, "r");
+    if (f == NULL) {
+        g_free((gpointer)filename);
+        return (NULL);
+    }
+
+    while (fgets(s, 254, f)) {
+        if (mode == 1) {
+            /* just tags (could be more than one per line) */
+            i = 0;
+            while (s[i] && i < 254) {
+                while (s[i] != '[' && s[i])
+                    i++;
+                if (s[i] != '[')
+                    continue;
+                i++;
+                t = 0;
+                while (s[i] != ']' && s[i] && t < MAXTAGSIZE)
+                    readelement[t++] = s[i++];
+                readelement[t] = '\0';
+                candidatelist = add_list(readelement, candidatelist);
+                i++;
+            }
+        } else {
+            /* complete string (bookmarks & history) */
+            candidatelist = add_list(s, candidatelist);
+        }
+        candidatepointer = candidatelist;
+        while (candidatepointer != NULL) {
+            if (!complete_case_sensitive) {
+               g_strdown(candidatepointer->element);
+            }
+            if (!strlen(searchfor) || strstr(candidatepointer->element, searchfor) != NULL) {
+                /* only use string up to the first space */
+                memset(readelement, 0, MAXTAGSIZE + 1);
+                if (strchr(candidatepointer->element, ' ') != NULL) {
+                    i = strcspn(candidatepointer->element, " ");
+                    strncpy(readelement, candidatepointer->element, i);
+                } else {
+                    strncpy(readelement, candidatepointer->element, MAXTAGSIZE);
+                }
+                elementlist = add_list(readelement, elementlist);
+                n = count_list(elementlist);
+            }
+            if (n >= MAX_LIST_SIZE)
+                break;
+            candidatepointer = candidatepointer->next;
+        }
+        free_list(candidatelist);
+        candidatelist = NULL;
+        if (n >= MAX_LIST_SIZE)
+            break;
+    }
+    g_free((gpointer)filename);
+    return (elementlist);
+}
+
+Listelement *
+add_list(const char *element, Listelement *elementlist)
+{
+    int n, i = 0;
+    Listelement *newelement, *elementpointer, *lastelement;
+
+    if (elementlist == NULL) { /* first element */
+        newelement = malloc(sizeof(Listelement));
+        if (newelement == NULL) 
+            return (NULL);
+        strncpy(newelement->element, element, 254);
+        newelement->next = NULL;
+        return newelement;
+    }
+    elementpointer = elementlist;
+    n = strlen(element);
+
+    /* check if element is already in list */
+    while (elementpointer != NULL) {
+        if (strlen(elementpointer->element) == n && 
+                strncmp(elementpointer->element, element, n) == 0)
+            return (elementlist);
+        lastelement = elementpointer;
+        elementpointer = elementpointer->next;
+        i++;
+    }
+    /* add to list */
+    newelement = malloc(sizeof(Listelement));
+    if (newelement == NULL)
+        return (NULL);
+    lastelement->next = newelement;
+    strncpy(newelement->element, element, 254);
+    newelement->next = NULL;
+    return elementlist;
+}
+
+void
+free_list(Listelement *elementlist)
+{
+    Listelement *elementpointer;
+
+    while (elementlist != NULL) {
+        elementpointer = elementlist->next;
+        free(elementlist);
+        elementlist = elementpointer;
+    }
+}
+
+int
+count_list(Listelement *elementlist)
+{
+    Listelement *elementpointer = elementlist;
+    int n = 0;
+
+    while (elementpointer != NULL) {
+        n++;
+        elementpointer = elementpointer->next;
+    }
+    
+    return n;
 }
 
 int

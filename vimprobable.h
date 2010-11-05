@@ -108,6 +108,11 @@ typedef struct {
     char *uri;
 } Searchengine;
 
+typedef struct {
+    void *next;
+    char element[255];
+} Listelement;
+
 /* constants */
 #define MOUSE_BUTTON_1 1
 #define MOUSE_BUTTON_2 2
@@ -116,3 +121,6 @@ typedef struct {
 #define MOUSE_BUTTON_5 5
 #define BUFFERSIZE 255
 #define MAXTAGSIZE 200
+
+/* completion list size */
+#define             MAX_LIST_SIZE               40
