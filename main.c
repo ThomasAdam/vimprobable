@@ -881,9 +881,13 @@ complete(const Arg *arg) {
                     break;
             }
             free_list(elementlist);
+            if (suggurls != NULL) {
+                free(suggurls);
+                suggurls = NULL;
+            }
             if (entry != NULL) {
-                free(entry);
-                entry = NULL;
+               free(entry);
+               entry = NULL;
             }
         }
         widgets = realloc(widgets, sizeof(GtkWidget*) * n);
@@ -915,15 +919,6 @@ complete(const Arg *arg) {
     } else
         gtk_entry_set_text(GTK_ENTRY(inputbox), prefix);
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
-    if (suggurls != NULL) {
-        m = 0;
-        while (suggurls[m]) {
-            free(suggurls[m]);
-            suggurls[m] = NULL;
-        }
-        free(suggurls);
-        suggurls = NULL;
-    }
     return TRUE;
 }
 
