@@ -145,8 +145,8 @@ struct map_pair {
 
 typedef struct {
     void *next;
-    char tag[255];
-} Tagelement;
+    char element[255];
+} Listelement;
 
 /* constants */
 #define MOUSE_BUTTON_1 1
@@ -163,3 +163,10 @@ typedef struct {
 /* quickmarks */
 #define             QUICKMARK_FILE              "%s/.config/vimprobable/quickmarks", getenv("HOME")
 
+/* history */
+#define             HISTORY_MAX_ENTRIES         1000
+#define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
+#define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
+
+/* completion list size */
+#define             MAX_LIST_SIZE               40

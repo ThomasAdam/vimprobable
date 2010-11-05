@@ -740,20 +740,18 @@ GtkWidget * fill_eventbox(const char * completion_line) {
 
 gboolean
 complete(const Arg *arg) {
-    FILE *f;
-    const char *filename;
-    char *str, *s, *p, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", *url, **suggurls;
+    char *str, *p, *s, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", **suggurls;
     size_t listlen, len, cmdlen;
     int i, spacepos;
-    Tagelement *taglist, *tagpointer;
-    gboolean highlight = FALSE, finished = FALSE;
+    Listelement *elementlist = NULL, *elementpointer;
+    gboolean highlight = FALSE;
     GtkBox *row;
     GtkWidget *row_eventbox, *el;
     GtkBox *_table;
     GdkColor color;
     static GtkWidget *table, **widgets, *top_border;
     static char **suggestions, *prefix;
-    static int n = 0, current = -1;
+    static int n = 0, m, current = -1;
 
     str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
     len = strlen(str);
@@ -798,6 +796,7 @@ complete(const Arg *arg) {
         _table = GTK_BOX(gtk_vbox_new(FALSE, 0));
         highlight = len > 1;
         if (strchr(str, ' ') == NULL) {
+            /* command completion */
             for (i = 0; i < listlen; i++) {
                 cmdlen = strlen(commands[i].cmd);
                 if (!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
@@ -827,147 +826,68 @@ complete(const Arg *arg) {
             }
         } else {
             entry = (char *)malloc(512 * sizeof(char));
-            if (entry != NULL) {
-                memset(entry, 0, 512);
-                suggurls = malloc(sizeof(char*) * listlen);
-                if (suggurls != NULL) {
-                    spacepos = strcspn(str, " ");
-                    searchfor = (str + spacepos + 1);
-                    strncpy(command, (str + 1), spacepos - 1);
-                    if (strlen(command) == 3 && strncmp(command, "set", 3) == 0) {
-                        /* browser settings */
-                        listlen = LENGTH(browsersettings);
-                        for (i = 0; i < listlen; i++) {
-                            if (strstr(browsersettings[i].name, searchfor) != NULL) {
-                                /* match */
-                                fill_suggline(suggline, command, browsersettings[i].name);
-                                suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                strncpy(suggurls[n], suggline, 512);
-                                suggestions[n] = suggurls[n];
-                                row_eventbox = fill_eventbox(suggline);
-                                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                widgets[n++] = row_eventbox;
-                            }
+            if (entry == NULL) {
+                return FALSE;
+            }
+            memset(entry, 0, 512);
+            suggurls = malloc(sizeof(char*) * listlen);
+            if (suggurls == NULL) {
+                return FALSE;
+            }
+            spacepos = strcspn(str, " ");
+            searchfor = (str + spacepos + 1);
+            strncpy(command, (str + 1), spacepos - 1);
+            if (strlen(command) == 3 && strncmp(command, "set", 3) == 0) {
+                /* browser settings */
+                listlen = LENGTH(browsersettings);
+                for (i = 0; i < listlen; i++) {
+                    if (strstr(browsersettings[i].name, searchfor) != NULL) {
+                        /* match */
+                        fill_suggline(suggline, command, browsersettings[i].name);
+                        suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                        strncpy(suggurls[n], suggline, 512);
+                        suggestions[n] = suggurls[n];
+                        row_eventbox = fill_eventbox(suggline);
+                        gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                        widgets[n++] = row_eventbox;
+                    }
 
-                        }
-                    } else if (strlen (command) == 2 && strncmp(command, "qt", 2) == 0) {
-                        /* completion on tags */
-                        spacepos = strcspn (str, " ");
-                        searchfor = (str + spacepos + 1);
-                        s = g_strdup(searchfor);
-                        if (!complete_case_sensitive) {
-                            /* turn argument into lowercase for case-insensitive search */
-                            g_strdown(s);
-                        }
-                        taglist = (complete_tags(s));
-                        tagpointer = taglist;
-                        while (tagpointer != NULL) {
-                            fill_suggline(suggline, command, tagpointer->tag);
-                            suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                            strncpy(suggurls[n], suggline, 512);
-                            suggestions[n] = suggurls[n];
-                            row_eventbox = fill_eventbox(suggline);
-                            gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                            widgets[n++] = row_eventbox;
-                            tagpointer = tagpointer->next;
-                        }
-                        free_taglist(taglist);
-                    } else {
-                        /* URL completion using the current command */
-                        s = g_strdup(searchfor);
-                        if (!complete_case_sensitive) {
-                            /* turn argument into lowercase for case-insensitive search */
-                            g_strdown(s);
-                        }
-                        filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
-                        f = fopen(filename, "r");
-                        if (f != NULL) {
-                            while (finished != TRUE) {
-                                if ((char *)NULL == fgets(entry, 512, f)) {
-                                    /* check if end of file was reached / error occured */
-                                    if (!feof(f)) {
-                                        break;
-                                    }
-                                    /* end of file reached */
-                                    finished = TRUE;
-                                    continue;
-                                }
-                                if (!complete_case_sensitive) {
-                                    g_strdown(entry);
-                                }
-                                if (strstr(entry, s) != NULL) {
-                                    /* found in bookmarks */
-                                    if (strchr(entry, ' ') != NULL) {
-                                        url = strtok(entry, " ");
-                                    } else {
-                                        url = strtok(entry, "\n");
-                                    }
-                                    fill_suggline(suggline, command, url);
-                                    suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                    strncpy(suggurls[n], suggline, 512);
-                                    suggestions[n] = suggurls[n];
-                                    row_eventbox = fill_eventbox(suggline);
-                                    gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                    widgets[n++] = row_eventbox;
-                                }
-                                if (n >= listlen) {
-                                    break;
-                                }
-                            }
-                            fclose(f);
-                            /* history */
-                            if (n < listlen) {
-                                filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
-                                f = fopen(filename, "r");
-                                if (f != NULL) {
-                                    finished = FALSE;
-                                    while (finished != TRUE) {
-                                        if ((char *)NULL == fgets(entry, 512, f)) {
-                                            /* check if end of file was reached / error occured */
-                                            if (!feof(f)) {
-                                                break;
-                                            }
-                                            /* end of file reached */
-                                            finished = TRUE;
-                                            continue;
-                                        }
-                                        if (!complete_case_sensitive) {
-                                            g_strdown(entry);
-                                        }
-                                        if (strstr(entry, s) != NULL) {
-                                            /* found in history */
-                                            if (strchr(entry, ' ') != NULL) {
-                                                url = strtok(entry, " ");
-                                            } else {
-                                                url = strtok(entry, "\n");
-                                            }
-                                            fill_suggline(suggline, command, url);
-                                            suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                            strncpy(suggurls[n], suggline, 512);
-                                            suggestions[n] = suggurls[n];
-                                            row_eventbox = fill_eventbox(suggline);
-                                            gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                            widgets[n++] = row_eventbox;
-                                        }
-                                        if (n >= listlen) {
-                                            break;
-                                        }
-                                    }
-                                    fclose(f);
-                                }
-                            }
-                        }
-                    }
-                    g_free(s);
-                    if (suggurls != NULL) {
-                        free(suggurls);
-                        suggurls = NULL;
-                    }
                 }
-                if (entry != NULL) {
-                    free(entry);
-                    entry = NULL;
+            } else if (strlen(command) == 2 && strncmp(command, "qt", 2) == 0) {
+                /* completion on tags */
+                spacepos = strcspn(str, " ");
+                searchfor = (str + spacepos + 1);
+                elementlist = complete_list(searchfor, 1, elementlist);
+            } else {
+                /* URL completion: bookmarks */
+                elementlist = complete_list(searchfor, 0, elementlist);
+                m = count_list(elementlist);
+                if (m < MAX_LIST_SIZE) {
+                    /* URL completion: history */
+                    elementlist = complete_list(searchfor, 2, elementlist);
                 }
+            }
+            elementpointer = elementlist;
+            while (elementpointer != NULL) {
+                fill_suggline(suggline, command, elementpointer->element);
+                suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                strncpy(suggurls[n], suggline, 512);
+                suggestions[n] = suggurls[n];
+                row_eventbox = fill_eventbox(suggline);
+                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                widgets[n++] = row_eventbox;
+                elementpointer = elementpointer->next;
+                if (n >= MAX_LIST_SIZE)
+                    break;
+            }
+            free_list(elementlist);
+            if (suggurls != NULL) {
+                free(suggurls);
+                suggurls = NULL;
+            }
+            if (entry != NULL) {
+                free(entry);
+                entry = NULL;
             }
         }
         widgets = realloc(widgets, sizeof(GtkWidget*) * n);

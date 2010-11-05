@@ -407,19 +407,22 @@ give_feedback(const char *feedback)
     echo(&a);
 }
 
-Tagelement *
-complete_tags(const char *searchfor)
+Listelement *
+complete_list(const char *searchfor, const int mode, Listelement *elementlist)
 {
     FILE *f;
     const char *filename;
-    Tagelement *taglist;
-    char s[255], readtag[MAXTAGSIZE + 1];
-    int i, t;
+    Listelement *candidatelist = NULL, *candidatepointer = NULL;
+    char s[255] = "", readelement[MAXTAGSIZE + 1] = "";
+    int i, t, n = 0;
 
-    taglist = NULL;
-
-    /* look for tags in bookmarkfile */
-    filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    if (mode == 2) {
+        /* open in history file */
+        filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
+    } else {
+        /* open in bookmark file (for tags and bookmarks) */
+        filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    }
     f = fopen(filename, "r");
     if (f == NULL) {
         g_free((gpointer)filename);
@@ -427,69 +430,114 @@ complete_tags(const char *searchfor)
     }
 
     while (fgets(s, 254, f)) {
-        i = 0;
-        while (s[i] && i < 254) {
-            while (s[i] != '[' && s[i])
+        if (mode == 1) {
+            /* just tags (could be more than one per line) */
+            i = 0;
+            while (s[i] && i < 254) {
+                while (s[i] != '[' && s[i])
+                    i++;
+                if (s[i] != '[')
+                    continue;
                 i++;
-            if (s[i] != '[')
-                continue;
-            i++;
-            t = 0;
-            while (s[i] != ']' && s[i] && t < MAXTAGSIZE)
-                readtag[t++] = s[i++];
-            readtag[t] = '\0';
-            if (!complete_case_sensitive) {
-                g_strdown(readtag);
+                t = 0;
+                while (s[i] != ']' && s[i] && t < MAXTAGSIZE)
+                    readelement[t++] = s[i++];
+                readelement[t] = '\0';
+                candidatelist = add_list(readelement, candidatelist);
+                i++;
             }
-            if (!strlen(searchfor) || strstr(readtag, searchfor) != NULL)
-                taglist = addtag(readtag, taglist);
-            i++;
+        } else {
+            /* complete string (bookmarks & history) */
+            candidatelist = add_list(s, candidatelist);
         }
+        candidatepointer = candidatelist;
+        while (candidatepointer != NULL) {
+            if (!complete_case_sensitive) {
+               g_strdown(candidatepointer->element);
+            }
+            if (!strlen(searchfor) || strstr(candidatepointer->element, searchfor) != NULL) {
+                /* only use string up to the first space */
+                memset(readelement, 0, MAXTAGSIZE + 1);
+                if (strchr(candidatepointer->element, ' ') != NULL) {
+                    i = strcspn(candidatepointer->element, " ");
+                    strncpy(readelement, candidatepointer->element, i);
+                } else {
+                    strncpy(readelement, candidatepointer->element, MAXTAGSIZE);
+                }
+                elementlist = add_list(readelement, elementlist);
+                n = count_list(elementlist);
+            }
+            if (n >= MAX_LIST_SIZE)
+                break;
+            candidatepointer = candidatepointer->next;
+        }
+        free_list(candidatelist);
+        candidatelist = NULL;
+        if (n >= MAX_LIST_SIZE)
+            break;
     }
     g_free((gpointer)filename);
-    return (taglist);
+    return (elementlist);
 }
 
-Tagelement *
-addtag(const char *tag, Tagelement *taglist)
+Listelement *
+add_list(const char *element, Listelement *elementlist)
 {
-    int n;
-    Tagelement *newtag, *tagpointer, *lasttag;
+    int n, i = 0;
+    Listelement *newelement, *elementpointer, *lastelement;
 
-    if (taglist == NULL) { /* first element */
-        newtag = malloc(sizeof(Tagelement));
-        if (newtag == NULL) return (NULL);
-        strcpy(newtag->tag, tag);
-        newtag->next = NULL;
-        return (newtag);
+    if (elementlist == NULL) { /* first element */
+        newelement = malloc(sizeof(Listelement));
+        if (newelement == NULL) 
+            return (NULL);
+        strncpy(newelement->element, element, 254);
+        newelement->next = NULL;
+        return newelement;
     }
-    tagpointer = taglist;
-    n = strlen(tag);
+    elementpointer = elementlist;
+    n = strlen(element);
 
-    /* check if tag is allready in taglist */
-    while (tagpointer != NULL) {
-        if (strncmp(tagpointer->tag, tag, n) == 0) return (taglist);
-        lasttag = tagpointer;
-        tagpointer = tagpointer->next;
+    /* check if element is already in list */
+    while (elementpointer != NULL) {
+        if (strlen(elementpointer->element) == n && 
+                strncmp(elementpointer->element, element, n) == 0)
+            return (elementlist);
+        lastelement = elementpointer;
+        elementpointer = elementpointer->next;
+        i++;
     }
     /* add to list */
-    newtag = malloc(sizeof(Tagelement));
-    if (newtag == NULL)
-        return (taglist);
-    lasttag->next = newtag;
-    strcpy(newtag->tag, tag);
-    newtag->next = NULL;
-    return (taglist);
+    newelement = malloc(sizeof(Listelement));
+    if (newelement == NULL)
+        return (NULL);
+    lastelement->next = newelement;
+    strncpy(newelement->element, element, 254);
+    newelement->next = NULL;
+    return elementlist;
 }
 
 void
-free_taglist(Tagelement *taglist)
+free_list(Listelement *elementlist)
 {
-    Tagelement *tagpointer;
+    Listelement *elementpointer;
 
-    while (taglist != NULL) {
-        tagpointer = taglist->next;
-        free(taglist);
-        taglist = tagpointer;
+    while (elementlist != NULL) {
+        elementpointer = elementlist->next;
+        free(elementlist);
+        elementlist = elementpointer;
     }
+}
+
+int
+count_list(Listelement *elementlist)
+{
+    Listelement *elementpointer = elementlist;
+    int n = 0;
+
+    while (elementpointer != NULL) {
+        n++;
+        elementpointer = elementpointer->next;
+    }
+    
+    return n;
 }
