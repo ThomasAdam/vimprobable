@@ -678,7 +678,7 @@ GtkWidget * fill_eventbox(const char * completion_line) {
 gboolean
 complete(const Arg *arg) {
     char *str, *p, *s, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", **suggurls = NULL;
-    size_t len, cmdlen;
+    size_t listlen, len, cmdlen;
     int i, spacepos;
     Listelement *elementlist = NULL, *elementpointer;
     gboolean highlight = FALSE;
@@ -733,9 +733,10 @@ complete(const Arg *arg) {
         highlight = len > 1;
         if (strchr(str, ' ') == NULL) {
             /* command completion */
-            for (i = 0; i < MAX_LIST_SIZE; i++) {
+            listlen = LENGTH(commands);
+            for (i = 0; i < listlen; i++) {
                 cmdlen = strlen(commands[i].cmd);
-                if (!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
+                if (!highlight || (n < MAX_LIST_SIZE && len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
                     p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
                     if (highlight) {
                         memcpy(p, COMPLETION_TAG_OPEN, sizeof(COMPLETION_TAG_OPEN) - 1);
