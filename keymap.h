@@ -2,6 +2,8 @@
     (c) 2009 by Leon Winter
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
+    (c) 2010 by Hans-Peter Deifel
+    (c) 2010 by Thomas Adams
     see LICENSE file
 */
 #ifndef _KEYMAP
@@ -75,8 +77,8 @@ Key keys[] = {
     { 0,                    GDK_g,          GDK_u,          descend,    {NthSubdir} },
     { GDK_SHIFT_MASK,       GDK_g,          GDK_U,          descend,    {Rootdir} },
 
-    { 0,                    GDK_g,          GDK_h,          open,       {TargetCurrent, startpage} },
-    { GDK_SHIFT_MASK,       GDK_g,          GDK_H,          open,       {TargetNew,     startpage} },
+    { 0,                    GDK_g,          GDK_h,          open_arg,   {TargetCurrent, startpage} },
+    { GDK_SHIFT_MASK,       GDK_g,          GDK_H,          open_arg,   {TargetNew,     startpage} },
 
     { 0,                    0,              GDK_p,          paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK} },
     { GDK_SHIFT_MASK,       0,              GDK_P,          paste,      {TargetNew      | ClipboardPrimary  | ClipboardGTK} },

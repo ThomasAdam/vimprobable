@@ -2,6 +2,8 @@
     (c) 2009 by Leon Winter
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
+    (c) 2010 by Hans-Peter Deifel
+    (c) 2010 by Thomas Adams
     see LICENSE file
 */
 
@@ -141,6 +143,11 @@ struct map_pair {
 	char value[240];
 } my_pair;
 
+typedef struct {
+    void *next;
+    char element[255];
+} Listelement;
+
 /* constants */
 #define MOUSE_BUTTON_1 1
 #define MOUSE_BUTTON_2 2
@@ -150,6 +157,16 @@ struct map_pair {
 #define BUFFERSIZE 255
 #define MAXTAGSIZE 200
 
-/* quickmarks */
-#define             QUICKMARK_FILE               "%s/.config/vimprobable/quickmarks", getenv("HOME")
+/* bookmarks */
+#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimprobable/bookmarks", getenv("HOME")
 
+/* quickmarks */
+#define             QUICKMARK_FILE              "%s/.config/vimprobable/quickmarks", getenv("HOME")
+
+/* history */
+#define             HISTORY_MAX_ENTRIES         1000
+#define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
+#define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
+
+/* completion list size */
+#define             MAX_LIST_SIZE               40

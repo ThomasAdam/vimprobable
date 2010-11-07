@@ -1,13 +1,15 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009 by Hannes Schueller
-    (c) 2009 by Matto Fransen
+    (c) 2009, 2010 by Hannes Schueller
+    (c) 2009, 2010 by Matto Fransen
+    (c) 2010 by Hans-Peter Deifel
+    (c) 2010 by Thomas Adams
     see LICENSE file
 */
 
 /* general settings */
 char startpage[241]                     = "http://www.vimprobable.org/";
-char useragent[120]	                    = "Vimprobable2/0.9.5.0";
+char useragent[120]	                    = "Vimprobable2/0.9.6.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 static const gboolean enableJava        = TRUE; /* FALSE disables Java applets */
 
@@ -49,14 +51,6 @@ static const char progressborderright   = ']';
 #define             COOKIES_STORAGE_FILENAME    "%s/.config/vimprobable/cookies", getenv("HOME")
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
 
-/* bookmarks */
-#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimprobable/bookmarks", getenv("HOME")
-
-/* history */
-#define             HISTORY_MAX_ENTRIES         1000
-#define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
-#define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
-
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
 
@@ -69,7 +63,6 @@ static const char progressborderright   = ']';
 /* proxy */
 static const gboolean use_proxy         = TRUE; /* TRUE if you're going to use a proxy (whose address
                                                   is specified in http_proxy environment variable), false otherwise */
-
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */
 static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
@@ -78,6 +71,7 @@ static unsigned int pagingkeep          = 40;   /* pixels kept when paging */
 /* searching */
 #define             ENABLE_MATCH_HIGHLITING
 static const int searchoptions          = CaseInsensitive | Wrapping;
+gboolean complete_case_sensitive        = TRUE;
 
 /* search engines */
 static Searchengine searchengines[] = {
@@ -101,8 +95,8 @@ Command commands[] = {
     { "fo",                                            	navigate,         {NavigationForward} },
     { "forward",                                       	navigate,         {NavigationForward} },
     { "javascript",                                    	script,           {Silent} },
-    { "o",                                             	open,             {TargetCurrent} },
-    { "open",                                          	open,             {TargetCurrent} },
+    { "o",                                             	open_arg,         {TargetCurrent} },
+    { "open",                                          	open_arg,         {TargetCurrent} },
     { "q",                                             	quit,             {0} },
     { "quit",                                          	quit,             {0} },
     { "re",                                            	navigate,         {NavigationReload} },
@@ -112,8 +106,8 @@ Command commands[] = {
     { "qt",                                             search_tag,       {0} },
     { "st",                                            	navigate,         {NavigationCancel} },
     { "stop",                                          	navigate,         {NavigationCancel} },
-    { "t",                                             	open,             {TargetNew} },
-    { "tabopen",                                       	open,             {TargetNew} },
+    { "t",                                             	open_arg,         {TargetNew} },
+    { "tabopen",                                       	open_arg,         {TargetNew} },
     { "print",                                         	print_frame,      {0} },
     { "bma",                                           	bookmark,         {0} },
     { "bookmark",                                      	bookmark,         {0} },
@@ -141,7 +135,7 @@ static Mouse mouse[] = {
     /* modmask,             modkey,         button,            function,   argument */
     { 0,                    0,              MOUSE_BUTTON_2,    paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK, rememberedURI} },
     { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,      {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
-    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open,       {TargetNew, rememberedURI} },
+    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open_arg,   {TargetNew, rememberedURI} },
 };
 
 /* settings (arguments of :set command) */
@@ -177,4 +171,5 @@ static Setting browsersettings[] = {
     { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "completioncase",  NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
 };

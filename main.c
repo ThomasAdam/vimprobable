@@ -3,6 +3,8 @@
     (c) 2009 by Leon Winter
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
+    (c) 2010 by Hans-Peter Deifel
+    (c) 2010 by Thomas Adams
     see LICENSE file
 */
 
@@ -49,7 +51,7 @@ static gboolean focus_input(const Arg *arg);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
-static gboolean open(const Arg *arg);
+static gboolean open_arg(const Arg *arg);
 static gboolean paste(const Arg *arg);
 static gboolean quickmark(const Arg *arg);
 static gboolean quit(const Arg *arg);
@@ -86,7 +88,7 @@ void toggle_scrollbars(gboolean onoff);
 gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
 GtkWidget * fill_eventbox(const char * completion_line);
-
+static void mop_up(void);
 
 #include "main.h"
 
@@ -139,6 +141,21 @@ int  maxcommands    = 0;
 int  commandpointer = 0;
 KeyList *keylistroot = NULL;
 
+/* Cookie support. */
+#ifdef ENABLE_COOKIE_SUPPORT
+static SoupCookieJar *session_cookie_jar = NULL;
+static SoupCookieJar *file_cookie_jar = NULL;
+static time_t cookie_timeout = 4800;
+static char *cookie_store;
+static void setup_cookies(void);
+static const char *get_cookies(SoupURI *soup_uri);
+static void load_all_cookies(void);
+static void save_all_cookies(void);
+static void new_generic_request(SoupSession *soup_ses, SoupMessage *soup_msg, gpointer unused);
+static void update_cookie_jar(SoupCookie *new);
+static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
+static int lock;
+#endif
 /* callbacks */
 void
 window_destroyed_cb(GtkWidget *window, gpointer func_data) {
@@ -197,7 +214,7 @@ webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpo
     if (strlen(rememberedURI) > 0) {
         a.s = rememberedURI;
     }
-    open(&a);
+    open_arg(&a);
     return FALSE;
 }
 
@@ -205,7 +222,7 @@ gboolean
 webview_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetworkRequest *request,
                         WebKitWebNavigationAction *action, WebKitWebPolicyDecision *decision, gpointer user_data) {
     Arg a = { .i = TargetNew, .s = (char*)webkit_network_request_get_uri(request) };
-    open(&a);
+    open_arg(&a);
     webkit_web_policy_decision_ignore(decision);
     return TRUE;
 }
@@ -325,7 +342,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             memset(inputBuffer, 0, 65);
             if (event->keyval == GDK_Escape) {
                 a.i = Info;
-                a.s = "";
+                a.s = g_strdup("");
                 echo(&a);
             } else if (current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                     || (event->keyval == GDK_0 && count))) {
@@ -569,7 +586,6 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
             a.i = Error;
             a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
             echo(&a);
-            g_free(a.s);
         } else if (!success) {
             a.i = Error;
             if (error_msg != NULL) {
@@ -580,7 +596,6 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
                 a.s = g_strdup_printf("Unknown error. Please file a bug report!");
             }
             echo(&a);
-            g_free(a.s);
         }
     } else if ((forward = text[0] == '/') || text[0] == '?') {
         webkit_web_view_unmark_text_matches(webview);
@@ -725,19 +740,18 @@ GtkWidget * fill_eventbox(const char * completion_line) {
 
 gboolean
 complete(const Arg *arg) {
-    FILE *f;
-    const char *filename;
-    char *str, *s, *p, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", *url, **suggurls;
+    char *str, *p, *s, *markup, *entry, *searchfor, command[32] = "", suggline[512] = "", **suggurls;
     size_t listlen, len, cmdlen;
     int i, spacepos;
-    gboolean highlight = FALSE, finished = FALSE;
+    Listelement *elementlist = NULL, *elementpointer;
+    gboolean highlight = FALSE;
     GtkBox *row;
     GtkWidget *row_eventbox, *el;
     GtkBox *_table;
     GdkColor color;
     static GtkWidget *table, **widgets, *top_border;
     static char **suggestions, *prefix;
-    static int n = 0, current = -1;
+    static int n = 0, m, current = -1;
 
     str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
     len = strlen(str);
@@ -770,9 +784,8 @@ complete(const Arg *arg) {
         return TRUE;
     if (!widgets) {
         prefix = g_strdup_printf(str);
-        listlen = LENGTH(commands);
-        widgets = malloc(sizeof(GtkWidget*) * listlen);
-        suggestions = malloc(sizeof(char*) * listlen);
+        widgets = malloc(sizeof(GtkWidget*) * MAX_LIST_SIZE);
+        suggestions = malloc(sizeof(char*) * MAX_LIST_SIZE);
         top_border = gtk_event_box_new();
         gtk_widget_set_size_request(GTK_WIDGET(top_border), 0, 1);
         gdk_color_parse(completioncolor[2], &color);
@@ -782,9 +795,11 @@ complete(const Arg *arg) {
         _table = GTK_BOX(gtk_vbox_new(FALSE, 0));
         highlight = len > 1;
         if (strchr(str, ' ') == NULL) {
+            /* command completion */
+            listlen = LENGTH(commands);
             for (i = 0; i < listlen; i++) {
                 cmdlen = strlen(commands[i].cmd);
-                if (!highlight || (len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
+                if (!highlight || (n < MAX_LIST_SIZE && len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
                     p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
                     if (highlight) {
                         memcpy(p, COMPLETION_TAG_OPEN, sizeof(COMPLETION_TAG_OPEN) - 1);
@@ -811,113 +826,68 @@ complete(const Arg *arg) {
             }
         } else {
             entry = (char *)malloc(512 * sizeof(char));
-            if (entry != NULL) {
-                memset(entry, 0, 512);
-                suggurls = malloc(sizeof(char*) * listlen);
-                if (suggurls != NULL) {
-                    spacepos = strcspn(str, " ");
-                    searchfor = (str + spacepos + 1);
-                    strncpy(command, (str + 1), spacepos - 1);
-                    if (strlen(command) == 3 && strncmp(command, "set", 3) == 0) {
-                        /* browser settings */
-                        listlen = LENGTH(browsersettings);
-                        for (i = 0; i < listlen; i++) {
-                            if (strstr(browsersettings[i].name, searchfor) != NULL) {
-                                /* match */
-                                fill_suggline(suggline, command, browsersettings[i].name);
-                                suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                strncpy(suggurls[n], suggline, 512);
-                                suggestions[n] = suggurls[n];
-                                row_eventbox = fill_eventbox(suggline);
-                                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                widgets[n++] = row_eventbox;
-                            }
+            if (entry == NULL) {
+                return FALSE;
+            }
+            memset(entry, 0, 512);
+            suggurls = malloc(sizeof(char*) * MAX_LIST_SIZE);
+            if (suggurls == NULL) {
+                return FALSE;
+            }
+            spacepos = strcspn(str, " ");
+            searchfor = (str + spacepos + 1);
+            strncpy(command, (str + 1), spacepos - 1);
+            if (strlen(command) == 3 && strncmp(command, "set", 3) == 0) {
+                /* browser settings */
+                listlen = LENGTH(browsersettings);
+                for (i = 0; i < listlen; i++) {
+                    if (n < MAX_LIST_SIZE && strstr(browsersettings[i].name, searchfor) != NULL) {
+                        /* match */
+                        fill_suggline(suggline, command, browsersettings[i].name);
+                        suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                        strncpy(suggurls[n], suggline, 512);
+                        suggestions[n] = suggurls[n];
+                        row_eventbox = fill_eventbox(suggline);
+                        gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                        widgets[n++] = row_eventbox;
+                    }
 
-                        }
-                    } else {
-                        /* URL completion using the current command */
-                        filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
-                        f = fopen(filename, "r");
-                        if (f != NULL) {
-                            while (finished != TRUE) {
-                                if ((char *)NULL == fgets(entry, 512, f)) {
-                                    /* check if end of file was reached / error occured */
-                                    if (!feof(f)) {
-                                        break;
-                                    }
-                                    /* end of file reached */
-                                    finished = TRUE;
-                                    continue;
-                                }
-                                if (strstr(entry, searchfor) != NULL) {
-                                    /* found in bookmarks */
-                                    if (strchr(entry, ' ') != NULL) {
-                                        url = strtok(entry, " ");
-                                    } else {
-                                        url = strtok(entry, "\n");
-                                    }
-                                    fill_suggline(suggline, command, url);
-                                    suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                    strncpy(suggurls[n], suggline, 512);
-                                    suggestions[n] = suggurls[n];
-                                    row_eventbox = fill_eventbox(suggline);
-                                    gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                    widgets[n++] = row_eventbox;
-                                }
-                                if (n >= listlen) {
-                                    break;
-                                }
-                            }
-                            fclose(f);
-                            /* history */
-                            if (n < listlen) {
-                                filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
-                                f = fopen(filename, "r");
-                                if (f != NULL) {
-                                    finished = FALSE;
-                                    while (finished != TRUE) {
-                                        if ((char *)NULL == fgets(entry, 512, f)) {
-                                            /* check if end of file was reached / error occured */
-                                            if (!feof(f)) {
-                                                break;
-                                            }
-                                            /* end of file reached */
-                                            finished = TRUE;
-                                            continue;
-                                        }
-                                        if (strstr(entry, searchfor) != NULL) {
-                                            /* found in history */
-                                            if (strchr(entry, ' ') != NULL) {
-                                                url = strtok(entry, " ");
-                                            } else {
-                                                url = strtok(entry, "\n");
-                                            }
-                                            fill_suggline(suggline, command, url);
-                                            suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
-                                            strncpy(suggurls[n], suggline, 512);
-                                            suggestions[n] = suggurls[n];
-                                            row_eventbox = fill_eventbox(suggline);
-                                            gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
-                                            widgets[n++] = row_eventbox;
-                                        }
-                                        if (n >= listlen) {
-                                            break;
-                                        }
-                                    }
-                                    fclose(f);
-                                }
-                            }
-                        }
-                    }
-                    if (suggurls != NULL) {
-                        free(suggurls);
-                        suggurls = NULL;
-                    }
                 }
-                if (entry != NULL) {
-                    free(entry);
-                    entry = NULL;
+            } else if (strlen(command) == 2 && strncmp(command, "qt", 2) == 0) {
+                /* completion on tags */
+                spacepos = strcspn(str, " ");
+                searchfor = (str + spacepos + 1);
+                elementlist = complete_list(searchfor, 1, elementlist);
+            } else {
+                /* URL completion: bookmarks */
+                elementlist = complete_list(searchfor, 0, elementlist);
+                m = count_list(elementlist);
+                if (m < MAX_LIST_SIZE) {
+                    /* URL completion: history */
+                    elementlist = complete_list(searchfor, 2, elementlist);
                 }
+            }
+            elementpointer = elementlist;
+            while (elementpointer != NULL) {
+                fill_suggline(suggline, command, elementpointer->element);
+                suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
+                strncpy(suggurls[n], suggline, 512);
+                suggestions[n] = suggurls[n];
+                row_eventbox = fill_eventbox(suggline);
+                gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+                widgets[n++] = row_eventbox;
+                elementpointer = elementpointer->next;
+                if (n >= MAX_LIST_SIZE)
+                    break;
+            }
+            free_list(elementlist);
+            if (suggurls != NULL) {
+                free(suggurls);
+                suggurls = NULL;
+            }
+            if (entry != NULL) {
+               free(entry);
+               entry = NULL;
             }
         }
         widgets = realloc(widgets, sizeof(GtkWidget*) * n);
@@ -997,6 +967,12 @@ echo(const Arg *arg) {
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
 
+	/* TA:  Always free arg->s here, rather than relying on the caller to do
+	 * this.
+	 */
+	if (arg->s)
+		g_free(arg->s);
+
     return TRUE;
 }
 
@@ -1065,7 +1041,7 @@ number(const Arg *arg) {
 }
 
 gboolean
-open(const Arg *arg) {
+open_arg(const Arg *arg) {
     char *argv[6];
     char *s = arg->s, *p, *new;
     Arg a = { .i = NavigationReload };
@@ -1152,7 +1128,7 @@ paste(const Arg *arg) {
     /* If we're over a link, open it in a new target. */
     if (strlen(rememberedURI) > 0) {
         Arg new_target = { .i = TargetNew, .s = arg->s };
-        open(&new_target);
+        open_arg(&new_target);
         return TRUE;
     }
 
@@ -1161,7 +1137,7 @@ paste(const Arg *arg) {
     if (!a.s && arg->i & ClipboardGTK)
         a.s = gtk_clipboard_wait_for_text(clipboards[1]);
     if (a.s)
-        open(&a);
+        open_arg(&a);
     return TRUE;
 }
 
@@ -1198,7 +1174,7 @@ revive(const Arg *arg) {
     }
     if (strlen(buffer) > 0) {
         a.s = buffer;
-        open(&a);
+        open_arg(&a);
         return TRUE;
     }
     return FALSE;
@@ -1239,7 +1215,6 @@ search(const Arg *arg) {
                             direction ? "BOTTOM" : "TOP",
                             direction ? "TOP" : "BOTTOM");
                     echo(&a);
-                    g_free(a.s);
                 } else
                     break;
             } else
@@ -1250,7 +1225,6 @@ search(const Arg *arg) {
         a.i = Error;
         a.s = g_strdup_printf("Pattern not found: %s", search_handle);
         echo(&a);
-        g_free(a.s);
     }
     return TRUE;
 }
@@ -1269,15 +1243,15 @@ set(const Arg *arg) {
         gtk_widget_grab_focus(GTK_WIDGET(webview));
         break;
     case ModePassThrough:
-        a.s = "-- PASS THROUGH --";
+        a.s = g_strdup("-- PASS THROUGH --");
         echo(&a);
         break;
     case ModeSendKey:
-        a.s = "-- PASS TROUGH (next) --";
+        a.s = g_strdup("-- PASS TROUGH (next) --");
         echo(&a);
         break;
     case ModeInsert: /* should not be called manually but automatically */
-        a.s = "-- INSERT --";
+        a.s = g_strdup("-- INSERT --");
         echo(&a);
         break;
     case ModeHints:
@@ -1343,13 +1317,12 @@ quickmark(const Arg *a) {
        char *ptr = strrchr(buf, '\n');
        *ptr = '\0';
        Arg x = { .s = buf };
-       if ( strlen(buf)) return open(&x);
+       if ( strlen(buf)) return open_arg(&x);
        else  
        {       
            x.i = Error;
            x.s = g_strdup_printf("Quickmark %d not defined", b);
            echo(&x);
-           g_free(x.s);
 	   return false; 
        }
     }
@@ -1372,7 +1345,7 @@ script(const Arg *arg) {
     }
     if (arg->i != Silent && value) {
         a.i = arg->i;
-        a.s = value;
+        a.s = g_strdup(value);
         echo(&a);
     }
     if (value) {
@@ -1395,7 +1368,7 @@ script(const Arg *arg) {
                 a.i = TargetCurrent;
             memset(followTarget, 0, 8);
             a.s = (value + 5);
-            open(&a);
+            open_arg(&a);
         }
     }
     g_free(value);
@@ -1444,7 +1417,7 @@ fake_key_event(const Arg *a) {
     err.i = Error;
     Display *xdpy;
     if ( (xdpy = XOpenDisplay(NULL)) == NULL ) {
-        err.s = "Couldn't find the XDisplay.";
+        err.s = g_strdup("Couldn't find the XDisplay.");
         echo(&err);
         return FALSE;
     }
@@ -1459,7 +1432,7 @@ fake_key_event(const Arg *a) {
     xk.state =  a->i;
 
     if( ! a->s ) {
-        err.s = "Zero pointer as argument! Check your config.h";
+        err.s = g_strdup("Zero pointer as argument! Check your config.h");
         echo(&err);
         return FALSE;
     }
@@ -1472,14 +1445,14 @@ fake_key_event(const Arg *a) {
     }
     
     if( (xk.keycode = XKeysymToKeycode(xdpy, keysym)) == NoSymbol ) {
-        err.s = "Couldn't translate keysym to keycode";
+        err.s = g_strdup("Couldn't translate keysym to keycode");
         echo(&err);
         return FALSE;
     }
    
     xk.type = KeyPress;
     if( !XSendEvent(xdpy, embed, True, KeyPressMask, (XEvent *)&xk) ) {
-        err.s = "XSendEvent failed";
+        err.s = g_strdup("XSendEvent failed");
         echo(&err);
         return FALSE;
     }
@@ -1757,6 +1730,10 @@ process_set_line(char *line) {
             if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0)
                 toggle_scrollbars(boolval);
 
+            /* case sensitivity of completion */
+            if (strlen(my_pair.what) == 14 && strncmp("completioncase", my_pair.what, 14) == 0)
+                complete_case_sensitive = boolval;
+
             /* reload page? */
             if (browsersettings[i].reload)
                 webkit_web_view_reload(webview);
@@ -1838,7 +1815,7 @@ search_tag(const Arg * a) {
                             while (s[i] && !isspace(s[i])) url[k++] = s[i++];
                             url[k] = '\0';
                             Arg x = { .i = TargetNew, .s = url };
-                           open (&x);
+                           open_arg(&x);
                         }
                     }
                     intag = 0;
@@ -2083,9 +2060,7 @@ setup_settings() {
     SoupURI *proxy_uri;
     char *filename, *new;
     int  len;
-#ifdef ENABLE_COOKIE_SUPPORT
-    SoupCookieJar *cookiejar;
-#endif
+
     session = webkit_get_default_session();
     g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
     g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
@@ -2097,12 +2072,7 @@ setup_settings() {
     g_object_set((GObject*)settings, "user-agent", useragent, NULL);
     g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
-#ifdef ENABLE_COOKIE_SUPPORT
-    filename = g_strdup_printf(COOKIES_STORAGE_FILENAME);
-    cookiejar = soup_cookie_jar_text_new(filename, COOKIES_STORAGE_READONLY);
-    g_free(filename);
-    soup_session_add_feature(session, (SoupSessionFeature*)cookiejar);
-#endif
+
     /* proxy */
     if (use_proxy == TRUE) {
         filename = (char *)g_getenv("http_proxy");
@@ -2123,6 +2093,10 @@ setup_settings() {
 
 void
 setup_signals() {
+#ifdef ENABLE_COOKIE_SUPPORT
+    /* Headers. */
+    g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
+#endif
     /* window */
     g_object_connect((GObject*)window,
         "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
@@ -2159,6 +2133,174 @@ setup_signals() {
     /* inspector */
     g_signal_connect((GObject*)inspector,
         "inspect-web-view",                             (GCallback)inspector_inspect_web_view_cb,   NULL);
+}
+
+#ifdef ENABLE_COOKIE_SUPPORT
+void
+setup_cookies()
+{
+	if (file_cookie_jar)
+		g_object_unref(file_cookie_jar);
+
+	if (session_cookie_jar)
+		g_object_unref(session_cookie_jar);
+
+	session_cookie_jar = soup_cookie_jar_new();
+	cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
+
+	lock = open(cookie_store, 0);
+	flock(lock, LOCK_EX);
+
+	load_all_cookies();
+
+	flock(lock, LOCK_UN);
+	close(lock);
+
+	soup_session_add_feature(session, SOUP_SESSION_FEATURE(session_cookie_jar));
+	soup_session_add_feature(session, SOUP_SESSION_FEATURE(file_cookie_jar));
+
+	return;
+}
+
+/* TA:  XXX - we should be using this callback for any header-requests we
+ *      receive (hence the name "new_generic_request" -- but for now, its use
+ *      is limited to handling cookies.
+ */
+void
+new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused) {
+	SoupMessageHeaders *soup_msg_h;
+	SoupURI *uri;
+	const char *cookie_str;
+
+	soup_msg_h = soup_msg->request_headers;
+	soup_message_headers_remove(soup_msg_h, "Cookie");
+	uri = soup_message_get_uri(soup_msg);
+	if( (cookie_str = get_cookies(uri)) )
+		soup_message_headers_append(soup_msg_h, "Cookie", cookie_str);
+
+	g_signal_connect_after(G_OBJECT(soup_msg), "got-headers", G_CALLBACK(handle_cookie_request), NULL);
+
+	return;
+}
+
+const char *
+get_cookies(SoupURI *soup_uri) {
+	const char *cookie_str;
+
+	cookie_str = soup_cookie_jar_get_cookies(session_cookie_jar, soup_uri, TRUE);
+
+	return cookie_str;
+}
+
+void
+handle_cookie_request(SoupMessage *soup_msg, gpointer unused)
+{
+	GSList *resp_cookie = NULL;
+	SoupCookie *cookie;
+
+	for(resp_cookie = soup_cookies_from_response(soup_msg);
+		resp_cookie;
+		resp_cookie = g_slist_next(resp_cookie))
+	{
+		SoupDate *soup_date;
+		cookie = soup_cookie_copy((SoupCookie *)resp_cookie->data);
+
+		if (cookie_timeout && cookie->expires == NULL) {
+			soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout * 10);
+			soup_cookie_set_expires(cookie, soup_date);
+		}
+		soup_cookie_jar_add_cookie(session_cookie_jar, cookie);
+		update_cookie_jar(cookie);
+	}
+
+	return;
+}
+
+void
+update_cookie_jar(SoupCookie *new)
+{
+	if (!new) {
+		/* Nothing to do. */
+		return;
+	}
+
+	/* TA:  Note that this locking is merely advisory -- because there's
+	 * no linking between different vimprobable processes, the cookie jar,
+	 * when being written to here, *WILL* be truncated and overwritten
+	 * with cookie contents from the specific session saving its cookies
+	 * at that time.
+	 *
+	 * This may or may not contain cookies stored in other Vimprobable
+	 * instances, although when those instances save their cookies,
+	 * they'll just replace the cookie store's contents.
+	 *
+	 * The locking should probably be changed to be fcntl() based one day
+	 * -- but the caveat with that is all Vimprobable instances would then
+	 * block waiting for the cookie file to become availabe.  The
+	 * advisory locking used here so far seems to work OK, but if we run
+	 * into problems in the future, we'll know where to look.
+	 *
+	 * Ideally, if Vimprobable were ever to want to do this cleanly,
+	 * something like using libunique to pass messages between registered
+	 * sessions.
+	 */
+	lock = open(cookie_store, 0);
+	flock(lock, LOCK_EX);
+
+	save_all_cookies();
+	load_all_cookies();
+
+	flock(lock, LOCK_UN);
+	close(lock);
+
+	return;
+}
+
+void
+save_all_cookies()
+{
+	GSList *session_cookie_list = soup_cookie_jar_all_cookies(session_cookie_jar);
+
+	 for (; session_cookie_list;
+		session_cookie_list = session_cookie_list->next)
+	 {
+		soup_cookie_jar_add_cookie(file_cookie_jar, session_cookie_list->data);
+	 }
+
+	 soup_cookies_free(session_cookie_list);
+
+	 return;
+}
+
+void
+load_all_cookies()
+{
+	file_cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
+
+	/* Put them back in the session store. */
+	GSList *cookies_from_file = soup_cookie_jar_all_cookies(file_cookie_jar);
+
+	for (; cookies_from_file;
+	       cookies_from_file = cookies_from_file->next)
+	{
+		soup_cookie_jar_add_cookie(session_cookie_jar, cookies_from_file->data);
+	}
+
+	soup_cookies_free(cookies_from_file);
+
+	return;
+}
+
+#endif
+
+void
+mop_up(void) {
+	/* Free up any nasty globals before exiting. */
+#ifdef ENABLE_COOKIE_SUPPORT
+	if (cookie_store)
+		g_free(cookie_store);
+#endif
+	return;
 }
 
 int
@@ -2202,6 +2344,9 @@ main(int argc, char *argv[]) {
     setup_modkeys();
     make_keyslist();
     setup_gui();
+#ifdef ENABLE_COOKIE_SUPPORT
+    setup_cookies();
+#endif
 
     /* read config file */
     if (!read_rcfile(configfile)) {
@@ -2209,7 +2354,6 @@ main(int argc, char *argv[]) {
         a.i = Error;
         a.s = g_strdup_printf("Error in config file");
         echo(&a);
-        g_free(a.s);
     }
 
     /* command line argument: URL */
@@ -2221,8 +2365,10 @@ main(int argc, char *argv[]) {
 
     a.i = TargetCurrent;
     a.s = url;
-    open(&a);
+    open_arg(&a);
     gtk_main();
+
+    mop_up();
 
     return EXIT_SUCCESS;
 }

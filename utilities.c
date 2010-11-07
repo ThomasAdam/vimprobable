@@ -2,6 +2,8 @@
     (c) 2009 by Leon Winter
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
+    (c) 2010 by Hans-Peter Deifel
+    (c) 2010 by Thomas Adams
     see LICENSE file
 */
 
@@ -16,6 +18,7 @@ extern int lastcommand, maxcommands, commandpointer;
 extern KeyList *keylistroot;
 extern Key keys[];
 extern char *error_msg;
+extern gboolean complete_case_sensitive;
 
 gboolean read_rcfile(const char *config)
 {
@@ -76,7 +79,6 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
 	    a.i = Error;
 	    a.s = g_strdup_printf("Invalid quickmark, only 1-9");
 	    echo(&a);
-	    g_free(a.s);
 	    return TRUE;
     }	    
     if ( uri == NULL ) return FALSE;
@@ -113,7 +115,6 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
     a.i = Error;
     a.s = g_strdup_printf("Saved as quickmark %d: %s", mark, uri);
     echo(&a);
-    g_free(a.s);
 
     return TRUE;
 }
@@ -404,5 +405,139 @@ give_feedback(const char *feedback)
 
     a.s = g_strdup_printf(feedback);
     echo(&a);
-    g_free(a.s);
+}
+
+Listelement *
+complete_list(const char *searchfor, const int mode, Listelement *elementlist)
+{
+    FILE *f;
+    const char *filename;
+    Listelement *candidatelist = NULL, *candidatepointer = NULL;
+    char s[255] = "", readelement[MAXTAGSIZE + 1] = "";
+    int i, t, n = 0;
+
+    if (mode == 2) {
+        /* open in history file */
+        filename = g_strdup_printf(HISTORY_STORAGE_FILENAME);
+    } else {
+        /* open in bookmark file (for tags and bookmarks) */
+        filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
+    }
+    f = fopen(filename, "r");
+    if (f == NULL) {
+        g_free((gpointer)filename);
+        return (NULL);
+    }
+
+    while (fgets(s, 254, f)) {
+        if (mode == 1) {
+            /* just tags (could be more than one per line) */
+            i = 0;
+            while (s[i] && i < 254) {
+                while (s[i] != '[' && s[i])
+                    i++;
+                if (s[i] != '[')
+                    continue;
+                i++;
+                t = 0;
+                while (s[i] != ']' && s[i] && t < MAXTAGSIZE)
+                    readelement[t++] = s[i++];
+                readelement[t] = '\0';
+                candidatelist = add_list(readelement, candidatelist);
+                i++;
+            }
+        } else {
+            /* complete string (bookmarks & history) */
+            candidatelist = add_list(s, candidatelist);
+        }
+        candidatepointer = candidatelist;
+        while (candidatepointer != NULL) {
+            if (!complete_case_sensitive) {
+               g_strdown(candidatepointer->element);
+            }
+            if (!strlen(searchfor) || strstr(candidatepointer->element, searchfor) != NULL) {
+                /* only use string up to the first space */
+                memset(readelement, 0, MAXTAGSIZE + 1);
+                if (strchr(candidatepointer->element, ' ') != NULL) {
+                    i = strcspn(candidatepointer->element, " ");
+                    strncpy(readelement, candidatepointer->element, i);
+                } else {
+                    strncpy(readelement, candidatepointer->element, MAXTAGSIZE);
+                }
+                elementlist = add_list(readelement, elementlist);
+                n = count_list(elementlist);
+            }
+            if (n >= MAX_LIST_SIZE)
+                break;
+            candidatepointer = candidatepointer->next;
+        }
+        free_list(candidatelist);
+        candidatelist = NULL;
+        if (n >= MAX_LIST_SIZE)
+            break;
+    }
+    g_free((gpointer)filename);
+    return (elementlist);
+}
+
+Listelement *
+add_list(const char *element, Listelement *elementlist)
+{
+    int n, i = 0;
+    Listelement *newelement, *elementpointer, *lastelement;
+
+    if (elementlist == NULL) { /* first element */
+        newelement = malloc(sizeof(Listelement));
+        if (newelement == NULL) 
+            return (NULL);
+        strncpy(newelement->element, element, 254);
+        newelement->next = NULL;
+        return newelement;
+    }
+    elementpointer = elementlist;
+    n = strlen(element);
+
+    /* check if element is already in list */
+    while (elementpointer != NULL) {
+        if (strlen(elementpointer->element) == n && 
+                strncmp(elementpointer->element, element, n) == 0)
+            return (elementlist);
+        lastelement = elementpointer;
+        elementpointer = elementpointer->next;
+        i++;
+    }
+    /* add to list */
+    newelement = malloc(sizeof(Listelement));
+    if (newelement == NULL)
+        return (NULL);
+    lastelement->next = newelement;
+    strncpy(newelement->element, element, 254);
+    newelement->next = NULL;
+    return elementlist;
+}
+
+void
+free_list(Listelement *elementlist)
+{
+    Listelement *elementpointer;
+
+    while (elementlist != NULL) {
+        elementpointer = elementlist->next;
+        free(elementlist);
+        elementlist = elementpointer;
+    }
+}
+
+int
+count_list(Listelement *elementlist)
+{
+    Listelement *elementpointer = elementlist;
+    int n = 0;
+
+    while (elementpointer != NULL) {
+        n++;
+        elementpointer = elementpointer->next;
+    }
+    
+    return n;
 }

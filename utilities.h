@@ -2,6 +2,8 @@
     (c) 2009 by Leon Winter
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
+    (c) 2010 by Hans-Peter Deifel
+    (c) 2010 by Thomas Adams
     see LICENSE file
 */
 
@@ -24,4 +26,7 @@ gboolean mappings(const Arg *arg);
 gboolean build_taglist(const Arg *arg, FILE *f);
 void set_error(const char *error);
 void give_feedback(const char *feedback);
-
+Listelement * complete_list(const char *searchfor, const int mode, Listelement *elementlist);
+Listelement * add_list(const char *element, Listelement *elementlist);
+int count_list(Listelement *elementlist);
+void free_list(Listelement *elementlist);
