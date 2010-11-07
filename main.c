@@ -2308,6 +2308,7 @@ main(int argc, char *argv[]) {
     static Arg a;
     static char url[256] = "";
     static gboolean ver = false;
+    static gboolean configfile_exists = FALSE;
     static const char *cfile = NULL;
     static GOptionEntry opts[] = {
             { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
@@ -2348,12 +2349,25 @@ main(int argc, char *argv[]) {
     setup_cookies();
 #endif
 
+    /* Check if the specified file exists. */
+    /* And only warn the user, if they explicitly asked for a config on the
+     * command line.
+     */
+    if (!(access(configfile, F_OK) == 0) && cfile) {
+	    char *feedback_str;
+
+	    feedback_str = g_strdup_printf("Config file '%s' doesn't exist", cfile);
+	    give_feedback(feedback_str);
+    } else if ((access(configfile, F_OK) == 0))
+	    configfile_exists = true;
+
     /* read config file */
-    if (!read_rcfile(configfile)) {
-	free(configfile);
+    /* But only report errors if we failed, and the file existed. */
+    if (!read_rcfile(configfile) && configfile_exists) {
         a.i = Error;
-        a.s = g_strdup_printf("Error in config file");
+        a.s = g_strdup_printf("Error in config file '%s'", configfile);
         echo(&a);
+        g_free(configfile);
     }
 
     /* command line argument: URL */
