@@ -443,7 +443,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 update_state();
             }
             return TRUE;
-        } else if (CLEAN(event->state) == 0 && event->keyval == GDK_Return && count) {
+        } else if (CLEAN(event->state) == 0 && (event->keyval == GDK_Return || event->keyval == GDK_KP_Enter) && count) {
             memset(inputBuffer, 0, 65);
             sprintf(inputBuffer, "%d", count);
             a.s = g_strconcat("vimprobable_fire(", inputBuffer, ")", NULL);
