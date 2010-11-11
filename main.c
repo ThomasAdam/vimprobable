@@ -2103,7 +2103,7 @@ complete_list(const char *searchfor, const int mode, Listelement *elementlist)
     f = fopen(filename, "r");
     if (f == NULL) {
         g_free((gpointer)filename);
-        return (NULL);
+        return (elementlist);
     }
 
     while (fgets(s, 254, f)) {
@@ -2166,7 +2166,7 @@ add_list(const char *element, Listelement *elementlist)
     if (elementlist == NULL) { /* first element */
         newelement = malloc(sizeof(Listelement));
         if (newelement == NULL) 
-            return (NULL);
+            return (elementlist);
         strncpy(newelement->element, element, 254);
         newelement->next = NULL;
         return newelement;
@@ -2186,7 +2186,7 @@ add_list(const char *element, Listelement *elementlist)
     /* add to list */
     newelement = malloc(sizeof(Listelement));
     if (newelement == NULL)
-        return (NULL);
+        return (elementlist);
     lastelement->next = newelement;
     strncpy(newelement->element, element, 254);
     newelement->next = NULL;
