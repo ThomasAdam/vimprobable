@@ -15,8 +15,12 @@
 #include "callbacks.h"
 #include "javascript.h"
 
-/* remove numlock symbol from keymask */
-#define CLEAN(mask) (mask & ~(GDK_MOD2_MASK) & ~(GDK_BUTTON1_MASK) & ~(GDK_BUTTON2_MASK) & ~(GDK_BUTTON3_MASK) & ~(GDK_BUTTON4_MASK) & ~(GDK_BUTTON5_MASK))
+/* the CLEAN_MOD_*_MASK defines have all the bits set that will be stripped from the modifier bit field */
+#define CLEAN_MOD_NUMLOCK_MASK (GDK_MOD2_MASK)
+#define CLEAN_MOD_BUTTON_MASK (GDK_BUTTON1_MASK|GDK_BUTTON2_MASK|GDK_BUTTON3_MASK|GDK_BUTTON4_MASK|GDK_BUTTON5_MASK)
+
+/* remove unused bits, numlock symbol and buttons from keymask */
+#define CLEAN(mask) (mask & (GDK_MODIFIER_MASK) & ~(CLEAN_MOD_NUMLOCK_MASK) & ~(CLEAN_MOD_BUTTON_MASK))
 
 /* callbacks here */
 static void inputbox_activate_cb(GtkEntry *entry, gpointer user_data);
