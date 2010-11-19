@@ -13,7 +13,7 @@
 #include "utilities.h"
 
 extern char commandhistory[COMMANDHISTSIZE][255];
-extern Command *commands;
+extern Command commands[COMMANDSIZE];
 extern int lastcommand, maxcommands, commandpointer;
 extern KeyList *keylistroot;
 extern Key keys[];
