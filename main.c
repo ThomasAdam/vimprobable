@@ -2265,7 +2265,7 @@ update_cookie_jar(SoupCookie *new)
 }
 
 void
-save_all_cookies()
+save_all_cookies(void)
 {
 	GSList *session_cookie_list = soup_cookie_jar_all_cookies(session_cookie_jar);
 
@@ -2281,7 +2281,7 @@ save_all_cookies()
 }
 
 void
-load_all_cookies()
+load_all_cookies(void)
 {
 	file_cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
 
