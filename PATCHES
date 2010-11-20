@@ -101,6 +101,18 @@ $ git checkout my-new-feature
 rebasing against origin/vimprobable2 -- although that's not being mentioned
 here in the general case, but would equally be acceptable.)
 
+Compiling/Testing patches
+=========================
+
+Before you send patches to the mailing list, please ensure that you compile
+Vimprobable using the V_DEBUG target, as in the following:
+
+$ make clean && make V_DEBUG=1
+
+This not only compiles with "-g -ggdb" (for debug symbols), but also runs
+some sanity check to ensure you've not missed anything.  If you have, fix up
+any warnings or errors, and repeat the above command until it's clean.
+
 Generating patches to send to the mailing list
 ==============================================
 
