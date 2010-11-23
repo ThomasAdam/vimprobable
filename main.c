@@ -2141,6 +2141,10 @@ complete_list(const char *searchfor, const int mode, Listelement *elementlist)
                 } else {
                     strncpy(readelement, candidatepointer->element, MAXTAGSIZE);
                 }
+                /* for URLs without title, strip newline character */
+                if (readelement[strlen(readelement) - 1] == '\n') {
+                    readelement[strlen(readelement) - 1] = '\0';
+                }
                 elementlist = add_list(readelement, elementlist);
                 n = count_list(elementlist);
             }
