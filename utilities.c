@@ -465,6 +465,10 @@ complete_list(const char *searchfor, const int mode, Listelement *elementlist)
                 } else {
                     strncpy(readelement, candidatepointer->element, MAXTAGSIZE);
                 }
+                /* in the case of URLs without title, remove the line break */
+                if (readelement[strlen(readelement) - 1] == '\n') {
+                    readelement[strlen(readelement) - 1] = '\0';
+                }
                 elementlist = add_list(readelement, elementlist);
                 n = count_list(elementlist);
             }
