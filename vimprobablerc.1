@@ -189,6 +189,17 @@ line into ~/.config/vimprobable/vimprobablerc:
 
 map <S-R> reload
 
+.SH MAPPING COLON COMMANDS
+
+Key can be mapped to any colon commands. Instead of entering an
+internal symbol for the key combination to be mapped to, enter
+a command line as you would enter it within a running browser
+instance. For example:
+
+map <C-s>=:set scripts=false
+
+This would map Control-s to disable Javascript.
+
 .SH INTERACTIVE SETTING
 All settings can be changed on the fly by entering
 :set followed by one of the commands in the SETTINGS section
@@ -199,7 +210,4 @@ There has not been any significant bug-hunting yet.
 .SH AUTHORS
 Hannes Schueller and Matto Fransen
 .SH "SEE ALSO"
-.BR vimprobable (1),
-
-
-
+.BR vimprobable2 (1),
