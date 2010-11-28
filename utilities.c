@@ -214,8 +214,24 @@ parse_colour(char *color) {
 }
 
 gboolean
-changemapping(Key * search_key, int maprecord) {
+process_line_arg(const Arg *arg) {
+    return process_line(arg->s);
+}
+
+gboolean
+changemapping(Key *search_key, int maprecord, char *cmd) {
     KeyList *current, *newkey;
+    Arg a = { .s = cmd };
+
+    /* sanity check */
+    if (maprecord < 0 && cmd == NULL) {
+        /* possible states:
+         * - maprecord >= 0 && cmd == NULL: mapping to internal symbol
+         * - maprecord < 0 && cmd != NULL: mapping to command line
+         * - maprecord >= 0 && cmd != NULL: cmd will be ignored, treated as mapping to internal symbol
+         * - anything else (gets in here): an error, hence we return FALSE */
+        return FALSE;
+    }
 
     current = keylistroot;
 
@@ -226,8 +242,15 @@ changemapping(Key * search_key, int maprecord) {
                 current->Element.modkey == search_key->modkey &&
                 current->Element.key    == search_key->key
                ) {
-                current->Element.func = commands[maprecord].func;
-                current->Element.arg  = commands[maprecord].arg;
+                if (maprecord >= 0) {
+                    /* mapping to an internal signal */
+                    current->Element.func = commands[maprecord].func;
+                    current->Element.arg  = commands[maprecord].arg;
+                } else {
+                    /* mapping to a command line */
+                    current->Element.func = process_line_arg;
+                    current->Element.arg  = a;
+                }
                 return TRUE;
             }
             current = current->next;
@@ -240,8 +263,15 @@ changemapping(Key * search_key, int maprecord) {
     newkey->Element.mask   = search_key->mask;
     newkey->Element.modkey = search_key->modkey;
     newkey->Element.key    = search_key->key;
-    newkey->Element.func   = commands[maprecord].func;
-    newkey->Element.arg    = commands[maprecord].arg;
+    if (maprecord >= 0) {
+        /* mapping to an internal signal */
+        newkey->Element.func = commands[maprecord].func;
+        newkey->Element.arg  = commands[maprecord].arg;
+    } else {
+        /* mapping to a command line */
+        newkey->Element.func = process_line_arg;
+        newkey->Element.arg  = a;
+    }
     newkey->next           = NULL;
 
     if (keylistroot == NULL) keylistroot = newkey;
@@ -255,7 +285,7 @@ gboolean
 mappings(const Arg *arg) {
     char line[255];
 
-    if ( !arg->s ) {
+    if (!arg->s) {
         set_error("Missing argument.");
         return FALSE;
     }
@@ -269,7 +299,7 @@ mappings(const Arg *arg) {
 }
 
 gboolean
-process_mapping(char * keystring, int maprecord) {
+process_mapping(char *keystring, int maprecord, char *cmd) {
     Key search_key;
 
     search_key.mask   = 0;
@@ -331,31 +361,51 @@ process_mapping(char * keystring, int maprecord) {
         search_key.modkey= keystring[0];
         search_key.key = keystring[4];
     }
-    return (changemapping(&search_key, maprecord));
+    return (changemapping(&search_key, maprecord, cmd));
 }
 
 gboolean
 process_map_line(char *line) {
     int listlen, i;
-    char *c;
+    char *c, *cmd;
     my_pair.line = line;
-    c = search_word (0);
+    c = search_word(0);
 
-    if (!strlen (my_pair.what))
+    if (!strlen(my_pair.what))
         return FALSE;
-    while (isspace (*c) && *c)
+    while (isspace(*c) && *c)
         c++;
 
     if (*c == ':' || *c == '=')
         c++;
     my_pair.line = c;
-    c = search_word (1);
-    if (!strlen (my_pair.value))
+    c = search_word(1);
+    if (!strlen(my_pair.value))
         return FALSE;
     listlen = LENGTH(commands);
     for (i = 0; i < listlen; i++) {
-        if (strlen(commands[i].cmd) == strlen(my_pair.value) && strncmp(commands[i].cmd, my_pair.value, strlen(my_pair.value)) == 0)
-            return process_mapping(my_pair.what, i);
+        /* commands is fixed size */
+        if (commands[i].cmd == NULL)
+            break;
+        if (strlen(commands[i].cmd) == strlen(my_pair.value) && strncmp(commands[i].cmd, my_pair.value, strlen(my_pair.value)) == 0) {
+            /* map to an internal symbol */
+            return process_mapping(my_pair.what, i, NULL);
+        }
+    }
+    /* if this is reached, the mapping is not for one of the internal symbol - test for command line structure */
+    if (strlen(my_pair.value) > 1 && strncmp(my_pair.value, ":", 1) == 0) {
+        /* The string begins with a colon, like a command line, but it's not _just_ a colon, 
+         * i.e. increasing the pointer by one will not go 'out of bounds'.
+         * We don't actually check that the command line after the = is valid.
+         * This is user responsibility, the worst case is the new mapping simply doing nothing.
+         * Since we will pass the command to the same function which also handles the config file lines,
+         * we have to strip the colon itself (a colon counts as a commented line there - like in vim).
+         * Last, but not least, the second argument being < 0 signifies to the function that this is a 
+         * command line mapping, not a mapping to an existing internal symbol. */
+        cmd = (char *)malloc(sizeof(char) * strlen(my_pair.value));
+        strncpy(cmd, (my_pair.value + 1), strlen(my_pair.value) - 1);
+        cmd[strlen(cmd)] = '\0';
+        return process_mapping(my_pair.what, -1, cmd);
     }
     return FALSE;
 }

@@ -570,6 +570,8 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     text = (char*)gtk_entry_get_text(entry);
     if (text[0] == ':') {
         for (i = 0; i < LENGTH(commands); i++) {
+            if (commands[i].cmd == NULL)
+                break;
             len = strlen(commands[i].cmd);
             if (length >= len && !strncmp(&text[1], commands[i].cmd, len) && (text[len + 1] == ' ' || !text[len + 1])) {
                 found = TRUE;
@@ -798,6 +800,8 @@ complete(const Arg *arg) {
             /* command completion */
             listlen = LENGTH(commands);
             for (i = 0; i < listlen; i++) {
+                if (commands[i].cmd == NULL)
+                    break;
                 cmdlen = strlen(commands[i].cmd);
                 if (!highlight || (n < MAX_LIST_SIZE && len - 1 <= cmdlen && !strncmp(&str[1], commands[i].cmd, len - 1))) {
                     p = s = malloc(sizeof(char*) * (highlight ? sizeof(COMPLETION_TAG_OPEN) + sizeof(COMPLETION_TAG_CLOSE) - 1 : 1) + cmdlen);
