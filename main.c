@@ -2199,7 +2199,7 @@ main(int argc, char *argv[]) {
     }
 
     if (ver) {
-        printf("%s\n", USER_AGENT);
+        printf("%s\n", INTERNAL_VERSION);
         return EXIT_SUCCESS;
     }
 

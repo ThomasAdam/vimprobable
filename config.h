@@ -71,6 +71,7 @@ static const char progressborderright   = ']';
 
 /* Vimprobable version number */
 #define             VERSION                     "0.9.20.4"
+#define             INTERNAL_VERSION            "Vimprobable/" VERSION
 
 /* user agent */
 #define             USER_AGENT                  "Vimprobable/" VERSION
