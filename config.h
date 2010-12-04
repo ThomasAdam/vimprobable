@@ -7,9 +7,12 @@
     see LICENSE file
 */
 
+/* Vimprobable version number */
+#define VERSION "0.9.7.0"
+
 /* general settings */
 char startpage[1024]                    = "http://www.vimprobable.org/";
-char useragent[1024]                    = "Vimprobable2/0.9.7.0";
+char useragent[1024]                    = "Vimprobable2/" VERSION;
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 static const gboolean enableJava        = TRUE; /* FALSE disables Java applets */
 
