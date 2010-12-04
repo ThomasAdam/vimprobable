@@ -8,8 +8,8 @@
 */
 
 /* general settings */
-char startpage[241]                     = "http://www.vimprobable.org/";
-char useragent[120]	                    = "Vimprobable2/0.9.7.0";
+char startpage[1024]                    = "http://www.vimprobable.org/";
+char useragent[1024]                    = "Vimprobable2/0.9.7.0";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 static const gboolean enableJava        = TRUE; /* FALSE disables Java applets */
 
