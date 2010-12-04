@@ -8,7 +8,7 @@
 */
 
 /* general settings */
-static char startpage[]                 = "http://www.vimprobable.org/";
+static char startpage[1024]             = "http://www.vimprobable.org/";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 
 /* appearance */
