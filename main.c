@@ -2287,7 +2287,7 @@ main(int argc, char *argv[]) {
     }
 
     if (ver) {
-        printf("%s\n", useragent);
+        printf("%s\n", INTERNAL_VERSION);
         return EXIT_SUCCESS;
     }
 
