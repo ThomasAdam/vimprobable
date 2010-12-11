@@ -9,7 +9,7 @@
 
 /* Vimprobable version number */
 #define VERSION "0.9.7.0"
-#define INTERNAL_VERSION "Vimprobable/"VERSION
+#define INTERNAL_VERSION "Vimprobable2/"VERSION
 
 /* general settings */
 char startpage[1024]                    = "http://www.vimprobable.org/";
