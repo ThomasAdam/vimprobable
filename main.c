@@ -2072,6 +2072,7 @@ setup_settings() {
     g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
     g_object_set((GObject*)settings, "enable-plugins", enablePlugins, NULL);
     g_object_set((GObject*)settings, "enable-java-applet", enableJava, NULL);
+    g_object_set((GObject*)settings, "enable-page-cache", enablePagecache, NULL);
     filename = g_strdup_printf(USER_STYLESHEET);
     filename = g_strdup_printf("file://%s", filename);
     g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);
