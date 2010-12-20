@@ -10,6 +10,7 @@
 /* general settings */
 static char startpage[]                 = "http://www.vimprobable.org/";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
+static const gboolean enablePagecache   = FALSE; /* TRUE turns on the page cache. */
 
 /* appearance */
 static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
