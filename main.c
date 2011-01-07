@@ -2101,44 +2101,44 @@ void
 setup_signals() {
 #ifdef ENABLE_COOKIE_SUPPORT
     /* Headers. */
-    g_signal_connect_after(G_OBJECT(session), "request-started", (GCallback)new_generic_request, NULL);
+    g_signal_connect_after(G_OBJECT(session), "request-started", G_CALLBACK(new_generic_request), NULL);
 #endif
     /* window */
     g_object_connect(G_OBJECT(window),
-        "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
+        "signal::destroy",                              G_CALLBACK(window_destroyed_cb),            NULL,
     NULL);
     /* webview */
     g_object_connect(G_OBJECT(webview),
-        "signal::title-changed",                        (GCallback)webview_title_changed_cb,        NULL,
-        "signal::load-progress-changed",                (GCallback)webview_progress_changed_cb,     NULL,
-        "signal::load-committed",                       (GCallback)webview_load_committed_cb,       NULL,
-        "signal::load-finished",                        (GCallback)webview_load_finished_cb,        NULL,
-        "signal::navigation-policy-decision-requested", (GCallback)webview_navigation_cb,           NULL,
-        "signal::new-window-policy-decision-requested", (GCallback)webview_new_window_cb,           NULL,
-        "signal::mime-type-policy-decision-requested",  (GCallback)webview_mimetype_cb,             NULL,
-        "signal::download-requested",                   (GCallback)webview_download_cb,             NULL,
-        "signal::key-press-event",                      (GCallback)webview_keypress_cb,             NULL,
-        "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
-        "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
-        "signal::create-web-view",                      (GCallback)webview_open_in_new_window_cb,   NULL,
-        "signal::event",                                (GCallback)notify_event_cb,                 NULL,
+        "signal::title-changed",                        G_CALLBACK(webview_title_changed_cb),        NULL,
+        "signal::load-progress-changed",                G_CALLBACK(webview_progress_changed_cb),     NULL,
+        "signal::load-committed",                       G_CALLBACK(webview_load_committed_cb),       NULL,
+        "signal::load-finished",                        G_CALLBACK(webview_load_finished_cb),        NULL,
+        "signal::navigation-policy-decision-requested", G_CALLBACK(webview_navigation_cb),           NULL,
+        "signal::new-window-policy-decision-requested", G_CALLBACK(webview_new_window_cb),           NULL,
+        "signal::mime-type-policy-decision-requested",  G_CALLBACK(webview_mimetype_cb),             NULL,
+        "signal::download-requested",                   G_CALLBACK(webview_download_cb),             NULL,
+        "signal::key-press-event",                      G_CALLBACK(webview_keypress_cb),             NULL,
+        "signal::hovering-over-link",                   G_CALLBACK(webview_hoverlink_cb),            NULL,
+        "signal::console-message",                      G_CALLBACK(webview_console_cb),              NULL,
+        "signal::create-web-view",                      G_CALLBACK(webview_open_in_new_window_cb),   NULL,
+        "signal::event",                                G_CALLBACK(notify_event_cb),                 NULL,
     NULL);
     /* webview adjustment */
     g_object_connect(G_OBJECT(adjust_v),
-        "signal::value-changed",                        (GCallback)webview_scroll_cb,               NULL,
+        "signal::value-changed",                        G_CALLBACK(webview_scroll_cb),               NULL,
     NULL);
     /* inputbox */
     g_object_connect(G_OBJECT(inputbox),
-        "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
-        "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
-        "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
+        "signal::activate",                             G_CALLBACK(inputbox_activate_cb),            NULL,
+        "signal::key-press-event",                      G_CALLBACK(inputbox_keypress_cb),            NULL,
+        "signal::key-release-event",                    G_CALLBACK(inputbox_keyrelease_cb),          NULL,
 #ifdef ENABLE_INCREMENTAL_SEARCH
-        "signal::changed",                              (GCallback)inputbox_changed_cb,             NULL,
+        "signal::changed",                              G_CALLBACK(inputbox_changed_cb),             NULL,
 #endif
     NULL);
     /* inspector */
     g_signal_connect(G_OBJECT(inspector),
-        "inspect-web-view",                             (GCallback)inspector_inspect_web_view_cb,   NULL);
+        "inspect-web-view",                             G_CALLBACK(inspector_inspect_web_view_cb),   NULL);
 }
 
 #ifdef ENABLE_COOKIE_SUPPORT
