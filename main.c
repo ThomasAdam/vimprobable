@@ -1901,7 +1901,7 @@ update_url(const char *uri) {
     if (!back && !fwd)
         before[0] = after[0] = '\0';
 #endif
-    gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
+    gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped(
 #ifdef ENABLE_HISTORY_INDICATOR
         "<span font=\"%s\">%s%s%s%s%s</span>", statusfont, uri,
         before, back ? "+" : "", fwd ? "-" : "", after
@@ -2006,9 +2006,9 @@ setup_gui() {
     adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
     adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
     if (embed) {
-        window = (GtkWindow *)gtk_plug_new(embed);
+        window = GTK_WINDOW(gtk_plug_new(embed));
     } else {
-        window = (GtkWindow *)gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
         gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable2", "Vimprobable2");
     }
     gtk_window_set_default_size(GTK_WINDOW(window), 640, 480);
