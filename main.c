@@ -1719,11 +1719,11 @@ process_set_line(char *line) {
             if (strlen(browsersettings[i].webkit) > 0) {
                 /* activate appropriate webkit setting */
                 if (browsersettings[i].boolval) {
-                    g_object_set((GObject*)settings, browsersettings[i].webkit, boolval, NULL);
+                    g_object_set(G_OBJECT(settings), browsersettings[i].webkit, boolval, NULL);
                 } else if (browsersettings[i].intval) {
-                    g_object_set((GObject*)settings, browsersettings[i].webkit, atoi(my_pair.value), NULL);
+                    g_object_set(G_OBJECT(settings), browsersettings[i].webkit, atoi(my_pair.value), NULL);
                 } else {
-                    g_object_set((GObject*)settings, browsersettings[i].webkit, my_pair.value, NULL);
+                    g_object_set(G_OBJECT(settings), browsersettings[i].webkit, my_pair.value, NULL);
                 }
                 webkit_web_view_set_settings(webview, settings);
             }
@@ -2068,15 +2068,15 @@ setup_settings() {
     int  len;
 
     session = webkit_get_default_session();
-    g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
-    g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
-    g_object_set((GObject*)settings, "enable-plugins", enablePlugins, NULL);
-    g_object_set((GObject*)settings, "enable-java-applet", enableJava, NULL);
+    g_object_set(G_OBJECT(settings), "default-font-size", DEFAULT_FONT_SIZE, NULL);
+    g_object_set(G_OBJECT(settings), "enable-scripts", enablePlugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-plugins", enablePlugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-java-applet", enableJava, NULL);
     filename = g_strdup_printf(USER_STYLESHEET);
     filename = g_strdup_printf("file://%s", filename);
-    g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);
-    g_object_set((GObject*)settings, "user-agent", useragent, NULL);
-    g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
+    g_object_set(G_OBJECT(settings), "user-stylesheet-uri", filename, NULL);
+    g_object_set(G_OBJECT(settings), "user-agent", useragent, NULL);
+    g_object_get(G_OBJECT(settings), "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
 
     /* proxy */
@@ -2101,14 +2101,14 @@ void
 setup_signals() {
 #ifdef ENABLE_COOKIE_SUPPORT
     /* Headers. */
-    g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
+    g_signal_connect_after(G_OBJECT(session), "request-started", (GCallback)new_generic_request, NULL);
 #endif
     /* window */
-    g_object_connect((GObject*)window,
+    g_object_connect(G_OBJECT(window),
         "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
     NULL);
     /* webview */
-    g_object_connect((GObject*)webview,
+    g_object_connect(G_OBJECT(webview),
         "signal::title-changed",                        (GCallback)webview_title_changed_cb,        NULL,
         "signal::load-progress-changed",                (GCallback)webview_progress_changed_cb,     NULL,
         "signal::load-committed",                       (GCallback)webview_load_committed_cb,       NULL,
@@ -2124,11 +2124,11 @@ setup_signals() {
         "signal::event",                                (GCallback)notify_event_cb,                 NULL,
     NULL);
     /* webview adjustment */
-    g_object_connect((GObject*)adjust_v,
+    g_object_connect(G_OBJECT(adjust_v),
         "signal::value-changed",                        (GCallback)webview_scroll_cb,               NULL,
     NULL);
     /* inputbox */
-    g_object_connect((GObject*)inputbox,
+    g_object_connect(G_OBJECT(inputbox),
         "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
         "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
         "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
@@ -2137,7 +2137,7 @@ setup_signals() {
 #endif
     NULL);
     /* inspector */
-    g_signal_connect((GObject*)inspector,
+    g_signal_connect(G_OBJECT(inspector),
         "inspect-web-view",                             (GCallback)inspector_inspect_web_view_cb,   NULL);
 }
 
@@ -2157,7 +2157,7 @@ setup_cookies()
 
 	load_all_cookies();
 
-	g_signal_connect((GObject *)file_cookie_jar, "changed",
+	g_signal_connect(G_OBJECT(file_cookie_jar), "changed",
 			G_CALLBACK(update_cookie_jar), NULL);
 
 	return;
