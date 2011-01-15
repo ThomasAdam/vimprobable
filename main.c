@@ -1689,6 +1689,12 @@ process_set_line(char *line) {
             /* mandatory argument not provided */
             if (strlen(my_pair.value) == 0)
                 return FALSE;
+            /* process acceptlanguage */
+            if (strlen(my_pair.what) == 14 && strncmp("acceptlanguage", my_pair.what, 14) == 0) {
+                strncpy(acceptlanguage, my_pair.value, strlen(my_pair.value) + 1);
+                g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
+                return TRUE;
+            }
             /* process qmark? */
             if (strlen(my_pair.what) == 5 && strncmp("qmark", my_pair.what, 5) == 0) {
                 return (process_save_qmark(my_pair.value, webview));
@@ -2104,6 +2110,8 @@ setup_signals() {
     /* Headers. */
     g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
 #endif
+    /* Accept-language header */
+    g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
     /* window */
     g_object_connect((GObject*)window,
         "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
