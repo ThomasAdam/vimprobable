@@ -1406,8 +1406,8 @@ toggle_plugins(const Arg *arg) {
     WebKitWebSettings *settings;
     settings = webkit_web_view_get_settings(webview);
     plugins = !plugins;
-    g_object_set((GObject*)settings, "enable-plugins", plugins, NULL);
-    g_object_set((GObject*)settings, "enable-scripts", plugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-plugins", plugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-scripts", plugins, NULL);
     webkit_web_view_set_settings(webview, settings);
     webkit_web_view_reload(webview);
     return TRUE;
@@ -1419,7 +1419,7 @@ toggle_images(const Arg *arg) {
     WebKitWebSettings *settings;
     settings = webkit_web_view_get_settings(webview);
     images = !images;
-    g_object_set((GObject*)settings, "auto-load-images", images, NULL);
+    g_object_set(G_OBJECT(settings), "auto-load-images", images, NULL);
     webkit_web_view_set_settings(webview, settings);
     webkit_web_view_reload(webview);
     return TRUE;
@@ -1673,7 +1673,7 @@ update_url(const char *uri) {
     if (!back && !fwd)
         before[0] = after[0] = '\0';
 #endif
-    gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
+    gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped(
 #ifdef ENABLE_HISTORY_INDICATOR
         "<span font=\"%s\">%s%s%s%s%s</span>", statusfont, uri,
         before, back ? "+" : "", fwd ? "-" : "", after
@@ -1778,9 +1778,9 @@ setup_gui() {
     adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
     adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
     if (embed) {
-        window = (GtkWindow *)gtk_plug_new(embed);
+        window = GTK_WINDOW(gtk_plug_new(embed));
     } else {
-        window = (GtkWindow *)gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
         gtk_window_set_wmclass(window, "vimprobable", "Vimprobable");
     }
     gtk_window_set_default_size(window, 640, 480);
@@ -1845,15 +1845,15 @@ setup_settings() {
     int  len;
 
     session = webkit_get_default_session();
-    g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
-    g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
-    g_object_set((GObject*)settings, "enable-plugins", enablePlugins, NULL);
-    g_object_set((GObject*)settings, "enable-page-cache", enablePagecache, NULL);
+    g_object_set(G_OBJECT(settings), "default-font-size", DEFAULT_FONT_SIZE, NULL);
+    g_object_set(G_OBJECT(settings), "enable-scripts", enablePlugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-plugins", enablePlugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-page-cache", enablePagecache, NULL);
     filename = g_strdup_printf(USER_STYLES_FILENAME);
     filename = g_strdup_printf("file://%s", filename);
-    g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);
-    g_object_set((GObject*)settings, "user-agent", USER_AGENT, NULL);
-    g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
+    g_object_set(G_OBJECT(settings), "user-stylesheet-uri", filename, NULL);
+    g_object_set(G_OBJECT(settings), "user-agent", USER_AGENT, NULL);
+    g_object_get(G_OBJECT(settings), "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
 
     /* proxy */
@@ -1881,41 +1881,41 @@ void
 setup_signals() {
 #ifdef ENABLE_COOKIE_SUPPORT
     /* Headers. */
-    g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
+    g_signal_connect_after(G_OBJECT(session), "request-started", G_CALLBACK(new_generic_request), NULL);
 #endif
     /* Accept-language header */
     g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
     /* window */
-    g_object_connect((GObject*)window,
-        "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
+    g_object_connect(G_OBJECT(window),
+        "signal::destroy",                              G_CALLBACK(window_destroyed_cb),             NULL,
     NULL);
     /* webview */
-    g_object_connect((GObject*)webview,
-        "signal::title-changed",                        (GCallback)webview_title_changed_cb,        NULL,
-        "signal::load-progress-changed",                (GCallback)webview_progress_changed_cb,     NULL,
-        "signal::load-committed",                       (GCallback)webview_load_committed_cb,       NULL,
-        "signal::load-finished",                        (GCallback)webview_load_finished_cb,        NULL,
-        "signal::navigation-policy-decision-requested", (GCallback)webview_navigation_cb,           NULL,
-        "signal::new-window-policy-decision-requested", (GCallback)webview_new_window_cb,           NULL,
-        "signal::mime-type-policy-decision-requested",  (GCallback)webview_mimetype_cb,             NULL,
-        "signal::download-requested",                   (GCallback)webview_download_cb,             NULL,
-        "signal::key-press-event",                      (GCallback)webview_keypress_cb,             NULL,
-        "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
-        "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
-        "signal::create-web-view",                      (GCallback)webview_open_in_new_window_cb,   NULL,
-        "signal::event",                                (GCallback)notify_event_cb,                 NULL,
+    g_object_connect(G_OBJECT(webview),
+        "signal::title-changed",                        G_CALLBACK(webview_title_changed_cb),        NULL,
+        "signal::load-progress-changed",                G_CALLBACK(webview_progress_changed_cb),     NULL,
+        "signal::load-committed",                       G_CALLBACK(webview_load_committed_cb),       NULL,
+        "signal::load-finished",                        G_CALLBACK(webview_load_finished_cb),        NULL,
+        "signal::navigation-policy-decision-requested", G_CALLBACK(webview_navigation_cb),           NULL,
+        "signal::new-window-policy-decision-requested", G_CALLBACK(webview_new_window_cb),           NULL,
+        "signal::mime-type-policy-decision-requested",  G_CALLBACK(webview_mimetype_cb),             NULL,
+        "signal::download-requested",                   G_CALLBACK(webview_download_cb),             NULL,
+        "signal::key-press-event",                      G_CALLBACK(webview_keypress_cb),             NULL,
+        "signal::hovering-over-link",                   G_CALLBACK(webview_hoverlink_cb),            NULL,
+        "signal::console-message",                      G_CALLBACK(webview_console_cb),              NULL,
+        "signal::create-web-view",                      G_CALLBACK(webview_open_in_new_window_cb),   NULL,
+        "signal::event",                                G_CALLBACK(notify_event_cb),                 NULL,
     NULL);
     /* webview adjustment */
-    g_object_connect((GObject*)adjust_v,
-        "signal::value-changed",                        (GCallback)webview_scroll_cb,               NULL,
+    g_object_connect(G_OBJECT(adjust_v),
+        "signal::value-changed",                        G_CALLBACK(webview_scroll_cb),               NULL,
     NULL);
     /* inputbox */
-    g_object_connect((GObject*)inputbox,
-        "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
-        "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
-        "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
+    g_object_connect(G_OBJECT(inputbox),
+        "signal::activate",                             G_CALLBACK(inputbox_activate_cb),            NULL,
+        "signal::key-press-event",                      G_CALLBACK(inputbox_keypress_cb),            NULL,
+        "signal::key-release-event",                    G_CALLBACK(inputbox_keyrelease_cb),          NULL,
 #ifdef ENABLE_INCREMENTAL_SEARCH
-        "signal::changed",                              (GCallback)inputbox_changed_cb,             NULL,
+        "signal::changed",                              G_CALLBACK(inputbox_changed_cb),             NULL,
 #endif
     NULL);
 }
