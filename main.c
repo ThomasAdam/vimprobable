@@ -1883,6 +1883,8 @@ setup_signals() {
     /* Headers. */
     g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
 #endif
+    /* Accept-language header */
+    g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
     /* window */
     g_object_connect((GObject*)window,
         "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
