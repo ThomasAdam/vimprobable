@@ -193,7 +193,7 @@ ascii_bar(int total, int state, char *string) {
 
 void
 webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
-    Arg a = { .i = Silent, .s = JS_SETUP_HINTS };
+    Arg a = { .i = Silent, .s = g_strdup(JS_SETUP_HINTS) };
     const char *uri = webkit_web_view_get_uri(webview);
 
     update_url(uri);
@@ -202,7 +202,7 @@ webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointe
 
 void
 webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
-    Arg a = { .i = Silent, .s = JS_SETUP_INPUT_FOCUS };
+    Arg a = { .i = Silent, .s = g_strdup(JS_SETUP_INPUT_FOCUS) };
 
     if (HISTORY_MAX_ENTRIES > 0)
         history();
@@ -364,7 +364,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeInsert:
         if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
-            a.s = "vimprobable_clearfocus()";
+            a.s = g_strdup("vimprobable_clearfocus()");
             script(&a);
             a.i = ModeNormal;
             return set(&a);
@@ -383,7 +383,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeHints:
         if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
-            a.s = "vimprobable_clear()";
+            a.s = g_strdup("vimprobable_clear()");
             script(&a);
             a.i = ModeNormal;
             count = 0;
@@ -437,7 +437,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 memset(inputKey, 0, 5);
                 count = 0;
                 a.i = Silent;
-                a.s = "vimprobable_cleanup()";
+                a.s = g_strdup("vimprobable_cleanup()");
                 script(&a);
                 a.s = g_strconcat("vimprobable_show_hints('", inputBuffer, "')", NULL);
                 a.i = Silent;
@@ -470,7 +470,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 count = 0;
                 memset(inputBuffer, 0, 65);
                 a.i = Silent;
-                a.s = "vimprobable_cleanup()";
+                a.s = g_strdup("vimprobable_cleanup()");
                 script(&a);
                 a.s = g_strconcat("vimprobable_show_hints()", NULL);
                 a.i = Silent;
@@ -478,7 +478,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 update_state();
             } else if (strlen(inputBuffer) > 0) {
                 a.i = Silent;
-                a.s = "vimprobable_cleanup()";
+                a.s = g_strdup("vimprobable_cleanup()");
                 script(&a);
                 /* check how many bytes the last character uses */
                 for (count = 0; count < 64; count++) {
@@ -578,8 +578,21 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
             if (length >= len && !strncmp(&text[1], commands[i].cmd, len) && (text[len + 1] == ' ' || !text[len + 1])) {
                 found = TRUE;
                 a.i = commands[i].arg.i;
-                a.s = length > len + 2 ? &text[len + 2] : commands[i].arg.s;
+
+		if (length > len + 2) {
+			a.s = g_strdup(&text[len + 2]);
+		} else {
+			a.s = g_strdup(commands[i].arg.s ? commands[i].arg.s : "");
+		}
                 success = commands[i].func(&a);
+
+		/* TA:  FIXME - likely other commands here won't have free()d.
+		 * Maybe they should in the future, that is, so we don't need
+		 * to do this here for commands which rely on processing
+		 * options sent to them in ".s".
+		 */
+	        SAFEFREE(a.s);
+
                 break;
             }
         }
@@ -973,11 +986,10 @@ echo(const Arg *arg) {
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
 
-	/* TA:  Always free arg->s here, rather than relying on the caller to do
-	 * this.
-	 */
-	if (arg->s)
-		g_free(arg->s);
+    /* TA:  Always free arg->s here, rather than relying on the caller to do
+     * this.
+     */
+    SAFEFREE(((Arg *)arg)->s);
 
     return TRUE;
 }
@@ -1264,7 +1276,7 @@ set(const Arg *arg) {
         memset(followTarget, 0, 8);
         strncpy(followTarget, arg->s, 8);
         a.i = Silent;
-        a.s = "vimprobable_show_hints()";
+        a.s = g_strdup("vimprobable_show_hints()");
         script(&a);
         break;
     default:
@@ -1378,6 +1390,10 @@ script(const Arg *arg) {
         }
     }
     g_free(value);
+
+    /* free() the command string given. */
+    SAFEFREE(((Arg *)arg)->s);
+
     return TRUE;
 }
 
