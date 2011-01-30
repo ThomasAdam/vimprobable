@@ -587,10 +587,11 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
                 success = commands[i].func(&a);
 
 		/* TA:  FIXME - likely other commands here won't have free()d.
-		 * Maybe they should. 
+		 * Maybe they should in the future, that is, so we don't need
+		 * to do this here for commands which rely on processing
+		 * options sent to them in ".s".
 		 */
-		if (!a.s)
-			g_free(a.s);
+	        SAFEFREE(a.s);
 
                 break;
             }
@@ -985,11 +986,10 @@ echo(const Arg *arg) {
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
 
-	/* TA:  Always free arg->s here, rather than relying on the caller to do
-	 * this.
-	 */
-	if (arg->s)
-		g_free(arg->s);
+    /* TA:  Always free arg->s here, rather than relying on the caller to do
+     * this.
+     */
+    SAFEFREE(((Arg *)arg)->s);
 
     return TRUE;
 }
@@ -1392,8 +1392,7 @@ script(const Arg *arg) {
     g_free(value);
 
     /* free() the command string given. */
-    if (arg->s)
-	g_free(arg->s);
+    SAFEFREE(((Arg *)arg)->s);
 
     return TRUE;
 }

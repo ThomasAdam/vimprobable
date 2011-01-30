@@ -9,6 +9,7 @@
 
 /* macros */
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
+#define SAFEFREE(p)                 {if (p) {free(p);(p)=NULL;}}
 
 /* enums */
 enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };	/* modes */
