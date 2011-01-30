@@ -564,7 +564,6 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     int i;
     size_t len;
     gboolean success = FALSE, forward = FALSE, found = FALSE;
-    gboolean did_malloc = FALSE;
 
     a.i = HideCompletion;
     complete(&a);
@@ -581,18 +580,16 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
                 a.i = commands[i].arg.i;
 
 		if (length > len + 2) {
-			a.s = &text[len + 2];
-			did_malloc = FALSE;
+			a.s = g_strdup(&text[len + 2]);
 		} else {
 			a.s = g_strdup(commands[i].arg.s ? commands[i].arg.s : "");
-			did_malloc = TRUE;
 		}
                 success = commands[i].func(&a);
 
 		/* TA:  FIXME - likely other commands here won't have free()d.
 		 * Maybe they should. 
 		 */
-		if (did_malloc && !a.s)
+		if (!a.s)
 			g_free(a.s);
 
                 break;
