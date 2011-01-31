@@ -753,12 +753,20 @@ complete(const Arg *arg) {
     GtkWidget *row_eventbox, *el;
     GtkBox *_table;
     GdkColor color;
-    static GtkWidget *table, **widgets, *top_border;
-    static char **suggestions, *prefix;
+    static GtkWidget *table, *top_border;
+    static char *prefix;
+    static char **suggestions;
+    static GtkWidget **widgets;
     static int n = 0, m, current = -1;
 
     str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
     len = strlen(str);
+
+    /* Get the length of the list of commands for completion.  We need this to
+     * malloc/realloc correctly.
+     */
+    listlen = LENGTH(commands);
+
     if ((len == 0 || str[0] != ':') && arg->i != HideCompletion)
         return TRUE;
     if (prefix) {
@@ -788,8 +796,8 @@ complete(const Arg *arg) {
         return TRUE;
     if (!widgets) {
         prefix = g_strdup_printf(str);
-        widgets = malloc(sizeof(GtkWidget*) * MAX_LIST_SIZE);
-        suggestions = malloc(sizeof(char*) * MAX_LIST_SIZE);
+        widgets = malloc(sizeof(GtkWidget*) * listlen);
+        suggestions = malloc(sizeof(char*) * listlen);
         top_border = gtk_event_box_new();
         gtk_widget_set_size_request(GTK_WIDGET(top_border), 0, 1);
         gdk_color_parse(completioncolor[2], &color);
@@ -801,7 +809,7 @@ complete(const Arg *arg) {
         if (strchr(str, ' ') == NULL) {
             /* command completion */
             listlen = LENGTH(commands);
-            for (i = 0; i < listlen; i++) {
+			for (i = 0; i < listlen; i++) {
                 if (commands[i].cmd == NULL)
                     break;
                 cmdlen = strlen(commands[i].cmd);
@@ -836,7 +844,7 @@ complete(const Arg *arg) {
                 return FALSE;
             }
             memset(entry, 0, 512);
-            suggurls = malloc(sizeof(char*) * MAX_LIST_SIZE);
+            suggurls = malloc(sizeof(char*) * listlen);
             if (suggurls == NULL) {
                 return FALSE;
             }
@@ -896,8 +904,22 @@ complete(const Arg *arg) {
                entry = NULL;
             }
         }
-        widgets = realloc(widgets, sizeof(GtkWidget*) * n);
-        suggestions = realloc(suggestions, sizeof(char*) * n);
+	/* TA:  FIXME - this needs rethinking entirely. */
+	{
+		GtkWidget **widgets_temp = realloc(widgets, sizeof(*widgets) * n);
+		if (widgets_temp == NULL && widgets == NULL) {
+			fprintf(stderr, "Couldn't realloc() widgets\n");
+			exit(1);
+		}
+		widgets = widgets_temp;
+
+		char **suggestions_temp = realloc(suggestions, sizeof(*suggestions) * n);
+		if (suggestions_temp == NULL && suggestions == NULL) {
+			fprintf(stderr, "Couldn't realloc() suggestions\n");
+			exit(1);
+		}
+		suggestions = suggestions_temp;
+	}
         if (!n) {
             gdk_color_parse(completionbgcolor[1], &color);
             gtk_widget_modify_bg(table, GTK_STATE_NORMAL, &color);
