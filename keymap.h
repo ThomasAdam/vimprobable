@@ -64,6 +64,8 @@ Key keys[] = {
 
     { 0,                    0,              GDK_plus,       zoom,       {ZoomIn         | ZoomText} },
     { 0,                    0,              GDK_minus,      zoom,       {ZoomOut        | ZoomText} },
+    { 0,                    0,              GDK_KP_Add,     zoom,       {ZoomIn         | ZoomText} },
+    { 0,                    0,              GDK_KP_Subtract,zoom,       {ZoomOut        | ZoomText} },
     { 0,                    GDK_z,          GDK_i,          zoom,       {ZoomIn         | ZoomText} },
     { 0,                    GDK_z,          GDK_o,          zoom,       {ZoomOut        | ZoomText} },
     { 0,                    GDK_z,          GDK_z,          zoom,       {ZoomReset      | ZoomText} },
@@ -96,6 +98,7 @@ Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_T,          input,      {.s = ":tabopen ", .i = InsertCurrentURL} },
     { 0,                    0,              GDK_slash,      input,      {.s = "/"} },
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
+    { 0,                    0,              GDK_KP_Divide,  input,      {.s = "/"} },
     { GDK_SHIFT_MASK,       0,              GDK_question,   input,      {.s = "?"} },
 
     { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
