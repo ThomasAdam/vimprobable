@@ -93,6 +93,7 @@ gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
 GtkWidget * fill_eventbox(const char * completion_line);
 static void mop_up(void);
+static void set_download_path(char *dl_path);
 
 #include "main.h"
 
@@ -135,6 +136,7 @@ static char followTarget[8] = "";
 char *error_msg = NULL;
 
 GList *activeDownloads;
+char *downloadpath;
 
 #include "config.h"
 #include "keymap.h"
@@ -190,6 +192,39 @@ ascii_bar(int total, int state, char *string) {
     string[i] = '\0';
 }
 #endif
+
+/* Check validity of specified dl_path, either through :set, or more
+ * explicitly at the time of download.
+ */
+void
+set_download_path(char *dl_path)
+{
+	struct stat dir;
+
+	/* TA:  XXX - check for write permissions as well? */
+	if (dl_path == NULL || (stat(dl_path, &dir) == -1))
+	{
+		{
+			char *temp_dl_path = g_strdup_printf(DOWNLOADS_PATH);
+
+			give_feedback(g_strdup_printf("Download path \"%s\" doesn't exist, using: "
+				      "\"%s\"", (dl_path == NULL) ? "" : dl_path,
+				      temp_dl_path));
+
+			g_free(temp_dl_path);
+		}
+		downloadpath = g_strdup_printf(DOWNLOADS_PATH);
+
+		return;
+	}
+	downloadpath = g_strdup(dl_path);
+
+	/* TA: XXX - use SAFEFREE macro when it's merged. */
+	g_free(dl_path);
+
+	return;
+}
+
 
 void
 webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
@@ -269,11 +304,18 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     uint32_t size;
     Arg a;
 
+    /* If there's no path to download the file, let set_download_path() decide
+     * for us what the default should be.  This is why the parameter is NULL
+     * here.
+     */
+    if (downloadpath == NULL || strlen(downloadpath) == 0)
+	    set_download_path(NULL);
+
     filename = webkit_download_get_suggested_filename(download);
     if (filename == NULL || strlen(filename) == 0) {
         filename = "vimprobable_download";
     }
-    path = g_build_filename(g_strdup_printf(DOWNLOADS_PATH), filename, NULL);
+    path = g_build_filename(downloadpath, filename, NULL);
     uri = g_strconcat("file://", path, NULL);
     webkit_download_set_destination_uri(download, uri);
     g_free(uri);
@@ -1739,6 +1781,9 @@ process_set_line(char *line) {
             /* case sensitivity of completion */
             if (strlen(my_pair.what) == 14 && strncmp("completioncase", my_pair.what, 14) == 0)
                 complete_case_sensitive = boolval;
+
+	    if (strlen(my_pair.what) == 12 && strncmp("downloadpath", my_pair.what, 12) == 0)
+		    set_download_path(g_strdup(my_pair.value));
 
             /* reload page? */
             if (browsersettings[i].reload)

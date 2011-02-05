@@ -176,4 +176,5 @@ static Setting browsersettings[] = {
     { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "completioncase",  NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "downloadpath",    NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
 };

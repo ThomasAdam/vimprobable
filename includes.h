@@ -11,7 +11,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/file.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <webkit/webkit.h>
