@@ -1049,7 +1049,7 @@ number(const Arg *arg) {
 gboolean
 open_arg(const Arg *arg) {
     char *argv[6];
-    char *s = arg->s, *p, *new;
+    char *s = arg->s, *p = NULL, *new;
     Arg a = { .i = NavigationReload };
     int len, i;
 
@@ -1068,18 +1068,24 @@ open_arg(const Arg *arg) {
     if (!arg->s)
         navigate(&a);
     else if (arg->i == TargetCurrent) {
-        len = strlen(arg->s);
-        new = NULL, p = strchr(arg->s, ' ');
+        while(*s == ' ') /* strip leading whitespace */
+            ++s;
+        p = (s + strlen(s) - 1);
+        while(*p == ' ') /* strip trailing whitespace */
+            --p;
+        *(p + 1) = '\0';
+        len = strlen(s);
+        new = NULL, p = strchr(s, ' ');
         if (p)                                                           /* check for search engines */
             for (i = 0; i < LENGTH(searchengines); i++)
-                if (!strncmp(arg->s, searchengines[i].handle, p - arg->s)) {
+                if (!strncmp(s, searchengines[i].handle, p - s)) {
                     p = soup_uri_encode(++p, "&");
                     new = g_strdup_printf(searchengines[i].uri, p);
                     g_free(p);
                     break;
                 }
         if (!new) {
-            if (len > 3 && strstr(arg->s, "://")) {                      /* valid url? */
+            if (len > 3 && strstr(s, "://")) {                      /* valid url? */
                 p = new = g_malloc(len + 1);
                 while(*s != '\0') {                                     /* strip whitespaces */
                     if (*s != ' ')
@@ -1087,18 +1093,18 @@ open_arg(const Arg *arg) {
                     ++s;
                 }
                 *p = '\0';
-            } else if (strcspn(arg->s, "/") == 0 || strcspn(arg->s, "./") == 0) {  /* prepend "file://" */
+            } else if (strcspn(s, "/") == 0 || strcspn(s, "./") == 0) {  /* prepend "file://" */
                 new = g_malloc(sizeof("file://") + len);
                 strcpy(new, "file://");
-                memcpy(&new[sizeof("file://") - 1], arg->s, len + 1);
-            } else if (p || !strchr(arg->s, '.')) {                      /* whitespaces or no dot? */
-                p = soup_uri_encode(arg->s, "&");
+                memcpy(&new[sizeof("file://") - 1], s, len + 1);
+            } else if (p || !strchr(s, '.')) {                      /* whitespaces or no dot? */
+                p = soup_uri_encode(s, "&");
                 new = g_strdup_printf(defsearch->uri, p);
                 g_free(p);
             } else {                                                    /* prepend "http://" */
                 new = g_malloc(sizeof("http://") + len);
                 strcpy(new, "http://");
-                memcpy(&new[sizeof("http://") - 1], arg->s, len + 1);
+                memcpy(&new[sizeof("http://") - 1], s, len + 1);
             }
         }
         webkit_web_view_load_uri(webview, new);
