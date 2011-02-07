@@ -298,6 +298,24 @@ mappings(const Arg *arg) {
     }
 }
 
+int 
+get_modkey(char key) {
+    switch (key) {
+        case '1':
+            return GDK_MOD1_MASK;
+        case '2':
+            return GDK_MOD2_MASK;
+        case '3':
+            return GDK_MOD3_MASK;
+        case '4':
+            return GDK_MOD4_MASK;
+        case '5':
+            return GDK_MOD5_MASK;
+        default:
+            return FALSE;
+    }
+}
+
 gboolean
 process_mapping(char *keystring, int maprecord, char *cmd) {
     Key search_key;
@@ -315,10 +333,15 @@ process_mapping(char *keystring, int maprecord, char *cmd) {
         search_key.key = keystring[1];
     }
 
-    /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v
-       or stuff like <S-v>a for Shift-v,a or <C-v>a for Ctrl-v,a
-    */
-    if ((strlen(keystring) == 5 ||  strlen(keystring) == 6)  && keystring[0] == '<'  && keystring[4] == '>') {
+    /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v (strlen == 5),
+       stuff like <S-v>a for Shift-v,a or <C-v>a for Ctrl-v,a (strlen == 6 && keystring[4] == '>')
+       stuff like <M1-v> for Mod1-v (strlen == 6 && keystring[5] == '>')
+       or stuff like <M1-v>a for Mod1-v,a (strlen = 7)
+     */
+    if (
+        ((strlen(keystring) == 5 ||  strlen(keystring) == 6)  && keystring[0] == '<'  && keystring[4] == '>') || 
+        ((strlen(keystring) == 6 ||  strlen(keystring) == 7)  && keystring[0] == '<'  && keystring[5] == '>')
+       ) {
         switch (toupper(keystring[1])) {
             case 'S':
                 search_key.mask = GDK_SHIFT_MASK;
@@ -332,21 +355,34 @@ process_mapping(char *keystring, int maprecord, char *cmd) {
             case 'C':
                 search_key.mask = GDK_CONTROL_MASK;
             break;
+            case 'M':
+                search_key.mask = get_modkey(keystring[2]);
+            break;
         }
         if (!search_key.mask)
             return FALSE;
         if (strlen(keystring) == 5) {
             search_key.key = keystring[3];
+        } else if (strlen(keystring) == 7) {
+            search_key.modkey = keystring[4];
+            search_key.key    = keystring[6];
         } else {
-            search_key.modkey= keystring[3];
-            search_key.key = keystring[5];
+            if (search_key.mask == 'S' || search_key.mask == 'C') {
+                search_key.modkey = keystring[3];
+                search_key.key    = keystring[5];
+            } else {
+                search_key.key = keystring[4];
+            }
         }
     }
 
-    /* process stuff like <S-v> for Shift-v or <C-v> for Ctrl-v
-       or  stuff like a<S-v> for a,Shift-v or a<C-v> for a,Ctrl-v
-    */
-    if (strlen(keystring) == 6 && keystring[1] == '<' && keystring[5] == '>') {
+    /* process stuff like a<S-v> for a,Shift-v or a<C-v> for a,Ctrl-v (strlen == 6)
+       or stuff like a<M1-v> for a,Mod1-v (strlen == 7)
+     */
+    if (
+        (strlen(keystring) == 6 && keystring[1] == '<' && keystring[5] == '>') || 
+        (strlen(keystring) == 7 && keystring[1] == '<' && keystring[6] == '>')
+       ) {
         switch (toupper(keystring[2])) {
             case 'S':
                 search_key.mask = GDK_SHIFT_MASK;
@@ -355,11 +391,18 @@ process_mapping(char *keystring, int maprecord, char *cmd) {
             case 'C':
                 search_key.mask = GDK_CONTROL_MASK;
             break;
+            case 'M':
+                search_key.mask = get_modkey(keystring[3]);
+            break;
         }
         if (!search_key.mask)
             return FALSE;
         search_key.modkey= keystring[0];
-        search_key.key = keystring[4];
+        if (strlen(keystring) == 6) {
+            search_key.key = keystring[4];
+        } else {
+            search_key.key = keystring[5];
+        }
     }
     return (changemapping(&search_key, maprecord, cmd));
 }
