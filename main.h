@@ -3,7 +3,7 @@
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
     (c) 2010 by Hans-Peter Deifel
-    (c) 2010 by Thomas Adam
+    (c) 2010, 2011 by Thomas Adam
     see LICENSE file
 */
 
@@ -12,3 +12,4 @@ void update_state(void);
 gboolean process_line(char *line);
 gboolean echo(const Arg *arg);
 char * search_word(int whichword);
+void set_download_path(char *dl_path);

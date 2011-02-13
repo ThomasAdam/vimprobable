@@ -4,7 +4,7 @@
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
     (c) 2010 by Hans-Peter Deifel
-    (c) 2010 by Thomas Adam
+    (c) 2010, 2011 by Thomas Adam
     see LICENSE file
 */
 
@@ -93,7 +93,6 @@ gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
 GtkWidget * fill_eventbox(const char * completion_line);
 static void mop_up(void);
-static void set_download_path(char *dl_path);
 
 #include "main.h"
 
@@ -887,6 +886,81 @@ complete(const Arg *arg) {
             strncpy(command, (str + 1), spacepos - 1);
             if (strlen(command) == 3 && strncmp(command, "set", 3) == 0) {
                 /* browser settings */
+		if (strlen(searchfor) > 0 && strstr(searchfor, "downloadpath")) {
+			char *dl_command = "set downloadpath";
+			/* FIXME - we should be using glib g_* string handling
+			 * routines here.
+			 */
+			char *tmp = strstr(searchfor, "downloadpath");
+			spacepos = strcspn(tmp, " = ");
+			searchfor = (tmp + spacepos + 1);
+
+			/* Remove any whitespace. */
+			while (isspace(*searchfor) && *searchfor)
+				searchfor++;
+
+			/* If we immediately have an equals sign, skip over
+			 * it, along with potentially more whitespace.  Caters
+			 * for things like:
+			 *
+			 * :set downloadpath               =         /t
+			 */
+			if (*searchfor == '=') {
+				searchfor++;
+				while (*searchfor &&
+					isspace(*searchfor) &&
+					*searchfor != '=')
+					searchfor++;
+			}
+
+			/* If there's nothing entered here, or just
+			 * whitespace, don't try and go any further; there's
+			 * nothing to do.
+			 */
+			if (strlen(searchfor) <= 0)
+				return FALSE;
+
+			/* If there's a tilde as part of the path, we must interpolate
+			 * that out to mean $HOME.  We have to do this here,
+			 * so that the input string is transformed when we
+			 * come to match directories in complete_directories()
+			 */
+			{
+				if ((strchr(searchfor, '~') != NULL))
+				{
+					char **tmp_split_str = g_strsplit(searchfor, "~", -1);
+					char *home_dir = getenv("HOME");
+
+					/* Shouldn't happen. */
+					if (home_dir == NULL)
+					{
+						set_error("Home directory invalid.");
+						return FALSE;
+					}
+
+					if (tmp_split_str != NULL) {
+						searchfor = g_strjoinv(home_dir, tmp_split_str);
+						g_free(tmp_split_str);
+					}
+				}
+			}
+
+			GList *path_items = complete_directories(searchfor);
+			for (; path_items; path_items = path_items->next)
+			{
+				fill_suggline(suggline, dl_command, (char *)path_items->data);
+				suggurls[n] = (char *)malloc(sizeof(char) * 1024 + 1);
+				strncpy(suggurls[n], suggline, 1024);
+				suggestions[n] = suggurls[n];
+				row_eventbox = fill_eventbox(suggline);
+				gtk_box_pack_start(_table, GTK_WIDGET(row_eventbox), FALSE, FALSE, 0);
+				widgets[n++] = row_eventbox;
+				if (n >= MAX_LIST_SIZE)
+					break;
+			}
+			g_list_free(path_items);
+		}
+
                 listlen = LENGTH(browsersettings);
                 for (i = 0; i < listlen; i++) {
                     if (n < MAX_LIST_SIZE && strstr(browsersettings[i].name, searchfor) != NULL) {
