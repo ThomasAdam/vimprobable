@@ -30,3 +30,4 @@ Listelement * complete_list(const char *searchfor, const int mode, Listelement *
 Listelement * add_list(const char *element, Listelement *elementlist);
 int count_list(Listelement *elementlist);
 void free_list(Listelement *elementlist);
+GList *complete_directories(char *path);

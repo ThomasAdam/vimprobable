@@ -3,7 +3,7 @@
     (c) 2009, 2010 by Hannes Schueller
     (c) 2009, 2010 by Matto Fransen
     (c) 2010 by Hans-Peter Deifel
-    (c) 2010 by Thomas Adam
+    (c) 2010, 2011 by Thomas Adam
     see LICENSE file
 */
 
@@ -595,4 +595,75 @@ count_list(Listelement *elementlist)
     }
     
     return n;
+}
+
+GList
+*complete_directories(char *path)
+{
+	GList *dir_list = NULL;
+	GDir *dir = NULL;
+	const char *dir_name = NULL;
+
+	char *base_dir_c = NULL;
+	char *match_dir_c = NULL;
+	char *base_dir = NULL;
+	char *match_component = NULL;
+
+	gboolean full_scan = FALSE;
+
+	/* If path is NULL, return. */
+	if (path == NULL)
+		return NULL;
+
+	/* If we have an incomplete directory path, such as:
+	 *
+	 * /home/xteddy/tedd
+	 *
+	 * And tab is pressed, we must take the dirname of what's entered, and
+	 * tab-completed that, ensuring that "tedd" is considered a prefix for
+	 * a match.
+	 *
+	 * It's a shame glib has no glob() functionality.
+	 */
+
+	/* path can be modified in place -- so dup the char array here. */
+	base_dir_c = g_strdup(path);
+	match_dir_c = g_strdup(path);
+
+	/* Never pass these to free() as they're NUL-terminated. */
+	base_dir = dirname(base_dir_c);
+	match_component = basename(match_dir_c);
+
+	/* If, when combined, base_dir and match_component happen to
+	 * form a directory, then it's safe to assume this directory
+	 * should be scanned absolute.  There are no partial matches
+	 * needed here.
+	 */
+	if (g_file_test(g_strconcat(base_dir, "/", match_component, NULL),
+			G_FILE_TEST_IS_DIR))
+	{
+		base_dir = g_strconcat(base_dir, "/", match_component, NULL);
+		full_scan = TRUE;
+	}
+
+	if ((dir = g_dir_open(base_dir, 'r', NULL))) {
+		while ((dir_name = g_dir_read_name(dir))) {
+			char *composed_path;
+
+			if (full_scan || g_str_has_prefix(dir_name, match_component)) {
+				composed_path = g_build_filename(base_dir, dir_name, NULL);
+
+				if (g_file_test(composed_path, G_FILE_TEST_IS_DIR)) {
+					dir_list = g_list_append(dir_list, composed_path);
+				} else {
+					g_free(composed_path);
+				}
+			}
+		}
+	}
+	g_free(base_dir_c);
+	g_free(match_dir_c);
+	g_dir_close(dir);
+
+	return g_list_sort(dir_list, (GCompareFunc)strcmp);
 }
