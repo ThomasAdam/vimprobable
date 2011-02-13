@@ -127,7 +127,7 @@ static GdkNativeWindow embed = 0;
 static char *configfile = NULL;
 static char *winid = NULL;
 
-static char rememberedURI[128] = "";
+static char rememberedURI[1024] = "";
 static char inputKey[5];
 static char inputBuffer[65] = "";
 static char chars[65] = "0000000000000000000000000000000000000000000000000000000000000000\n";
@@ -531,10 +531,10 @@ void
 webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data) {
     const char *uri = webkit_web_view_get_uri(webview);
 
-    memset(rememberedURI, 0, 128);
+    memset(rememberedURI, 0, 1024);
     if (link) {
         gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
-        strncpy(rememberedURI, link, 128);
+        strncpy(rememberedURI, link, 1024);
     } else
         update_url(uri);
 }
