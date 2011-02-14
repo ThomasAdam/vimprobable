@@ -177,4 +177,5 @@ static Setting browsersettings[] = {
     { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "completioncase",  NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "downloadpath",    NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
+    { "promptdownload",  NULL,               "",                            FALSE,	    TRUE,            FALSE,          FALSE  },
 };
