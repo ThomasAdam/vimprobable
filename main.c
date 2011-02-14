@@ -88,6 +88,7 @@ static gboolean process_set_line(char *line);
 void save_command_history(char *line);
 void toggle_proxy(gboolean onoff);
 void toggle_scrollbars(gboolean onoff);
+void start_download(void);
 
 gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
@@ -121,6 +122,7 @@ static char current_modkey;
 static char *search_handle;
 static gboolean search_direction;
 static gboolean echo_active = TRUE;
+static gboolean prompt_download = FALSE;
 WebKitWebInspector *inspector;
 
 static GdkNativeWindow embed = 0;
@@ -134,8 +136,7 @@ static char chars[65] = "0000000000000000000000000000000000000000000000000000000
 static char followTarget[8] = "";
 char *error_msg = NULL;
 
-GList *activeDownloads;
-char *downloadpath;
+static DownloadInfo dl_info;
 
 #include "config.h"
 #include "keymap.h"
@@ -212,14 +213,22 @@ set_download_path(char *dl_path)
 
 			g_free(temp_dl_path);
 		}
-		downloadpath = g_strdup_printf(DOWNLOADS_PATH);
+		dl_info.downloadpath = g_strdup_printf(DOWNLOADS_PATH);
+
+		dl_info.retry_prompt = TRUE;
 
 		return;
 	}
-	downloadpath = g_strdup(dl_path);
+	dl_info.downloadpath = g_strdup(dl_path);
 
 	/* TA: XXX - use SAFEFREE macro when it's merged. */
 	g_free(dl_path);
+
+	if (dl_info.waiting_for_download) {
+		dl_info.waiting_for_download = FALSE;
+		dl_info.retry_prompt = FALSE;
+		start_download();
+	}
 
 	return;
 }
@@ -298,23 +307,50 @@ inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
 
 gboolean
 webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data) {
+
+	dl_info.wk_download = download;
+	if (dl_info.retry_prompt ||
+		(prompt_download && !dl_info.waiting_for_download))
+	{
+	    Arg dload = { .s = g_strdup_printf(":set downloadpath %s",
+			    dl_info.downloadpath == NULL ? "" : dl_info.downloadpath) };
+	    Arg a = { .i = ModeDownload };
+
+	    set(&a);
+	    input(&dload);
+
+	    if (dload.s)
+		    g_free(dload.s);
+
+	    dl_info.waiting_for_download = TRUE;
+	} else
+		start_download();
+
+	return TRUE;
+}
+
+void
+start_download(void) {
     const gchar *filename;
     gchar *uri, *path;
     uint32_t size;
     Arg a;
 
+    WebKitDownload *download = dl_info.wk_download;
+
     /* If there's no path to download the file, let set_download_path() decide
      * for us what the default should be.  This is why the parameter is NULL
      * here.
      */
-    if (downloadpath == NULL || strlen(downloadpath) == 0)
+    if (dl_info.downloadpath == NULL || strlen(dl_info.downloadpath) == 0)
 	    set_download_path(NULL);
 
+    /* FIXME -- This clobbers existing files!! */
     filename = webkit_download_get_suggested_filename(download);
     if (filename == NULL || strlen(filename) == 0) {
         filename = "vimprobable_download";
     }
-    path = g_build_filename(downloadpath, filename, NULL);
+    path = g_build_filename(dl_info.downloadpath, filename, NULL);
     uri = g_strconcat("file://", path, NULL);
     webkit_download_set_destination_uri(download, uri);
     g_free(uri);
@@ -325,11 +361,13 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     else
         a.s = g_strdup_printf("Download %s started (unknown size)...", filename);
     echo(&a);
-    activeDownloads = g_list_prepend(activeDownloads, download);
+    dl_info.activeDownloads = g_list_prepend(dl_info.activeDownloads, download);
     g_signal_connect(download, "notify::progress", G_CALLBACK(download_progress), NULL);
     g_signal_connect(download, "notify::status", G_CALLBACK(download_progress), NULL);
+
+    webkit_download_start(download);
+
     update_state();
-    return TRUE;
 }
 
 void
@@ -346,8 +384,10 @@ download_progress(WebKitDownload *d, GParamSpec *pspec) {
             a.i = Info;
             a.s = g_strdup_printf("Download %s finished", webkit_download_get_suggested_filename(d));
             echo(&a);
+
+	    dl_info.waiting_for_download = FALSE;
         }
-        activeDownloads = g_list_remove(activeDownloads, d);
+        dl_info.activeDownloads = g_list_remove(dl_info.activeDownloads, d);
     }
     update_state();
 }
@@ -958,7 +998,16 @@ complete(const Arg *arg) {
 				if (n >= MAX_LIST_SIZE)
 					break;
 			}
-			g_list_free(path_items);
+			/* Free any items in this list. */
+			{
+				GList *tmp;
+				for( tmp = path_items; tmp; tmp = tmp->next)
+					if (tmp->data)
+						g_free(tmp->data);
+
+				g_list_free(path_items);
+				g_free(tmp);
+			}
 		}
 
                 listlen = LENGTH(browsersettings);
@@ -1363,7 +1412,8 @@ set(const Arg *arg) {
         }
         gtk_entry_set_text(GTK_ENTRY(inputbox), "");
         gtk_widget_grab_focus(GTK_WIDGET(webview));
-        break;
+        dl_info.waiting_for_download = FALSE;
+	break;
     case ModePassThrough:
         a.s = g_strdup("-- PASS THROUGH --");
         echo(&a);
@@ -1383,6 +1433,9 @@ set(const Arg *arg) {
         a.s = "vimprobable_show_hints()";
         script(&a);
         break;
+    case ModeDownload:
+	dl_info.waiting_for_download = TRUE;
+	break;
     default:
         return TRUE;
     }
@@ -1859,6 +1912,9 @@ process_set_line(char *line) {
 	    if (strlen(my_pair.what) == 12 && strncmp("downloadpath", my_pair.what, 12) == 0)
 		    set_download_path(g_strdup(my_pair.value));
 
+	    if (strlen(my_pair.what) == 14 && strncmp("promptdownload", my_pair.what, 14) == 0)
+		    prompt_download = boolval;
+
             /* reload page? */
             if (browsersettings[i].reload)
                 webkit_web_view_reload(webview);
@@ -2032,7 +2088,7 @@ update_url(const char *uri) {
 void
 update_state() {
     char *markup;
-    int download_count = g_list_length(activeDownloads);
+    int download_count = g_list_length(dl_info.activeDownloads);
     GString *status = g_string_new("");
 
     /* construct the status line */
@@ -2043,7 +2099,7 @@ update_state() {
     if (inputBuffer[0]) g_string_append_printf(status, " %s", inputBuffer);
 
     /* the number of active downloads */
-    if (activeDownloads) {
+    if (dl_info.activeDownloads) {
         g_string_append_printf(status, " %d active %s", download_count,
                 (download_count == 1) ? "download" : "downloads");
     }
@@ -2054,11 +2110,11 @@ update_state() {
         int progress = -1;
         char progressbar[progressbartick + 1];
 
-        if (activeDownloads) {
+        if (dl_info.activeDownloads) {
             progress = 0;
             GList *ptr;
 
-            for (ptr = activeDownloads; ptr; ptr = g_list_next(ptr)) {
+            for (ptr = dl_info.activeDownloads; ptr; ptr = g_list_next(ptr)) {
                 progress += 100 * webkit_download_get_progress(ptr->data);
             }
 
@@ -2379,6 +2435,14 @@ mop_up(void) {
 	if (cookie_store)
 		g_free(cookie_store);
 #endif
+
+	/* In the case of downloads, ensure we tear down any members allocated
+	 * on the heap.
+	 */
+	{
+		if (dl_info.downloadpath)
+			g_free(dl_info.downloadpath);
+	}
 	return;
 }
 

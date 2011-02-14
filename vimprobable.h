@@ -11,7 +11,7 @@
 #define LENGTH(x)                   (sizeof(x)/sizeof(x[0]))
 
 /* enums */
-enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints };	/* modes */
+enum { ModeNormal, ModePassThrough, ModeSendKey, ModeInsert, ModeHints, ModeDownload };	/* modes */
 enum { TargetCurrent, TargetNew };	/* target */
 /* bitmask,
     1 << 0:  0 = jumpTo,            1 = scroll
@@ -147,6 +147,14 @@ typedef struct {
     void *next;
     char element[255];
 } Listelement;
+
+typedef struct {
+	char *downloadpath;
+	gboolean waiting_for_download;
+	gboolean retry_prompt;
+	GList *activeDownloads;
+	WebKitDownload *wk_download;
+} DownloadInfo;
 
 /* constants */
 #define MOUSE_BUTTON_1 1
