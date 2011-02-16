@@ -89,6 +89,7 @@ void save_command_history(char *line);
 void toggle_proxy(gboolean onoff);
 void toggle_scrollbars(gboolean onoff);
 void start_download(void);
+static char *__expand_path(const char *path);
 
 gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
@@ -199,16 +200,17 @@ ascii_bar(int total, int state, char *string) {
 void
 set_download_path(char *dl_path)
 {
-	struct stat dir;
+	char *expanded = __expand_path(dl_path);
 
 	/* TA:  XXX - check for write permissions as well? */
-	if (dl_path == NULL || (stat(dl_path, &dir) == -1))
+	if (dl_path == NULL || expanded == NULL ||
+		!g_file_test(expanded, G_FILE_TEST_IS_DIR))
 	{
 		{
 			char *temp_dl_path = g_strdup_printf(DOWNLOADS_PATH);
 
 			give_feedback(g_strdup_printf("Download path \"%s\" doesn't exist, using: "
-				      "\"%s\"", (dl_path == NULL) ? "" : dl_path,
+				      "\"%s\"", (expanded == NULL) ? "" : expanded,
 				      temp_dl_path));
 
 			g_free(temp_dl_path);
@@ -219,10 +221,11 @@ set_download_path(char *dl_path)
 
 		return;
 	}
-	dl_info.downloadpath = g_strdup(dl_path);
+	dl_info.downloadpath = g_strdup(expanded);
 
 	/* TA: XXX - use SAFEFREE macro when it's merged. */
 	g_free(dl_path);
+	g_free(expanded);
 
 	if (dl_info.waiting_for_download) {
 		dl_info.waiting_for_download = FALSE;
@@ -232,6 +235,39 @@ set_download_path(char *dl_path)
 
 	return;
 }
+
+static char*
+__expand_path(const char *path)
+{
+	char *expanded_path = g_strdup(path);
+
+	if (path == NULL)
+		return NULL;
+
+	if ((strchr(path, '~') != NULL))
+	{
+		char **tmp_split_str = g_strsplit(path, "~", -1);
+		char *home_dir = getenv("HOME");
+
+		/* Shouldn't happen. */
+		if (home_dir == NULL) {
+			set_error("Home directory invalid.");
+
+			if (tmp_split_str)
+				g_free(tmp_split_str);
+
+			return NULL;
+		}
+
+		if (tmp_split_str)
+			expanded_path = g_strjoinv(home_dir, tmp_split_str);
+
+		g_strfreev(tmp_split_str);
+	}
+
+	return expanded_path;
+}
+
 
 
 void
@@ -927,7 +963,7 @@ complete(const Arg *arg) {
             if (strlen(command) == 3 && strncmp(command, "set", 3) == 0) {
                 /* browser settings */
 		if (strlen(searchfor) > 0 && strstr(searchfor, "downloadpath")) {
-			char *dl_command = "set downloadpath";
+			const char *dl_command = "set downloadpath";
 			/* FIXME - we should be using glib g_* string handling
 			 * routines here.
 			 */
@@ -953,39 +989,17 @@ complete(const Arg *arg) {
 					searchfor++;
 			}
 
-			/* If there's nothing entered here, or just
-			 * whitespace, don't try and go any further; there's
-			 * nothing to do.
-			 */
-			if (strlen(searchfor) <= 0)
-				return FALSE;
-
 			/* If there's a tilde as part of the path, we must interpolate
 			 * that out to mean $HOME.  We have to do this here,
 			 * so that the input string is transformed when we
 			 * come to match directories in complete_directories()
 			 */
-			{
-				if ((strchr(searchfor, '~') != NULL))
-				{
-					char **tmp_split_str = g_strsplit(searchfor, "~", -1);
-					char *home_dir = getenv("HOME");
+			char *expanded = __expand_path(searchfor);
 
-					/* Shouldn't happen. */
-					if (home_dir == NULL)
-					{
-						set_error("Home directory invalid.");
-						return FALSE;
-					}
+			if (expanded == NULL)
+				return FALSE;
 
-					if (tmp_split_str != NULL) {
-						searchfor = g_strjoinv(home_dir, tmp_split_str);
-						g_free(tmp_split_str);
-					}
-				}
-			}
-
-			GList *path_items = complete_directories(searchfor);
+			GList *path_items = complete_directories(expanded);
 			for (; path_items; path_items = path_items->next)
 			{
 				fill_suggline(suggline, dl_command, (char *)path_items->data);
@@ -1005,8 +1019,10 @@ complete(const Arg *arg) {
 					if (tmp->data)
 						g_free(tmp->data);
 
-				g_list_free(path_items);
 				g_free(tmp);
+				g_list_free(path_items);
+
+				g_free(expanded);
 			}
 		}
 
