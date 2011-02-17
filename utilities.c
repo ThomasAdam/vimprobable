@@ -12,6 +12,8 @@
 #include "main.h"
 #include "utilities.h"
 
+static void __canonicalise_dir_path(char **base, char **match);
+
 extern char commandhistory[COMMANDHISTSIZE][255];
 extern Command commands[COMMANDSIZE];
 extern int lastcommand, maxcommands, commandpointer;
@@ -608,6 +610,7 @@ GList
 	char *match_dir_c = NULL;
 	char *base_dir = NULL;
 	char *match_component = NULL;
+	char *full_path = NULL;
 
 	gboolean full_scan = FALSE;
 
@@ -630,7 +633,6 @@ GList
 	base_dir_c = g_strdup(path);
 	match_dir_c = g_strdup(path);
 
-	/* Never pass these to free() as they're NUL-terminated. */
 	base_dir = dirname(base_dir_c);
 	match_component = basename(match_dir_c);
 
@@ -639,10 +641,22 @@ GList
 	 * should be scanned absolute.  There are no partial matches
 	 * needed here.
 	 */
-	if (g_file_test(g_strconcat(base_dir, "/", match_component, NULL),
-			G_FILE_TEST_IS_DIR))
+
+	/* Using g_build_path() ensures we don't have a situation like this:
+	 *
+	 * //////////tmp//////
+	 *
+	 * Which looks ugly.
+	 *
+	 * But we still have to handle leading path separators ourselves.
+	 */
+	__canonicalise_dir_path(&base_dir, &match_component);
+
+	full_path = g_build_path("/", base_dir, match_component, NULL);
+
+	if (g_file_test(full_path, G_FILE_TEST_IS_DIR))
 	{
-		base_dir = g_strconcat(base_dir, "/", match_component, NULL);
+		base_dir = full_path;
 		full_scan = TRUE;
 	}
 
@@ -651,7 +665,7 @@ GList
 			char *composed_path;
 
 			if (full_scan || g_str_has_prefix(dir_name, match_component)) {
-				composed_path = g_build_filename(base_dir, dir_name, NULL);
+				composed_path = g_build_path("/", base_dir, dir_name, NULL);
 
 				if (g_file_test(composed_path, G_FILE_TEST_IS_DIR)) {
 					dir_list = g_list_append(dir_list, composed_path);
@@ -663,7 +677,40 @@ GList
 	}
 	g_free(base_dir_c);
 	g_free(match_dir_c);
+	g_free(base_dir);
+	g_free(match_component);
 	g_dir_close(dir);
 
 	return g_list_sort(dir_list, (GCompareFunc)strcmp);
+}
+
+static void
+__canonicalise_dir_path(char **base, char **match)
+{
+	char **base_path_tokens = g_strsplit_set(*base, "/", -1);
+	char **match_comp_tokens = g_strsplit_set(*match, "/", -1);
+
+	*base = g_build_pathv("/", base_path_tokens);
+	*match = g_build_pathv("/", match_comp_tokens);
+
+	/* Set both parts to "/" when we get nothing back. */
+	if (base == NULL || strlen(*base) == 0)
+		*base = g_strdup("/");
+	if (*match == NULL || strlen(*match) == 0)
+		*match = g_strdup("/");
+
+	/* In the case of "//foo", make it "/foo" because otherwise,
+	 * our base_dir is simply "foo".
+	 */
+	if (!g_str_has_prefix(*base, "/"))
+		*base = g_strconcat("/", *base, NULL);
+
+	/* If we have this "//", then set match_component to NULL --
+	 * full scan of "/".
+	 */
+	if (strcmp(*base, "/") == 0 && strcmp(*match, "/") == 0)
+		*match = NULL;
+
+	g_strfreev(base_path_tokens);
+	g_strfreev(match_comp_tokens);
 }
