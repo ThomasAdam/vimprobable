@@ -22,6 +22,10 @@
 /* remove unused bits, numlock symbol and buttons from keymask */
 #define CLEAN(mask) (mask & (GDK_MODIFIER_MASK) & ~(CLEAN_MOD_NUMLOCK_MASK) & ~(CLEAN_MOD_BUTTON_MASK))
 
+#define IS_ESCAPE(event) (IS_ESCAPE_KEY(CLEAN(event->state), event->keyval))
+#define IS_ESCAPE_KEY(s, k) ((s == 0 && k == GDK_Escape) || \
+        (s == GDK_CONTROL_MASK && k == GDK_bracketleft))
+
 /* callbacks here */
 static void inputbox_activate_cb(GtkEntry *entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event);
@@ -342,7 +346,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeNormal:
         if (CLEAN(event->state) == 0) {
             memset(inputBuffer, 0, 65);
-            if (event->keyval == GDK_Escape) {
+            if (IS_ESCAPE(event)) {
                 a.i = Info;
                 a.s = g_strdup("");
                 echo(&a);
@@ -362,7 +366,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
 
         break;
     case ModeInsert:
-        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (IS_ESCAPE(event)) {
             a.i = Silent;
             a.s = "vimprobable_clearfocus()";
             script(&a);
@@ -370,7 +374,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             return set(&a);
         }
     case ModePassThrough:
-        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (IS_ESCAPE(event)) {
             echo(&a);
             set(&a);
             return TRUE;
@@ -381,7 +385,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         set(&a);
         break;
     case ModeHints:
-        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (IS_ESCAPE(event)) {
             a.i = Silent;
             a.s = "vimprobable_clear()";
             script(&a);
@@ -628,7 +632,9 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
 
     switch (event->keyval) {
+        case GDK_bracketleft:
         case GDK_Escape:
+            if (!IS_ESCAPE(event)) break;
             a.i = HideCompletion;
             complete(&a);
             a.i = ModeNormal;
