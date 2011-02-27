@@ -102,6 +102,7 @@ Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_question,   input,      {.s = "?"} },
 
     { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
+    { GDK_CONTROL_MASK,     GDK_VoidSymbol, GDK_bracketleft,set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
     { 0,                    0,              GDK_f,          set,        { .i = ModeHints, .s = "current" } },
