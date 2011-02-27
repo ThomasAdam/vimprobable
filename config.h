@@ -8,7 +8,7 @@
 */
 
 /* general settings */
-static char startpage[]                 = "http://www.vimprobable.org/";
+static char startpage[1024]             = "http://www.vimprobable.org/";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 static const gboolean enablePagecache   = FALSE; /* TRUE turns on the page cache. */
 char acceptlanguage[1024]               = "";
@@ -71,8 +71,12 @@ static const char progressborderright   = ']';
 /* font size */
 #define             DEFAULT_FONT_SIZE           12
 
+/* Vimprobable version number */
+#define             VERSION                     "0.9.21.0"
+#define             INTERNAL_VERSION            "Vimprobable/" VERSION
+
 /* user agent */
-#define             USER_AGENT                  "Vimprobable/0.9.21.0"
+#define             USER_AGENT                  "Vimprobable/" VERSION
 
 /* scrolling */
 static unsigned int scrollstep          = 40;   /* cursor difference in pixel */

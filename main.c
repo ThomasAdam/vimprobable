@@ -21,8 +21,12 @@
 #include "vimprobable.h"
 #include "javascript.h"
 
-/* remove numlock symbol from keymask */
-#define CLEAN(mask) (mask & ~(GDK_MOD2_MASK) & ~(GDK_BUTTON1_MASK) & ~(GDK_BUTTON2_MASK) & ~(GDK_BUTTON3_MASK) & ~(GDK_BUTTON4_MASK) & ~(GDK_BUTTON5_MASK))
+/* the CLEAN_MOD_*_MASK defines have all the bits set that will be stripped from the modifier bit field */
+#define CLEAN_MOD_NUMLOCK_MASK (GDK_MOD2_MASK)
+#define CLEAN_MOD_BUTTON_MASK (GDK_BUTTON1_MASK|GDK_BUTTON2_MASK|GDK_BUTTON3_MASK|GDK_BUTTON4_MASK|GDK_BUTTON5_MASK)
+
+/* remove unused bits, numlock symbol and buttons from keymask */
+#define CLEAN(mask) (mask & (GDK_MODIFIER_MASK) & ~(CLEAN_MOD_NUMLOCK_MASK) & ~(CLEAN_MOD_BUTTON_MASK))
 
 #define IS_ESCAPE(event) (IS_ESCAPE_KEY(CLEAN(event->state), event->keyval))
 #define IS_ESCAPE_KEY(s, k) ((s == 0 && k == GDK_Escape) || \
@@ -148,11 +152,9 @@ static char *cookie_store;
 static void setup_cookies(void);
 static const char *get_cookies(SoupURI *soup_uri);
 static void load_all_cookies(void);
-static void save_all_cookies(void);
 static void new_generic_request(SoupSession *soup_ses, SoupMessage *soup_msg, gpointer unused);
-static void update_cookie_jar(SoupCookie *new);
+static void update_cookie_jar(SoupCookieJar *jar, SoupCookie *old, SoupCookie *new);
 static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
-static int lock;
 #endif
 /* callbacks */
 void
@@ -1960,16 +1962,10 @@ setup_cookies()
 	session_cookie_jar = soup_cookie_jar_new();
 	cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
 
-	lock = open(cookie_store, 0);
-	flock(lock, LOCK_EX);
-
 	load_all_cookies();
 
-	flock(lock, LOCK_UN);
-	close(lock);
-
-	soup_session_add_feature(session, SOUP_SESSION_FEATURE(session_cookie_jar));
-	soup_session_add_feature(session, SOUP_SESSION_FEATURE(file_cookie_jar));
+	g_signal_connect((GObject *)file_cookie_jar, "changed",
+			G_CALLBACK(update_cookie_jar), NULL);
 
 	return;
 }
@@ -1999,7 +1995,7 @@ const char *
 get_cookies(SoupURI *soup_uri) {
 	const char *cookie_str;
 
-	cookie_str = soup_cookie_jar_get_cookies(session_cookie_jar, soup_uri, TRUE);
+	cookie_str = soup_cookie_jar_get_cookies(file_cookie_jar, soup_uri, TRUE);
 
 	return cookie_str;
 }
@@ -2021,71 +2017,30 @@ handle_cookie_request(SoupMessage *soup_msg, gpointer unused)
 			soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout * 10);
 			soup_cookie_set_expires(cookie, soup_date);
 		}
-		soup_cookie_jar_add_cookie(session_cookie_jar, cookie);
-		update_cookie_jar(cookie);
+		soup_cookie_jar_add_cookie(file_cookie_jar, cookie);
 	}
 
 	return;
 }
 
 void
-update_cookie_jar(SoupCookie *new)
+update_cookie_jar(SoupCookieJar *jar, SoupCookie *old, SoupCookie *new)
 {
 	if (!new) {
 		/* Nothing to do. */
 		return;
 	}
 
-	/* TA:  Note that this locking is merely advisory -- because there's
-	 * no linking between different vimprobable processes, the cookie jar,
-	 * when being written to here, *WILL* be truncated and overwritten
-	 * with cookie contents from the specific session saving its cookies
-	 * at that time.
-	 *
-	 * This may or may not contain cookies stored in other Vimprobable
-	 * instances, although when those instances save their cookies,
-	 * they'll just replace the cookie store's contents.
-	 *
-	 * The locking should probably be changed to be fcntl() based one day
-	 * -- but the caveat with that is all Vimprobable instances would then
-	 * block waiting for the cookie file to become availabe.  The
-	 * advisory locking used here so far seems to work OK, but if we run
-	 * into problems in the future, we'll know where to look.
-	 *
-	 * Ideally, if Vimprobable were ever to want to do this cleanly,
-	 * something like using libunique to pass messages between registered
-	 * sessions.
-	 */
-	lock = open(cookie_store, 0);
-	flock(lock, LOCK_EX);
+	SoupCookie *copy;
+	copy = soup_cookie_copy(new);
 
-	save_all_cookies();
-	load_all_cookies();
-
-	flock(lock, LOCK_UN);
-	close(lock);
+	soup_cookie_jar_add_cookie(session_cookie_jar, copy);
 
 	return;
 }
 
 void
-save_all_cookies()
-{
-	GSList *session_cookie_list = soup_cookie_jar_all_cookies(session_cookie_jar);
-
-	 for (; session_cookie_list;
-		session_cookie_list = session_cookie_list->next)
-	 {
-		soup_cookie_jar_add_cookie(file_cookie_jar, session_cookie_list->data);
-	 }
-
-	 soup_cookies_free(session_cookie_list);
-
-	 return;
-}
-
-void
-load_all_cookies()
+load_all_cookies(void)
 {
 	file_cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
 
@@ -2274,7 +2229,7 @@ main(int argc, char *argv[]) {
     }
 
     if (ver) {
-        printf("%s\n", USER_AGENT);
+        printf("%s\n", INTERNAL_VERSION);
         return EXIT_SUCCESS;
     }
 
