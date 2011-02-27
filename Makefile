@@ -15,7 +15,7 @@ INSTALL = $(BINDIR)/$(TARGET) $(addprefix $(MANDIR)/man1/,$(MAN))
 V_DEBUG = 0
 
 CFLAGS += `pkg-config --cflags $(LIBS)`
-LDFLAGS += `pkg-config --libs $(LIBS)`
+LDFLAGS += `pkg-config --libs $(LIBS)` -lX11 -lXext
 
 # TA:  This is a pretty stringent list of warnings to bail on!
 ifeq ($(V_DEBUG),1)
