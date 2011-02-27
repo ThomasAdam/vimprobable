@@ -12,7 +12,7 @@ CLEAN = $(TARGET) $(OBJ) $(DEPS) javascript.h
 INSTALL = $(BINDIR)/$(TARGET) $(addprefix $(MANDIR)/man1/,$(MAN))
 
 CFLAGS += `pkg-config --cflags $(LIBS)`
-LDFLAGS += `pkg-config --libs $(LIBS)`
+LDFLAGS += `pkg-config --libs $(LIBS)` -lX11 -lXext
 
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
