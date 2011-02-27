@@ -904,22 +904,21 @@ complete(const Arg *arg) {
                entry = NULL;
             }
         }
-	/* TA:  FIXME - this needs rethinking entirely. */
-	{
-		GtkWidget **widgets_temp = realloc(widgets, sizeof(*widgets) * n);
-		if (widgets_temp == NULL && widgets == NULL) {
-			fprintf(stderr, "Couldn't realloc() widgets\n");
-			exit(1);
-		}
-		widgets = widgets_temp;
-
-		char **suggestions_temp = realloc(suggestions, sizeof(*suggestions) * n);
-		if (suggestions_temp == NULL && suggestions == NULL) {
-			fprintf(stderr, "Couldn't realloc() suggestions\n");
-			exit(1);
-		}
-		suggestions = suggestions_temp;
-	}
+        /* TA:  FIXME - this needs rethinking entirely. */
+        {
+            GtkWidget **widgets_temp = realloc(widgets, sizeof(*widgets) * n);
+            if (widgets_temp == NULL && widgets == NULL) {
+                fprintf(stderr, "Couldn't realloc() widgets\n");
+                exit(1);
+            }
+            widgets = widgets_temp;
+            char **suggestions_temp = realloc(suggestions, sizeof(*suggestions) * n);
+            if (suggestions_temp == NULL && suggestions == NULL) {
+                fprintf(stderr, "Couldn't realloc() suggestions\n");
+                exit(1);
+            }
+            suggestions = suggestions_temp;
+        }
         if (!n) {
             gdk_color_parse(completionbgcolor[1], &color);
             gtk_widget_modify_bg(table, GTK_STATE_NORMAL, &color);
