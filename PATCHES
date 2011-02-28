@@ -39,6 +39,17 @@ pass the "--global" option, as shown.
 This is a one-off operation once the repository has been cloned, assuming
 this information has ever been set before.
 
+Coding style
+============
+
+Vimprobable uses four spaces by default, rather than literal hard tabs.
+Most editors by default honour hard tabs only.  If you're using Vim (which
+isn't an unreasonable assumption ;)) you can set the following:
+
+:set expandtab ts=4 sts=4 sw=4
+
+This should help reduce the number of whitespace fixups needed.
+
 Use of topic branches
 =====================
 
