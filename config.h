@@ -86,7 +86,8 @@ static Searchengine searchengines[] = {
     { "w",          "https://secure.wikimedia.org/wikipedia/en/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
     { "wd",         "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
 };
-static Searchengine *defsearch = &searchengines[0];
+
+static char defaultsearch[1024] = "i";
 
 /* command mapping */
 Command commands[COMMANDSIZE] = {
@@ -176,6 +177,7 @@ static Setting browsersettings[] = {
     { "sslbgcolor",      sslbgcolor,         "",                            FALSE,          FALSE,           TRUE,           TRUE   },
     { "sslcolor",        sslcolor,           "",                            FALSE,          FALSE,           TRUE,           TRUE   },
     { "acceptlanguage",  acceptlanguage,     "",                            FALSE,          FALSE,           FALSE,          FALSE  },
+    { "defaultsearch",   defaultsearch,      "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },

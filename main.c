@@ -1100,9 +1100,12 @@ open_arg(const Arg *arg) {
                 strcpy(new, "file://");
                 memcpy(&new[sizeof("file://") - 1], s, len + 1);
             } else if (p || !strchr(s, '.')) {                      /* whitespaces or no dot? */
-                p = soup_uri_encode(s, "&");
-                new = g_strdup_printf(defsearch->uri, p);
-                g_free(p);
+                search_uri = find_uri_for_searchengine(defaultsearch);
+                if (search_uri != NULL) {
+                    search_term = soup_uri_encode(s, "&");
+                    new = g_strdup_printf(search_uri, search_term);
+                    g_free(search_term);
+                }
             } else {                                                    /* prepend "http://" */
                 new = g_malloc(sizeof("http://") + len);
                 strcpy(new, "http://");
