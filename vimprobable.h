@@ -168,6 +168,9 @@ typedef struct {
 #define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
 #define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
 
+/* searchengines */
+#define             SEARCHENGINES_STORAGE_FILENAME "%s/.config/vimprobable/searchengines", getenv("HOME")
+
 /* Command size */
 #define	            COMMANDSIZE	                1024
 
