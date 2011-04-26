@@ -1722,12 +1722,6 @@ process_set_line(char *line) {
             /* mandatory argument not provided */
             if (strlen(my_pair.value) == 0)
                 return FALSE;
-            /* process acceptlanguage */
-            if (strlen(my_pair.what) == 14 && strncmp("acceptlanguage", my_pair.what, 14) == 0) {
-                strncpy(acceptlanguage, my_pair.value, strlen(my_pair.value) + 1);
-                g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
-                return TRUE;
-            }
             /* process qmark? */
             if (strlen(my_pair.what) == 5 && strncmp("qmark", my_pair.what, 5) == 0) {
                 return (process_save_qmark(my_pair.value, webview));
@@ -1752,7 +1746,14 @@ process_set_line(char *line) {
                 /*if (browsersettings[i].intval) {
                     browsersettings[i].var = atoi(my_pair.value);
                 } else {*/
-                    strncpy(browsersettings[i].var, my_pair.value, strlen(my_pair.value) + 1);
+                    strncpy(browsersettings[i].var, my_pair.value, MAX_SETTING_SIZE);
+                    if (strlen(my_pair.value) > MAX_SETTING_SIZE - 1) {
+                        /* in this case, \0 will not have been copied */
+                        browsersettings[i].var[MAX_SETTING_SIZE - 1] = '\0';
+                        /* in case this string is also used for a webkit setting, make sure it's consistent */
+                        my_pair.value[MAX_SETTING_SIZE - 1] = '\0';
+                        give_feedback("String too long; automatically truncated!");
+                    }
                 /*}*/
             }
             if (strlen(browsersettings[i].webkit) > 0) {
@@ -1766,6 +1767,12 @@ process_set_line(char *line) {
                 }
                 webkit_web_view_set_settings(webview, settings);
             }
+
+            /* process acceptlanguage*/
+            if (strlen(my_pair.what) == 14 && strncmp("acceptlanguage", my_pair.what, 14) == 0) {
+                g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
+            }
+
             /* toggle proxy usage? */
             if (strlen(my_pair.what) == 5 && strncmp("proxy", my_pair.what, 5) == 0) {
                 toggle_proxy(boolval);

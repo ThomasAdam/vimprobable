@@ -169,7 +169,12 @@ typedef struct {
 #define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
 
 /* Command size */
-#define		    COMMANDSIZE			1024
+#define	            COMMANDSIZE	                1024
+
+/* maximum size of internal string variable handled by :set
+ * if you set this to anything lower than 8, colour values
+ * will stop working */
+#define             MAX_SETTING_SIZE            1024
 
 /* completion list size */
 #define             MAX_LIST_SIZE               40

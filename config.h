@@ -12,9 +12,9 @@
 #define INTERNAL_VERSION "Vimprobable2/"VERSION
 
 /* general settings */
-char startpage[1024]                    = "http://www.vimprobable.org/";
-char useragent[1024]                    = "Vimprobable2/" VERSION;
-char acceptlanguage[1024]               = "";
+char startpage[MAX_SETTING_SIZE]      = "http://www.vimprobable.org/";
+char useragent[MAX_SETTING_SIZE]      = "Vimprobable2/" VERSION;
+char acceptlanguage[MAX_SETTING_SIZE] = "";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 static const gboolean enableJava        = TRUE; /* FALSE disables Java applets */
 static const gboolean enablePagecache   = FALSE; /* TRUE turns on the page cache. */
