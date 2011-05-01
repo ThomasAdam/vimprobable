@@ -60,6 +60,7 @@ static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
 static gboolean open_arg(const Arg *arg);
+static gboolean open_remembered(const Arg *arg);
 static gboolean paste(const Arg *arg);
 static gboolean quickmark(const Arg *arg);
 static gboolean quit(const Arg *arg);
@@ -1109,6 +1110,17 @@ open_arg(const Arg *arg) {
         g_free(new);
     } else
         g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
+    return TRUE;
+}
+
+gboolean
+open_remembered(const Arg *arg)
+{
+    Arg a = {arg->i, rememberedURI};
+
+    if (strcmp(rememberedURI, "")) {
+        open_arg(&a);
+    }
     return TRUE;
 }
 

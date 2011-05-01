@@ -138,10 +138,10 @@ Command commands[COMMANDSIZE] = {
    you can use MOUSE_BUTTON_1 to MOUSE_BUTTON_5
 */
 static Mouse mouse[] = {
-    /* modmask,             modkey,         button,            function,   argument */
-    { 0,                    0,              MOUSE_BUTTON_2,    paste,      {TargetCurrent  | ClipboardPrimary  | ClipboardGTK, rememberedURI} },
-    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,      {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
-    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open_arg,   {TargetNew, rememberedURI} },
+    /* modmask,             modkey,         button,            function,        argument */
+    { 0,                    0,              MOUSE_BUTTON_2,    paste,           {TargetCurrent  | ClipboardPrimary  | ClipboardGTK, rememberedURI} },
+    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,           {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
+    { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open_remembered, {TargetNew} },
 };
 
 /* settings (arguments of :set command) */
