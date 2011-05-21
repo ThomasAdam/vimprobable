@@ -1023,7 +1023,7 @@ open_arg(const Arg *arg) {
 
 gboolean
 yank(const Arg *arg) {
-    const char *url, *feedback;
+    const char *url, *feedback, *content;
 
     if (arg->i & SourceURL) {
         url = webkit_web_view_get_uri(webview);
@@ -1035,8 +1035,18 @@ yank(const Arg *arg) {
             gtk_clipboard_set_text(clipboards[0], url, -1);
         if (arg->i & ClipboardGTK)
             gtk_clipboard_set_text(clipboards[1], url, -1);
-    } else
+    } else {
         webkit_web_view_copy_clipboard(webview);
+        if (arg->i & ClipboardPrimary)
+            content = gtk_clipboard_wait_for_text(clipboards[0]);
+        if (!content && arg->i & ClipboardGTK)
+            content = gtk_clipboard_wait_for_text(clipboards[1]);
+        if (content) {
+            feedback = g_strconcat("Yanked ", content, NULL);
+            g_free(content);
+            give_feedback(feedback);
+        }
+    }
     return TRUE;
 }
 

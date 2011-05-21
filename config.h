@@ -163,7 +163,7 @@ static Key keys[] = {
     { GDK_SHIFT_MASK,       GDK_z,          GDK_Z,          zoom,       {ZoomReset      | ZoomFullContent} },
 
     { 0,                    0,              GDK_y,          yank,       {SourceURL      | ClipboardPrimary  | ClipboardGTK} },
-    { GDK_SHIFT_MASK,       0,              GDK_Y,          yank,       {SourceSelection} },
+    { GDK_SHIFT_MASK,       0,              GDK_Y,          yank,       {SourceSelection| ClipboardPrimary  | ClipboardGTK} },
 
     { 0,                    GDK_g,          GDK_u,          descend,    {NthSubdir} },
     { GDK_SHIFT_MASK,       GDK_g,          GDK_U,          descend,    {Rootdir} },
