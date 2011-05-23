@@ -724,6 +724,8 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         a.i = Silent;
         a.s = "vimprobable_clear()";
         script(&a);
+        count = 0;
+        update_state();
     }
 
     return FALSE;
