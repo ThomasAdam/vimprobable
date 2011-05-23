@@ -449,12 +449,12 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
 
     a.i = HideCompletion;
     complete(&a);
-    if (length < 2)
+    if (length == 0)
         return;
     text = (char*)gtk_entry_get_text(entry);
-    if (text[0] == ':') {
+    if (length > 1 && text[0] == ':') {
         success = process_line((text + 1));
-    } else if ((forward = text[0] == '/') || text[0] == '?') {
+    } else if (length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
         webkit_web_view_unmark_text_matches(webview);
 #ifdef ENABLE_MATCH_HIGHLITING
         webkit_web_view_mark_text_matches(webview, &text[1], FALSE, 0);
@@ -469,6 +469,11 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         search_direction = forward;
         search_handle = g_strdup(&text[1]);
 #endif
+    } else if (count && (text[0] == '`' || text[0] == '~')) {
+        a.i = Silent;
+        a.s = g_strdup_printf("vimprobable_fire(%d)", count);
+        script(&a);
+        update_state();
     } else
         return;
     if (!echo_active)
