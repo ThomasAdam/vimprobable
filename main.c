@@ -645,7 +645,7 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
         return TRUE;
     } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
-            (text[0] == '`')) {
+            (text[0] == '`' || text[0] == '~')) {
         a.i = Silent;
         a.s = "vimprobable_cleanup()";
         script(&a);
@@ -958,9 +958,9 @@ input(const Arg *arg) {
         gtk_widget_modify_base(inputbox, GTK_STATE_NORMAL, urlboxbgcolor[index] ? &ibox_bg_color : NULL);
     }
 
-    if (arg->s[0] == '`') {
+    if (arg->s[0] == '`' || arg->s[0] == '~') {
         memset(followTarget, 0, 0);
-        strncpy(followTarget, "current", 8);
+        strncpy(followTarget, arg->s[0] == '`' ? "current" : "new", 8);
         a.i = Silent;
         a.s = "vimprobable_show_hints()";
         script(&a);
