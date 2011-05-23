@@ -108,8 +108,8 @@ Key keys[] = {
     { GDK_CONTROL_MASK,     GDK_VoidSymbol, GDK_bracketleft,set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
-    { 0,                    0,              GDK_f,          set,        { .i = ModeHints, .s = "current" } },
-    { GDK_SHIFT_MASK,       0,              GDK_F,          set,        { .i = ModeHints, .s = "new" } },
+    { 0,                    0,              GDK_f,          input,      {.s = "`"} },
+    { GDK_SHIFT_MASK,       0,              GDK_F,          input,      {.s = "~"} },
 
     { 0,                    GDK_g,          GDK_i,          focus_input,{} },
     { 0,                    0,              GDK_u,          revive,     {} },
