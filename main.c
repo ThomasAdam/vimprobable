@@ -187,7 +187,7 @@ ascii_bar(int total, int state, char *string) {
 
 void
 webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
-    Arg a = { .i = Silent, .s = JS_SETUP_HINTS };
+    Arg a = { .i = Silent, .s = g_strdup(JS_SETUP_HINTS) };
     const char *uri = webkit_web_view_get_uri(webview);
 
     update_url(uri);
@@ -196,7 +196,7 @@ webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointe
 
 void
 webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
-    Arg a = { .i = Silent, .s = JS_SETUP_INPUT_FOCUS };
+    Arg a = { .i = Silent, .s = g_strdup(JS_SETUP_INPUT_FOCUS) };
 
     if (HISTORY_MAX_ENTRIES > 0)
         history();
@@ -602,7 +602,6 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
         a.s = g_strconcat("vimprobable_update_hints(", count_buf, ")", NULL);
         script(&a);
         update_state();
-        g_free(a.s);
         return TRUE;
     }
 
@@ -666,19 +665,18 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
     } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
             (text[0] == '`' || text[0] == '~')) {
         a.i = Silent;
-        a.s = "vimprobable_cleanup()";
+        a.s = g_strdup("vimprobable_cleanup()");
         script(&a);
 
         a.i = Silent;
         a.s = g_strconcat("vimprobable_show_hints('", text + 1, "')", NULL);
         script(&a);
-        free(a.s);
 
         return TRUE;
     } else if (length == 0 && followTarget[0]) {
         memset(followTarget, 0, 8);
         a.i = Silent;
-        a.s = "vimprobable_clear()";
+        a.s = g_strdup("vimprobable_clear()");
         script(&a);
         count = 0;
         update_state();
@@ -983,7 +981,7 @@ input(const Arg *arg) {
         memset(followTarget, 0, 0);
         strncpy(followTarget, arg->s[0] == '`' ? "current" : "new", 8);
         a.i = Silent;
-        a.s = "vimprobable_show_hints()";
+        a.s = g_strdup("vimprobable_show_hints()");
         script(&a);
     }
 
@@ -1255,7 +1253,7 @@ set(const Arg *arg) {
         memset(followTarget, 0, 8);
         strncpy(followTarget, arg->s, 8);
         a.i = Silent;
-        a.s = "vimprobable_show_hints()";
+        a.s = g_strdup("vimprobable_show_hints()");
         script(&a);
         break;
     default:
@@ -1307,6 +1305,8 @@ script(const Arg *arg) {
     jsapi_evaluate_script(arg->s, &value, &message);
     if (message) {
         set_error(message);
+	if (arg->s)
+	    g_free(arg->s);
         return FALSE;
     }
     if (arg->i != Silent && value) {
@@ -1337,6 +1337,8 @@ script(const Arg *arg) {
             open_arg(&a);
         }
     }
+    if (arg->s)
+        g_free(arg->s);
     g_free(value);
     return TRUE;
 }
