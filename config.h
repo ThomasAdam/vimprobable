@@ -184,6 +184,8 @@ static Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
     { GDK_SHIFT_MASK,       0,              GDK_question,   input,      {.s = "?"} },
 
+    { 0,                    0,              GDK_quoteleft,  input,      {.s = "`"} },
+
     { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
