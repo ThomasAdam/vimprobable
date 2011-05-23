@@ -699,8 +699,12 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         script(&a);
         free(a.s);
 
-        update_state();
         return TRUE;
+    } else if (length == 0 && followTarget[0]) {
+        memset(followTarget, 0, 8);
+        a.i = Silent;
+        a.s = "vimprobable_clear()";
+        script(&a);
     }
 
     return FALSE;
@@ -1011,6 +1015,14 @@ input(const Arg *arg) {
      */
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
 
+    if (arg->s[0] == '`') {
+        memset(followTarget, 0, 0);
+        strncpy(followTarget, "current", 8);
+        a.i = Silent;
+        a.s = "vimprobable_show_hints()";
+        script(&a);
+    }
+
     /* to avoid things like :open URL :open URL2  or :open :open URL */
     gtk_entry_set_text(GTK_ENTRY(inputbox), "");
     gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
@@ -1018,15 +1030,6 @@ input(const Arg *arg) {
         gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
     gtk_widget_grab_focus(inputbox);
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
-
-    if (arg->s[0] == '`') {
-        memset(followTarget, 0, 0);
-        strncpy(followTarget, "current", 8);
-        a.i = Silent;
-        a.s = "vimprobable_show_hints()";
-        script(&a);
-        update_state();
-    }
 
     return TRUE;
 }
