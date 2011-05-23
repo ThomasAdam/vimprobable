@@ -570,6 +570,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
 gboolean
 inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
+    char count_buf[BUFFERSIZE];
 
      switch (event->keyval) {
          case GDK_Escape:
@@ -587,6 +588,24 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
              return complete(&a);
          break;
     }
+
+    if (followTarget[0] && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+            || (event->keyval >= GDK_KP_1 && event->keyval <= GDK_KP_9)
+            || ((event->keyval == GDK_0 || event->keyval == GDK_KP_0) && count))) {
+        /* allow a zero as non-first number */
+        if (event->keyval >= GDK_KP_0 && event->keyval <= GDK_KP_9)
+            count = (count ? count * 10 : 0) + (event->keyval - GDK_KP_0);
+        else
+            count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+        snprintf(count_buf, BUFFERSIZE, "%d", count);
+        a.i = Silent;
+        a.s = g_strconcat("vimprobable_update_hints(", count_buf, ")", NULL);
+        script(&a);
+        update_state();
+        g_free(a.s);
+        return TRUE;
+    }
+
     return FALSE;
 }
 
