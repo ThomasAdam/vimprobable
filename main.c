@@ -514,7 +514,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     }
 
     numval = g_unichar_digit_value((gunichar) gdk_keyval_to_unicode(event->keyval));
-    if (followTarget[0] && ((numval >= 1 && numval <= 9) || (numval == 0 && count))) {
+    if (mode == ModeHints && ((numval >= 1 && numval <= 9) || (numval == 0 && count))) {
         /* allow a zero as non-first number */
         count = (count ? count * 10 : 0) + numval;
         a.i = Silent;
@@ -593,7 +593,7 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
 
         return TRUE;
     } else if (length == 0 && followTarget[0]) {
-        memset(followTarget, 0, 8);
+        mode = ModeNormal;
         a.i = Silent;
         a.s = g_strdup("vimprobable_clear()");
         script(&a);
@@ -910,7 +910,8 @@ input(const Arg *arg) {
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
 
     if (arg->s[0] == '.' || arg->s[0] == ',') {
-        memset(followTarget, 0, 0);
+        mode = ModeHints;
+        memset(followTarget, 0, 8);
         strncpy(followTarget, arg->s[0] == '.' ? "current" : "new", 8);
         a.i = Silent;
         a.s = g_strdup("vimprobable_show_hints()");
@@ -1313,7 +1314,6 @@ script(const Arg *arg) {
                 a.i = TargetNew;
             else
                 a.i = TargetCurrent;
-            memset(followTarget, 0, 8);
             a.s = (value + 5);
             open_arg(&a);
         }
