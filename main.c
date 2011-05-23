@@ -469,15 +469,28 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
          break;
     }
 
-    numval = g_unichar_digit_value((gunichar) gdk_keyval_to_unicode(event->keyval));
-    if (mode == ModeHints && ((numval >= 1 && numval <= 9) || (numval == 0 && count))) {
-        /* allow a zero as non-first number */
-        count = (count ? count * 10 : 0) + numval;
-        a.i = Silent;
-        a.s = g_strdup_printf("vimprobable_update_hints(%d)", count);
-        script(&a);
-        update_state();
-        return TRUE;
+    if (mode == ModeHints) {
+        if ((CLEAN(event->state) & GDK_SHIFT_MASK) &&
+                (CLEAN(event->state) & GDK_CONTROL_MASK) &&
+                (event->keyval == GDK_BackSpace)) {
+            count /= 10;
+            a.i = Silent;
+            a.s = g_strdup_printf("vimprobable_update_hints(%d)", count);
+            script(&a);
+            update_state();
+            return TRUE;
+        }
+
+        numval = g_unichar_digit_value((gunichar) gdk_keyval_to_unicode(event->keyval));
+        if ((numval >= 1 && numval <= 9) || (numval == 0 && count)) {
+            /* allow a zero as non-first number */
+            count = (count ? count * 10 : 0) + numval;
+            a.i = Silent;
+            a.s = g_strdup_printf("vimprobable_update_hints(%d)", count);
+            script(&a);
+            update_state();
+            return TRUE;
+        }
     }
 
     return FALSE;
