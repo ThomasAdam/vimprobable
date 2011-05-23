@@ -469,7 +469,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         search_direction = forward;
         search_handle = g_strdup(&text[1]);
 #endif
-    } else if (count && (text[0] == '`' || text[0] == '~')) {
+    } else if (count && (text[0] == '.' || text[0] == ',')) {
         a.i = Silent;
         a.s = g_strdup_printf("vimprobable_fire(%d)", count);
         script(&a);
@@ -582,7 +582,7 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
         return TRUE;
     } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
-            (text[0] == '`' || text[0] == '~')) {
+            (text[0] == '.' || text[0] == ',')) {
         a.i = Silent;
         a.s = g_strdup("vimprobable_cleanup()");
         script(&a);
@@ -909,9 +909,9 @@ input(const Arg *arg) {
      */
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
 
-    if (arg->s[0] == '`' || arg->s[0] == '~') {
+    if (arg->s[0] == '.' || arg->s[0] == ',') {
         memset(followTarget, 0, 0);
-        strncpy(followTarget, arg->s[0] == '`' ? "current" : "new", 8);
+        strncpy(followTarget, arg->s[0] == '.' ? "current" : "new", 8);
         a.i = Silent;
         a.s = g_strdup("vimprobable_show_hints()");
         script(&a);
