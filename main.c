@@ -644,15 +644,17 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         webkit_web_view_unmark_text_matches(webview);
         webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
         return TRUE;
-    } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length > 1 &&
+    } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
             (text[0] == '`')) {
         a.i = Silent;
         a.s = "vimprobable_cleanup()";
         script(&a);
+
         a.i = Silent;
         a.s = g_strconcat("vimprobable_show_hints('", text + 1, "')", NULL);
         script(&a);
         free(a.s);
+
         update_state();
         return TRUE;
     }
@@ -923,6 +925,7 @@ input(const Arg *arg) {
     int pos = 0;
     count = 0;
     const char *url;
+    Arg a;
 
     update_state();
 
@@ -958,6 +961,16 @@ input(const Arg *arg) {
         gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
     gtk_widget_grab_focus(inputbox);
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
+
+    if (arg->s[0] == '`') {
+        memset(followTarget, 0, 0);
+        strncpy(followTarget, "current", 8);
+        a.i = Silent;
+        a.s = "vimprobable_show_hints()";
+        script(&a);
+        update_state();
+    }
+
     return TRUE;
 }
 
