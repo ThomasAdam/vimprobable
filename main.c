@@ -445,6 +445,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
 gboolean
 inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
+    int numval;
     char count_buf[BUFFERSIZE];
 
      switch (event->keyval) {
@@ -464,9 +465,8 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
          break;
     }
 
-    if (followTarget[0] && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
-            || (event->keyval >= GDK_KP_1 && event->keyval <= GDK_KP_9)
-            || ((event->keyval == GDK_0 || event->keyval == GDK_KP_0) && count))) {
+    numval = g_unichar_digit_value((gunichar) gdk_keyval_to_unicode(event->keyval));
+    if (followTarget[0] && ((numval >= 1 && numval <= 9) || (numval == 0 && count))) {
         /* allow a zero as non-first number */
         if (event->keyval >= GDK_KP_0 && event->keyval <= GDK_KP_9)
             count = (count ? count * 10 : 0) + (event->keyval - GDK_KP_0);
