@@ -134,9 +134,6 @@ static char *configfile = NULL;
 static char *winid = NULL;
 
 static char rememberedURI[1024] = "";
-static char inputKey[5];
-static char inputBuffer[65] = "";
-static char chars[65] = "0000000000000000000000000000000000000000000000000000000000000000\n";
 static char followTarget[8] = "";
 char *error_msg = NULL;
 
@@ -349,7 +346,6 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     switch (mode) {
     case ModeNormal:
         if (CLEAN(event->state) == 0) {
-            memset(inputBuffer, 0, 65);
             if (IS_ESCAPE(event)) {
                 a.i = Info;
                 a.s = g_strdup("");
@@ -388,127 +384,6 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeSendKey:
         echo(&a);
         set(&a);
-        break;
-    case ModeHints:
-        if (IS_ESCAPE(event)) {
-            a.i = Silent;
-            a.s = "vimprobable_clear()";
-            script(&a);
-            a.i = ModeNormal;
-            count = 0;
-            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000\0", 65);
-            return set(&a);
-        } else if (CLEAN(event->state) == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
-                || (event->keyval >= GDK_KP_1 && event->keyval <= GDK_KP_9)
-                || ((event->keyval == GDK_0 || event->keyval == GDK_KP_0) && count))) {
-            /* allow a zero as non-first number */
-            if (event->keyval >= GDK_KP_0 && event->keyval <= GDK_KP_9)
-                count = (count ? count * 10 : 0) + (event->keyval - GDK_KP_0);
-            else
-                count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
-            memset(inputBuffer, 0, 65);
-            sprintf(inputBuffer, "%d", count);
-            a.s = g_strconcat("vimprobable_update_hints(", inputBuffer, ")", NULL);
-            a.i = Silent;
-            memset(inputBuffer, 0, 65);
-            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000\0", 65);
-            script(&a);
-            update_state();
-            return TRUE;
-        } else if ((CLEAN(event->state) == 0 && (event->keyval >= GDK_a && event->keyval <= GDK_z))
-                || (CLEAN(event->state) == GDK_SHIFT_MASK && (event->keyval >= GDK_A && event->keyval <= GDK_Z))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_space && event->keyval <= GDK_slash))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_colon && event->keyval <= GDK_at))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_braceleft && event->keyval <= GDK_umacron))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Babovedot && event->keyval <= GDK_ycircumflex))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_OE && event->keyval <= GDK_Ydiaeresis))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_overline && event->keyval <= GDK_semivoicedsound))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Farsi_0 && event->keyval <= GDK_Arabic_9))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Arabic_semicolon && event->keyval <= GDK_Arabic_sukun))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Arabic_madda_above && event->keyval <= GDK_Arabic_heh_goal))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Cyrillic_GHE_bar && event->keyval <= GDK_Cyrillic_u_macron))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Serbian_dje && event->keyval <= GDK_Korean_Won))
-                || ((CLEAN(event->state) == 0 || CLEAN(event->state) == GDK_SHIFT_MASK) && (event->keyval >= GDK_Armenian_ligature_ew && event->keyval <= GDK_braille_dots_12345678))) {
-            /* update hints by link text */
-            if (strlen(inputBuffer) < 65) {
-                memset(inputKey, 0, 5);
-                /* support multibyte characters */
-                sprintf(inputKey, "%C", event->keyval);
-                strncat(inputBuffer, inputKey, 64 - strlen(inputBuffer));
-                /* remember the number of bytes of each character */
-                for (count = 0; count < 64; count++) {
-                    if (strncmp((chars + count), "0", 1) == 0) {
-                        sprintf(inputKey, "%d", (int)strlen(inputKey));
-                        strncpy((chars + count), inputKey, 1);
-                        break;
-                    }
-                }
-                memset(inputKey, 0, 5);
-                count = 0;
-                a.i = Silent;
-                a.s = "vimprobable_cleanup()";
-                script(&a);
-                a.s = g_strconcat("vimprobable_show_hints('", inputBuffer, "')", NULL);
-                a.i = Silent;
-                script(&a);
-                update_state();
-            }
-            return TRUE;
-        } else if (CLEAN(event->state) == 0 && (event->keyval == GDK_Return || event->keyval == GDK_KP_Enter) && count) {
-            memset(inputBuffer, 0, 65);
-            sprintf(inputBuffer, "%d", count);
-            a.s = g_strconcat("vimprobable_fire(", inputBuffer, ")", NULL);
-            a.i = Silent;
-            script(&a);
-            memset(inputBuffer, 0, 65);
-            count = 0;
-            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000\0", 65);
-            update_state();
-            return TRUE;
-        } else if (CLEAN(event->state) == 0 && event->keyval == GDK_BackSpace) {
-            if (count > 9) {
-                count /= 10;
-                memset(inputBuffer, 0, 65);
-                sprintf(inputBuffer, "%d", count);
-                a.s = g_strconcat("vimprobable_update_hints(", inputBuffer, ")", NULL);
-                a.i = Silent;
-                memset(inputBuffer, 0, 65);
-                script(&a);
-                update_state();
-            } else if (count > 0) {
-                count = 0;
-                memset(inputBuffer, 0, 65);
-                a.i = Silent;
-                a.s = "vimprobable_cleanup()";
-                script(&a);
-                a.s = g_strconcat("vimprobable_show_hints()", NULL);
-                a.i = Silent;
-                script(&a);
-                update_state();
-            } else if (strlen(inputBuffer) > 0) {
-                a.i = Silent;
-                a.s = "vimprobable_cleanup()";
-                script(&a);
-                /* check how many bytes the last character uses */
-                for (count = 0; count < 64; count++) {
-                    if (strncmp((chars + count), "0", 1) == 0) {
-                        break;
-                    }
-                }
-                memset(inputKey, 0, 5);
-                strncpy(inputKey, (chars + count - 1), 1);
-                strncpy((chars + count - 1), "0", 1);
-                count = atoi(inputKey);
-                /* remove the appropriate number of bytes from the string */
-                strncpy((inputBuffer + strlen(inputBuffer) - count), "\0", 1);
-                count = 0;
-                a.s = g_strconcat("vimprobable_show_hints('", inputBuffer, "')", NULL);
-                a.i = Silent;
-                script(&a);
-                update_state();
-            }
-            return TRUE;
-        }
         break;
     }
     return FALSE;
@@ -641,9 +516,8 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             count = (count ? count * 10 : 0) + (event->keyval - GDK_KP_0);
         else
             count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
-        snprintf(count_buf, BUFFERSIZE, "%d", count);
         a.i = Silent;
-        a.s = g_strconcat("vimprobable_update_hints(", count_buf, ")", NULL);
+        a.s = g_strdup_printf("vimprobable_update_hints(%d)", count);
         script(&a);
         update_state();
         return TRUE;
@@ -1334,13 +1208,6 @@ set(const Arg *arg) {
         echo(&a);
         g_free(a.s);
         break;
-    case ModeHints:
-        memset(followTarget, 0, 8);
-        strncpy(followTarget, arg->s, 8);
-        a.i = Silent;
-        a.s = g_strdup("vimprobable_show_hints()");
-        script(&a);
-        break;
     default:
         return TRUE;
     }
@@ -1434,15 +1301,11 @@ script(const Arg *arg) {
     if (value) {
         if (strncmp(value, "fire;", 5) == 0) {
             count = 0;
-            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000", 64);
-            memset(inputBuffer, 0, 65);
             a.s = g_strconcat("vimprobable_fire(", (value + 5), ")", NULL);
             a.i = Silent;
             script(&a);
         } else if (strncmp(value, "open;", 5) == 0) {
             count = 0;
-            strncpy(chars, "0000000000000000000000000000000000000000000000000000000000000000", 64);
-            memset(inputBuffer, 0, 65);
             a.i = ModeNormal;
             set(&a);
             if (strncmp(followTarget, "new", 3) == 0)
@@ -2050,7 +1913,6 @@ update_state() {
     /* count, modkey and input buffer */
     g_string_append_printf(status, "%.0d", count);
     if (current_modkey) g_string_append_c(status, current_modkey);
-    if (inputBuffer[0]) g_string_append_printf(status, " %s", inputBuffer);
 
     /* the number of active downloads */
     if (activeDownloads) {
