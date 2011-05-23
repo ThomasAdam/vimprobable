@@ -451,7 +451,6 @@ gboolean
 inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
     int numval;
-    char count_buf[BUFFERSIZE];
 
      switch (event->keyval) {
          case GDK_Escape:
