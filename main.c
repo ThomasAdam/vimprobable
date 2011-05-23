@@ -512,10 +512,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     numval = g_unichar_digit_value((gunichar) gdk_keyval_to_unicode(event->keyval));
     if (followTarget[0] && ((numval >= 1 && numval <= 9) || (numval == 0 && count))) {
         /* allow a zero as non-first number */
-        if (event->keyval >= GDK_KP_0 && event->keyval <= GDK_KP_9)
-            count = (count ? count * 10 : 0) + (event->keyval - GDK_KP_0);
-        else
-            count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+        count = (count ? count * 10 : 0) + numval;
         a.i = Silent;
         a.s = g_strdup_printf("vimprobable_update_hints(%d)", count);
         script(&a);
