@@ -179,5 +179,7 @@ static Setting browsersettings[] = {
     { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "statusbar",       NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "inputbox",        NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "completioncase",  NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
 };

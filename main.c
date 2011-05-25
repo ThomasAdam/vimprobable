@@ -110,6 +110,7 @@ static GtkAdjustment *adjust_h;
 static GtkAdjustment *adjust_v;
 static GtkWidget *inputbox;
 static GtkWidget *eventbox;
+static GtkBox *statusbar;
 static GtkWidget *status_url;
 static GtkWidget *status_state;
 static WebKitWebView *webview;
@@ -1016,6 +1017,10 @@ input(const Arg *arg) {
     const char *url;
     int index = Info;
 
+    /* if inputbox hidden, show it again */
+    if (!gtk_widget_get_visible(inputbox))
+        gtk_widget_set_visible(inputbox, TRUE);
+
     update_state();
 
     /* Set the colour and font back to the default, so that we don't still
@@ -1782,6 +1787,12 @@ process_set_line(char *line) {
             if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0)
                 toggle_scrollbars(boolval);
 
+            /* Toggle widgets */
+            if (strlen(my_pair.what) == 9 && strncmp("statusbar", my_pair.what, 9) == 0)
+                gtk_widget_set_visible(GTK_WIDGET(statusbar), boolval);
+            if (strlen(my_pair.what) == 8 && strncmp("inputbox", my_pair.what, 8) == 0)
+                gtk_widget_set_visible(inputbox, boolval);
+
             /* case sensitivity of completion */
             if (strlen(my_pair.what) == 14 && strncmp("completioncase", my_pair.what, 14) == 0)
                 complete_case_sensitive = boolval;
@@ -2055,7 +2066,7 @@ setup_gui() {
     box = GTK_BOX(gtk_vbox_new(FALSE, 0));
     inputbox = gtk_entry_new();
     webview = (WebKitWebView*)webkit_web_view_new();
-    GtkBox *statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
+    statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
     eventbox = gtk_event_box_new();
     status_url = gtk_label_new(NULL);
     status_state = gtk_label_new(NULL);
