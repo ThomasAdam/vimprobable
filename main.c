@@ -289,6 +289,7 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     else
         a.s = g_strdup_printf("Download %s started (unknown size)...", filename);
     echo(&a);
+    g_free(a.s);
     activeDownloads = g_list_prepend(activeDownloads, download);
     g_signal_connect(download, "notify::progress", G_CALLBACK(download_progress), NULL);
     g_signal_connect(download, "notify::status", G_CALLBACK(download_progress), NULL);
@@ -311,6 +312,7 @@ download_progress(WebKitDownload *d, GParamSpec *pspec) {
             a.s = g_strdup_printf("Download %s finished", webkit_download_get_suggested_filename(d));
             echo(&a);
         }
+        g_free(a.s);
         activeDownloads = g_list_remove(activeDownloads, d);
     }
     update_state();
@@ -351,6 +353,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 a.i = Info;
                 a.s = g_strdup("");
                 echo(&a);
+                g_free(a.s);
             } else if (current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                     || (event->keyval == GDK_0 && count))) {
                 count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
@@ -595,6 +598,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
             a.i = Error;
             a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
             echo(&a);
+            g_free(a.s);
         } else if (!success) {
             a.i = Error;
             if (error_msg != NULL) {
@@ -605,6 +609,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
                 a.s = g_strdup_printf("Unknown error. Please file a bug report!");
             }
             echo(&a);
+            g_free(a.s);
         }
     } else if ((forward = text[0] == '/') || text[0] == '?') {
         webkit_web_view_unmark_text_matches(webview);
@@ -1001,12 +1006,6 @@ echo(const Arg *arg) {
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
     gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
 
-	/* TA:  Always free arg->s here, rather than relying on the caller to do
-	 * this.
-	 */
-	if (arg->s)
-		g_free(arg->s);
-
     return TRUE;
 }
 
@@ -1259,6 +1258,7 @@ search(const Arg *arg) {
                             direction ? "BOTTOM" : "TOP",
                             direction ? "TOP" : "BOTTOM");
                     echo(&a);
+                    g_free(a.s);
                 } else
                     break;
             } else
@@ -1269,6 +1269,7 @@ search(const Arg *arg) {
         a.i = Error;
         a.s = g_strdup_printf("Pattern not found: %s", search_handle);
         echo(&a);
+        g_free(a.s);
     }
     return TRUE;
 }
@@ -1289,14 +1290,17 @@ set(const Arg *arg) {
     case ModePassThrough:
         a.s = g_strdup("-- PASS THROUGH --");
         echo(&a);
+        g_free(a.s);
         break;
     case ModeSendKey:
         a.s = g_strdup("-- PASS TROUGH (next) --");
         echo(&a);
+        g_free(a.s);
         break;
     case ModeInsert: /* should not be called manually but automatically */
         a.s = g_strdup("-- INSERT --");
         echo(&a);
+        g_free(a.s);
         break;
     case ModeHints:
         memset(followTarget, 0, 8);
@@ -1352,25 +1356,25 @@ quickmark(const Arg *a) {
     char buf[100];
 
     if (fp != NULL && b < 10) {
-       for( i=0; i < b; ++i ) {
-           if (feof(fp)) {
-               break;
-           }
-           fgets(buf, 100, fp);
-       }
-       char *ptr = strrchr(buf, '\n');
-       *ptr = '\0';
-       Arg x = { .s = buf };
-       if ( strlen(buf)) return open_arg(&x);
-       else  
-       {       
-           x.i = Error;
-           x.s = g_strdup_printf("Quickmark %d not defined", b);
-           echo(&x);
-	   return false; 
-       }
-    }
-    else { return false; }
+        for( i=0; i < b; ++i ) {
+            if (feof(fp)) {
+                break;
+            }
+            fgets(buf, 100, fp);
+        }
+        char *ptr = strrchr(buf, '\n');
+        *ptr = '\0';
+        Arg x = { .s = buf };
+        if (strlen(buf)) 
+            return open_arg(&x);
+        else {       
+            x.i = Error;
+            x.s = g_strdup_printf("Quickmark %d not defined", b);
+            echo(&x);
+            g_free(x.s);
+            return false; 
+        }
+    } else { return false; }
 }
 
 gboolean
@@ -1391,6 +1395,7 @@ script(const Arg *arg) {
         a.i = arg->i;
         a.s = g_strdup(value);
         echo(&a);
+        g_free(a.s);
     }
     if (value) {
         if (strncmp(value, "fire;", 5) == 0) {
@@ -1463,6 +1468,7 @@ fake_key_event(const Arg *a) {
     if ( (xdpy = XOpenDisplay(NULL)) == NULL ) {
         err.s = g_strdup("Couldn't find the XDisplay.");
         echo(&err);
+        g_free(err.s);
         return FALSE;
     }
        
@@ -1478,6 +1484,7 @@ fake_key_event(const Arg *a) {
     if( ! a->s ) {
         err.s = g_strdup("Zero pointer as argument! Check your config.h");
         echo(&err);
+        g_free(err.s);
         return FALSE;
     }
 
@@ -1485,12 +1492,14 @@ fake_key_event(const Arg *a) {
     if( (keysym = XStringToKeysym(a->s)) == NoSymbol ) {
         err.s = g_strdup_printf("Couldn't translate %s to keysym", a->s );
         echo(&err);
+        g_free(err.s);
         return FALSE;
     }
     
     if( (xk.keycode = XKeysymToKeycode(xdpy, keysym)) == NoSymbol ) {
         err.s = g_strdup("Couldn't translate keysym to keycode");
         echo(&err);
+        g_free(err.s);
         return FALSE;
     }
    
@@ -1498,6 +1507,7 @@ fake_key_event(const Arg *a) {
     if( !XSendEvent(xdpy, embed, True, KeyPressMask, (XEvent *)&xk) ) {
         err.s = g_strdup("XSendEvent failed");
         echo(&err);
+        g_free(err.s);
         return FALSE;
     }
     XFlush(xdpy);
@@ -2387,6 +2397,7 @@ main(int argc, char *argv[]) {
         a.i = Error;
         a.s = g_strdup_printf("Error in config file '%s'", configfile);
         echo(&a);
+        g_free(a.s);
         g_free(configfile);
     }
 
