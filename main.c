@@ -569,9 +569,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     char *text;
     guint16 length = gtk_entry_get_text_length(entry);
     Arg a;
-    int i;
-    size_t len;
-    gboolean success = FALSE, forward = FALSE, found = FALSE;
+    gboolean success = FALSE, forward = FALSE;
 
     a.i = HideCompletion;
     complete(&a);
@@ -579,38 +577,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         return;
     text = (char*)gtk_entry_get_text(entry);
     if (text[0] == ':') {
-        for (i = 0; i < LENGTH(commands); i++) {
-            if (commands[i].cmd == NULL)
-                break;
-            len = strlen(commands[i].cmd);
-            if (length >= len && !strncmp(&text[1], commands[i].cmd, len) && (text[len + 1] == ' ' || !text[len + 1])) {
-                found = TRUE;
-                a.i = commands[i].arg.i;
-                a.s = length > len + 2 ? &text[len + 2] : commands[i].arg.s;
-                success = commands[i].func(&a);
-                break;
-            }
-        }
-
-        save_command_history(text);
-
-        if (!found) {
-            a.i = Error;
-            a.s = g_strdup_printf("Not a browser command: %s", &text[1]);
-            echo(&a);
-            g_free(a.s);
-        } else if (!success) {
-            a.i = Error;
-            if (error_msg != NULL) {
-                a.s = g_strdup_printf("%s", error_msg);
-                g_free(error_msg);
-                error_msg = NULL;
-            } else {
-                a.s = g_strdup_printf("Unknown error. Please file a bug report!");
-            }
-            echo(&a);
-            g_free(a.s);
-        }
+        success = process_line((text + 1));
     } else if ((forward = text[0] == '/') || text[0] == '?') {
         webkit_web_view_unmark_text_matches(webview);
 #ifdef ENABLE_MATCH_HIGHLITING
@@ -1819,20 +1786,46 @@ process_set_line(char *line) {
 gboolean
 process_line(char *line) {
     char *c = line;
+    int i;
+    size_t len, length = strlen(line);
+    gboolean found = FALSE, success = FALSE;
+    Arg a;
 
     while (isspace(*c))
         c++;
     /* Ignore blank lines.  */
     if (c[0] == '\0')
         return TRUE;
-    if (strncmp(c, "map", 3) == 0) {
-        c += 4;
-        return process_map_line(c);
-    } else if (strncmp(c, "set", 3) == 0) {
-        c += 4;
-        return process_set_line(c);
+    for (i = 0; i < LENGTH(commands); i++) {
+        if (commands[i].cmd == NULL)
+            break;
+        len = strlen(commands[i].cmd);
+        if (length >= len && !strncmp(c, commands[i].cmd, len) && (c[len] == ' ' || !c[len])) {
+            found = TRUE;
+            a.i = commands[i].arg.i;
+            a.s = length > len + 1 ? &c[len + 1] : commands[i].arg.s;
+            success = commands[i].func(&a);
+            break;
+        }
     }
-    return FALSE;
+    save_command_history(c);
+    if (!found) {
+        a.i = Error;
+        a.s = g_strdup_printf("Not a browser command: %s", c);
+        echo(&a);
+    } else if (!success) {
+        a.i = Error;
+        if (error_msg != NULL) {
+            a.s = g_strdup_printf("%s", error_msg);
+            g_free(error_msg);
+            error_msg = NULL;
+        } else {
+            a.s = g_strdup_printf("Unknown error. Please file a bug report!");
+        }
+        echo(&a);
+        g_free(a.s);
+    }
+    return success;
 }
 
 static gboolean

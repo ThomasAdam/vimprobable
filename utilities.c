@@ -53,7 +53,8 @@ void save_command_history(char *line)
 		c++;
 	if (!strlen(c))
 		return;
-	strncpy(commandhistory[lastcommand], c, 254);
+	strncpy(commandhistory[lastcommand], ":", 1);
+	strncat(commandhistory[lastcommand], c, 254);
 	lastcommand++;
 	if (maxcommands < COMMANDHISTSIZE - 1)
 		maxcommands++;

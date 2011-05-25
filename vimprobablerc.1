@@ -37,6 +37,12 @@ Each line looks like this:
 
 Vimprobable is not picky about white space in these lines.
 
+.RE
+.IP misc
+.RS
+Any command listed under colon commands in vimprobable2(1) will be accepted in the config file as well.
+
+
 .SH FORMAT MODIFIED KEYS
 
 It is possible to map keys modified with eiter Control, Shift or Modkeys.
@@ -210,6 +216,10 @@ instance. For example:
 map <C-s>=:set scripts=false
 
 This would map Control-s to disable Javascript.
+
+map i=:javascript console.log('insertmode_on')
+
+This maps the i key to manually activate INSERT mode.
 
 .SH INTERACTIVE SETTING
 All settings can be changed on the fly by entering
