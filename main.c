@@ -49,6 +49,7 @@ static gboolean webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebF
 static void webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data);
 static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
 static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
+static gboolean blank_cb();
 
 /* functions */
 static gboolean bookmark(const Arg *arg);
@@ -295,6 +296,11 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     g_signal_connect(download, "notify::progress", G_CALLBACK(download_progress), NULL);
     g_signal_connect(download, "notify::status", G_CALLBACK(download_progress), NULL);
     update_state();
+    return TRUE;
+}
+
+gboolean
+blank_cb() {
     return TRUE;
 }
 
@@ -1912,10 +1918,11 @@ toggle_scrollbars(gboolean onoff) {
 	if (onoff == TRUE) {
 		adjust_h = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(viewport));
 		adjust_v = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(viewport));
-	}
-	else {
+		gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	} else {
 		adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
 		adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
+		gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 	}
 	gtk_widget_set_scroll_adjustments (GTK_WIDGET(webview), adjust_h, adjust_v);
 
@@ -2139,6 +2146,7 @@ setup_settings() {
 
 void
 setup_signals() {
+    WebKitWebFrame *frame = webkit_web_view_get_main_frame(webview);
 #ifdef ENABLE_COOKIE_SUPPORT
     /* Headers. */
     g_signal_connect_after(G_OBJECT(session), "request-started", G_CALLBACK(new_generic_request), NULL);
@@ -2149,6 +2157,9 @@ setup_signals() {
     g_object_connect(G_OBJECT(window),
         "signal::destroy",                              G_CALLBACK(window_destroyed_cb),            NULL,
     NULL);
+    /* frame */
+    g_signal_connect(G_OBJECT(frame),
+        "scrollbars-policy-changed",                    G_CALLBACK(blank_cb),                       NULL);
     /* webview */
     g_object_connect(G_OBJECT(webview),
         "signal::title-changed",                        G_CALLBACK(webview_title_changed_cb),        NULL,
