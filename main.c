@@ -330,7 +330,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeInsert:
         if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
             a.i = Silent;
-            a.s = "vimprobable_clearfocus()";
+            a.s = g_strdup("vimprobable_clearfocus()");
             script(&a);
             a.i = ModeNormal;
             return set(&a);
