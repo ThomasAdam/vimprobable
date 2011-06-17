@@ -148,6 +148,13 @@ typedef struct {
     char element[255];
 } Listelement;
 
+enum ConfigFileError {
+    SUCCESS        =  0,
+    FILE_NOT_FOUND = -1,
+    READING_FAILED = -2,
+    SYNTAX_ERROR   = -3
+};
+
 /* constants */
 #define MOUSE_BUTTON_1 1
 #define MOUSE_BUTTON_2 2

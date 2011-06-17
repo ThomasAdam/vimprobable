@@ -30,3 +30,7 @@ Listelement * complete_list(const char *searchfor, const int mode, Listelement *
 Listelement * add_list(const char *element, Listelement *elementlist);
 int count_list(Listelement *elementlist);
 void free_list(Listelement *elementlist);
+
+enum ConfigFileError read_searchengines(const char *filename);
+char *find_uri_for_searchengine(const char *handle);
+void make_searchengines_list(Searchengine *searchengines, int length);

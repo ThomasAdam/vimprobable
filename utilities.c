@@ -19,6 +19,7 @@ extern KeyList *keylistroot;
 extern Key keys[];
 extern char *error_msg;
 extern gboolean complete_case_sensitive;
+static GList *dynamic_searchengines = NULL;
 
 gboolean read_rcfile(const char *config)
 {
@@ -642,4 +643,139 @@ count_list(Listelement *elementlist)
     }
     
     return n;
+}
+
+/* split the string at the first occurence of whitespace and return the
+ * position of the second half.
+ * Unlike strtok, the substrings can be empty and the second string is
+ * stripped of trailing and leading whitespace.
+ * Return -1 if `string' contains no whitespace */
+static int split_string_at_whitespace(char *string)
+{
+    int index = strcspn(string, "\n\t ");
+    if (string[index] != '\0') {
+        string[index++] = 0;
+        g_strstrip(string+index);
+        return index;
+    }
+    return -1;
+}
+
+/* return TRUE, if the string contains exactly one unescaped %s and no other
+ * printf directives */
+static gboolean sanity_check_search_url(const char *string)
+{
+    int was_percent_char = 0, percent_s_count = 0;
+
+    for (; *string; string++) {
+        switch (*string) {
+        case '%':
+            was_percent_char = !was_percent_char;
+            break;
+        case 's':
+            if (was_percent_char)
+                percent_s_count++;
+            was_percent_char = 0;
+            break;
+        default:
+            if (was_percent_char)
+                return FALSE;
+            was_percent_char = 0;
+            break;
+        }
+    }
+
+    return !was_percent_char && percent_s_count == 1;
+}
+
+enum ConfigFileError
+read_searchengines(const char *filename)
+{
+    FILE *file;
+    char buffer[BUFFERSIZE], c;
+    int linum = 0, index;
+    gboolean found_malformed_lines = FALSE;
+    Searchengine *new;
+
+    if (access(filename, F_OK) != 0)
+        return FILE_NOT_FOUND;
+
+    file = fopen(filename, "r");
+    if (file == NULL)
+        return READING_FAILED;
+
+    while (fgets(buffer, BUFFERSIZE, file)) {
+        linum++;
+
+        /* skip empty lines */
+        if (!strcmp(buffer, "\n")) continue;
+
+        /* skip too long lines */
+        if (buffer[strlen(buffer)-1] != '\n') {
+            c = getc(file);
+            if (c != EOF) {  /* this is not the last line */
+                while ((c=getc(file)) != EOF && c != '\n');
+                fprintf(stderr, "searchengines: syntax error on line %d\n", linum);
+                found_malformed_lines = TRUE;
+                continue;
+            }
+        }
+
+        /* split line at whitespace */
+        index = split_string_at_whitespace(buffer);
+
+        if (index < 0 || buffer[0] == '\0' || buffer[index] == '\0'
+                || !sanity_check_search_url(buffer+index)) {
+            fprintf(stderr, "searchengines: syntax error on line %d\n", linum);
+            found_malformed_lines = TRUE;
+            continue;
+        }
+
+        new = malloc(sizeof(Searchengine));
+        if (new == NULL) {
+            fprintf(stderr, "Memory exhausted while loading search engines.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        new->handle = g_strdup(buffer);
+        new->uri = g_strdup(buffer+index);
+
+        dynamic_searchengines = g_list_prepend(dynamic_searchengines, new);
+    }
+
+    if (ferror(file)) {
+        fclose(file);
+        return READING_FAILED;
+    }
+
+    fclose(file);
+
+    return found_malformed_lines ? SYNTAX_ERROR : SUCCESS;
+}
+
+void make_searchengines_list(Searchengine *searchengines, int length)
+{
+    int i;
+    for (i = 0; i < length; i++, searchengines++) {
+        dynamic_searchengines = g_list_prepend(dynamic_searchengines, searchengines);
+    }
+}
+
+/* find a searchengine with a given handle and return its URI or NULL if
+ * nothing is found.
+ * The returned string is internal and must not be freed or modified. */
+char *find_uri_for_searchengine(const char *handle)
+{
+    GList *l;
+
+    if (dynamic_searchengines != NULL) {
+        for (l = dynamic_searchengines; l; l = g_list_next(l)) {
+            Searchengine *s = (Searchengine*)l->data;
+            if (!strcmp(s->handle, handle)) {
+                return s->uri;
+            }
+        }
+    }
+
+    return NULL;
 }

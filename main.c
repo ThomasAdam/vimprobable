@@ -1051,6 +1051,7 @@ open_arg(const Arg *arg) {
     char *s = arg->s, *p = NULL, *new;
     Arg a = { .i = NavigationReload };
     int len, i;
+    char *search_uri, *search_term;
 
     if (embed) {
         argv[0] = *args;
@@ -1075,14 +1076,16 @@ open_arg(const Arg *arg) {
         *(p + 1) = '\0';
         len = strlen(s);
         new = NULL, p = strchr(s, ' ');
-        if (p)                                                           /* check for search engines */
-            for (i = 0; i < LENGTH(searchengines); i++)
-                if (!strncmp(s, searchengines[i].handle, p - s)) {
-                    p = soup_uri_encode(++p, "&");
-                    new = g_strdup_printf(searchengines[i].uri, p);
-                    g_free(p);
-                    break;
-                }
+        if (p) {                                                         /* check for search engines */
+            *p = '\0';
+            search_uri = find_uri_for_searchengine(s);
+            if (search_uri != NULL) {
+                search_term = soup_uri_encode(p+1, "&");
+                new = g_strdup_printf(search_uri, search_term);
+                g_free(search_term);
+            }
+            *p = ' ';
+        }
         if (!new) {
             if (len > 3 && strstr(s, "://")) {                      /* valid url? */
                 p = new = g_malloc(len + 1);
@@ -2345,6 +2348,7 @@ main(int argc, char *argv[]) {
     static gboolean ver = false;
     static gboolean configfile_exists = FALSE;
     static const char *cfile = NULL;
+    char *searchengines_file;
     static GOptionEntry opts[] = {
             { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
             { "embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "embedded", NULL },
@@ -2405,6 +2409,26 @@ main(int argc, char *argv[]) {
         g_free(a.s);
         g_free(configfile);
     }
+
+    make_searchengines_list(searchengines, LENGTH(searchengines));
+
+    /* read searchengines. */
+    searchengines_file = g_strdup_printf(SEARCHENGINES_STORAGE_FILENAME);
+    switch (read_searchengines(searchengines_file)) {
+    case SYNTAX_ERROR:
+        a.i = Error;
+        a.s = g_strdup_printf("Syntax error in searchengines file '%s'", searchengines_file);
+        echo(&a);
+        break;
+    case READING_FAILED:
+        a.i = Error;
+        a.s = g_strdup_printf("Could not read searchengines file '%s'", searchengines_file);
+        echo(&a);
+        break;
+    default:
+        break;
+    }
+    g_free(searchengines_file);
 
     /* command line argument: URL */
     if (argc > 1) {
