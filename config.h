@@ -11,6 +11,8 @@
 /* general settings */
 static char startpage[1024]             = "http://www.vimprobable.org/";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
+static const gboolean enablePagecache   = FALSE; /* TRUE turns on the page cache. */
+char acceptlanguage[1024]               = "";
 
 /* appearance */
 static const char statusbgcolor[]       = "#000000";            /* background color for status bar */
@@ -151,6 +153,8 @@ static Key keys[] = {
 
     { 0,                    0,              GDK_plus,       zoom,       {ZoomIn         | ZoomText} },
     { 0,                    0,              GDK_minus,      zoom,       {ZoomOut        | ZoomText} },
+    { 0,                    0,              GDK_KP_Add,     zoom,       {ZoomIn         | ZoomText} },
+    { 0,                    0,              GDK_KP_Subtract,zoom,       {ZoomOut        | ZoomText} },
     { 0,                    GDK_z,          GDK_i,          zoom,       {ZoomIn         | ZoomText} },
     { 0,                    GDK_z,          GDK_o,          zoom,       {ZoomOut        | ZoomText} },
     { 0,                    GDK_z,          GDK_z,          zoom,       {ZoomReset      | ZoomText} },
@@ -183,12 +187,14 @@ static Key keys[] = {
     { GDK_SHIFT_MASK,       0,              GDK_T,          input,      {.s = ":tabopen ", .i = InsertCurrentURL} },
     { 0,                    0,              GDK_slash,      input,      {.s = "/"} },
     { GDK_SHIFT_MASK,       0,              GDK_slash,      input,      {.s = "/"} },
+    { 0,                    0,              GDK_KP_Divide,  input,      {.s = "/"} },
     { GDK_SHIFT_MASK,       0,              GDK_question,   input,      {.s = "?"} },
 
     { 0,                    0,              GDK_period,     input,      {.s = "."} },
     { 0,                    0,              GDK_comma,      input,      {.s = ","} },
 
     { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
+    { GDK_CONTROL_MASK,     GDK_VoidSymbol, GDK_bracketleft,set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
     { GDK_CONTROL_MASK,     0,              GDK_v,          set,        {ModeSendKey} },
     { 0,                    0,              GDK_f,          input,      {.s = "."} },

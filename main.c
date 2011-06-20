@@ -29,6 +29,10 @@
 /* remove unused bits, numlock symbol and buttons from keymask */
 #define CLEAN(mask) (mask & (GDK_MODIFIER_MASK) & ~(CLEAN_MOD_NUMLOCK_MASK) & ~(CLEAN_MOD_BUTTON_MASK))
 
+#define IS_ESCAPE(event) (IS_ESCAPE_KEY(CLEAN(event->state), event->keyval))
+#define IS_ESCAPE_KEY(s, k) ((s == 0 && k == GDK_Escape) || \
+        (s == GDK_CONTROL_MASK && k == GDK_bracketleft))
+
 /* callbacks here */
 static gboolean inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event);
@@ -129,7 +133,7 @@ static gboolean echo_active = TRUE;
 static GdkNativeWindow embed = 0;
 static char *winid = NULL;
 
-static char rememberedURI[128] = "";
+static char rememberedURI[1024] = "";
 static char followTarget[8] = "";
 char *error_msg = NULL;
 
@@ -295,7 +299,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     switch (mode) {
     case ModeNormal:
         if (CLEAN(event->state) == 0) {
-            if (event->keyval == GDK_Escape) {
+            if (IS_ESCAPE(event)) {
                 a.i = Info;
                 a.s = g_strdup("");
                 echo(&a);
@@ -325,7 +329,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
                 }
         break;
     case ModeInsert:
-        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (IS_ESCAPE(event)) {
             a.i = Silent;
             a.s = g_strdup("vimprobable_clearfocus()");
             script(&a);
@@ -333,7 +337,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             return set(&a);
         }
     case ModePassThrough:
-        if (CLEAN(event->state) == 0 && event->keyval == GDK_Escape) {
+        if (IS_ESCAPE(event)) {
             echo(&a);
             set(&a);
             return TRUE;
@@ -351,10 +355,10 @@ void
 webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data) {
     const char *uri = webkit_web_view_get_uri(webview);
 
-    memset(rememberedURI, 0, 128);
+    memset(rememberedURI, 0, 1024);
     if (link) {
         gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
-        strncpy(rememberedURI, link, 128);
+        strncpy(rememberedURI, link, 1024);
     } else
         update_url(uri);
 }
@@ -454,7 +458,9 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     int numval;
 
      switch (event->keyval) {
+         case GDK_bracketleft:
          case GDK_Escape:
+             if (!IS_ESCAPE(event)) break;
              a.i = HideCompletion;
              complete(&a);
              a.i = ModeNormal;
@@ -614,12 +620,20 @@ complete(const Arg *arg) {
     GtkWidget *row_eventbox, *el;
     GtkBox *_table;
     GdkColor color;
-    static GtkWidget *table, **widgets, *top_border;
-    static char **suggestions, *prefix;
+    static GtkWidget *table, *top_border;
+    static char *prefix;
+    static char **suggestions;
+    static GtkWidget **widgets;
     static int n = 0, m, current = -1;
 
     str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
     len = strlen(str);
+
+    /* Get the length of the list of commands for completion.  We need this to
+     * malloc/realloc correctly.
+     */
+    listlen = LENGTH(commands);
+
     if ((len == 0 || str[0] != ':') && arg->i != HideCompletion)
         return TRUE;
     if (prefix) {
@@ -649,8 +663,8 @@ complete(const Arg *arg) {
         return TRUE;
     if (!widgets) {
         prefix = g_strdup_printf(str);
-        widgets = malloc(sizeof(GtkWidget*) * MAX_LIST_SIZE);
-        suggestions = malloc(sizeof(char*) * MAX_LIST_SIZE);
+        widgets = malloc(sizeof(GtkWidget*) * listlen);
+        suggestions = malloc(sizeof(char*) * listlen);
         top_border = gtk_event_box_new();
         gtk_widget_set_size_request(GTK_WIDGET(top_border), 0, 1);
         gdk_color_parse(completioncolor[2], &color);
@@ -695,7 +709,7 @@ complete(const Arg *arg) {
                 return FALSE;
             }
             memset(entry, 0, 512);
-            suggurls = malloc(sizeof(char*) * MAX_LIST_SIZE);
+            suggurls = malloc(sizeof(char*) * listlen);
             if (suggurls == NULL) {
                 return FALSE;
             }
@@ -739,8 +753,21 @@ complete(const Arg *arg) {
                 entry = NULL;
             }
         }
-        widgets = realloc(widgets, sizeof(GtkWidget*) * n);
-        suggestions = realloc(suggestions, sizeof(char*) * n);
+        /* TA:  FIXME - this needs rethinking entirely. */
+        {
+            GtkWidget **widgets_temp = realloc(widgets, sizeof(*widgets) * n);
+            if (widgets_temp == NULL && widgets == NULL) {
+                fprintf(stderr, "Couldn't realloc() widgets\n");
+                exit(1);
+            }
+            widgets = widgets_temp;
+            char **suggestions_temp = realloc(suggestions, sizeof(*suggestions) * n);
+            if (suggestions_temp == NULL && suggestions == NULL) {
+                fprintf(stderr, "Couldn't realloc() suggestions\n");
+                exit(1);
+            }
+            suggestions = suggestions_temp;
+        }
         if (!n) {
             gdk_color_parse(completionbgcolor[1], &color);
             gtk_widget_modify_bg(table, GTK_STATE_NORMAL, &color);
@@ -1337,8 +1364,8 @@ toggle_plugins(const Arg *arg) {
     WebKitWebSettings *settings;
     settings = webkit_web_view_get_settings(webview);
     plugins = !plugins;
-    g_object_set((GObject*)settings, "enable-plugins", plugins, NULL);
-    g_object_set((GObject*)settings, "enable-scripts", plugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-plugins", plugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-scripts", plugins, NULL);
     webkit_web_view_set_settings(webview, settings);
     webkit_web_view_reload(webview);
     return TRUE;
@@ -1350,7 +1377,7 @@ toggle_images(const Arg *arg) {
     WebKitWebSettings *settings;
     settings = webkit_web_view_get_settings(webview);
     images = !images;
-    g_object_set((GObject*)settings, "auto-load-images", images, NULL);
+    g_object_set(G_OBJECT(settings), "auto-load-images", images, NULL);
     webkit_web_view_set_settings(webview, settings);
     webkit_web_view_reload(webview);
     return TRUE;
@@ -1604,7 +1631,7 @@ update_url(const char *uri) {
     if (!back && !fwd)
         before[0] = after[0] = '\0';
 #endif
-    gtk_label_set_markup((GtkLabel*)status_url, g_markup_printf_escaped(
+    gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped(
 #ifdef ENABLE_HISTORY_INDICATOR
         "<span font=\"%s\">%s%s%s%s%s</span>", statusfont, uri,
         before, back ? "+" : "", fwd ? "-" : "", after
@@ -1708,9 +1735,9 @@ setup_gui() {
     adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
     adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
     if (embed) {
-        window = (GtkWindow *)gtk_plug_new(embed);
+        window = GTK_WINDOW(gtk_plug_new(embed));
     } else {
-        window = (GtkWindow *)gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
         gtk_window_set_wmclass(window, "vimprobable", "Vimprobable");
     }
     gtk_window_set_default_size(window, 640, 480);
@@ -1775,14 +1802,15 @@ setup_settings() {
     int  len;
 
     session = webkit_get_default_session();
-    g_object_set((GObject*)settings, "default-font-size", DEFAULT_FONT_SIZE, NULL);
-    g_object_set((GObject*)settings, "enable-scripts", enablePlugins, NULL);
-    g_object_set((GObject*)settings, "enable-plugins", enablePlugins, NULL);
+    g_object_set(G_OBJECT(settings), "default-font-size", DEFAULT_FONT_SIZE, NULL);
+    g_object_set(G_OBJECT(settings), "enable-scripts", enablePlugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-plugins", enablePlugins, NULL);
+    g_object_set(G_OBJECT(settings), "enable-page-cache", enablePagecache, NULL);
     filename = g_strdup_printf(USER_STYLES_FILENAME);
     filename = g_strdup_printf("file://%s", filename);
-    g_object_set((GObject*)settings, "user-stylesheet-uri", filename, NULL);
-    g_object_set((GObject*)settings, "user-agent", USER_AGENT, NULL);
-    g_object_get((GObject*)settings, "zoom-step", &zoomstep, NULL);
+    g_object_set(G_OBJECT(settings), "user-stylesheet-uri", filename, NULL);
+    g_object_set(G_OBJECT(settings), "user-agent", USER_AGENT, NULL);
+    g_object_get(G_OBJECT(settings), "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
 
     /* proxy */
@@ -1810,39 +1838,41 @@ void
 setup_signals() {
 #ifdef ENABLE_COOKIE_SUPPORT
     /* Headers. */
-    g_signal_connect_after((GObject*)session, "request-started", (GCallback)new_generic_request, NULL);
+    g_signal_connect_after(G_OBJECT(session), "request-started", G_CALLBACK(new_generic_request), NULL);
 #endif
+    /* Accept-language header */
+    g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
     /* window */
-    g_object_connect((GObject*)window,
-        "signal::destroy",                              (GCallback)window_destroyed_cb,             NULL,
+    g_object_connect(G_OBJECT(window),
+        "signal::destroy",                              G_CALLBACK(window_destroyed_cb),             NULL,
     NULL);
     /* webview */
-    g_object_connect((GObject*)webview,
-        "signal::title-changed",                        (GCallback)webview_title_changed_cb,        NULL,
-        "signal::load-progress-changed",                (GCallback)webview_progress_changed_cb,     NULL,
-        "signal::load-committed",                       (GCallback)webview_load_committed_cb,       NULL,
-        "signal::load-finished",                        (GCallback)webview_load_finished_cb,        NULL,
-        "signal::navigation-policy-decision-requested", (GCallback)webview_navigation_cb,           NULL,
-        "signal::new-window-policy-decision-requested", (GCallback)webview_new_window_cb,           NULL,
-        "signal::mime-type-policy-decision-requested",  (GCallback)webview_mimetype_cb,             NULL,
-        "signal::download-requested",                   (GCallback)webview_download_cb,             NULL,
-        "signal::key-press-event",                      (GCallback)webview_keypress_cb,             NULL,
-        "signal::hovering-over-link",                   (GCallback)webview_hoverlink_cb,            NULL,
-        "signal::console-message",                      (GCallback)webview_console_cb,              NULL,
-        "signal::create-web-view",                      (GCallback)webview_open_in_new_window_cb,   NULL,
-        "signal::event",                                (GCallback)notify_event_cb,                 NULL,
+    g_object_connect(G_OBJECT(webview),
+        "signal::title-changed",                        G_CALLBACK(webview_title_changed_cb),        NULL,
+        "signal::load-progress-changed",                G_CALLBACK(webview_progress_changed_cb),     NULL,
+        "signal::load-committed",                       G_CALLBACK(webview_load_committed_cb),       NULL,
+        "signal::load-finished",                        G_CALLBACK(webview_load_finished_cb),        NULL,
+        "signal::navigation-policy-decision-requested", G_CALLBACK(webview_navigation_cb),           NULL,
+        "signal::new-window-policy-decision-requested", G_CALLBACK(webview_new_window_cb),           NULL,
+        "signal::mime-type-policy-decision-requested",  G_CALLBACK(webview_mimetype_cb),             NULL,
+        "signal::download-requested",                   G_CALLBACK(webview_download_cb),             NULL,
+        "signal::key-press-event",                      G_CALLBACK(webview_keypress_cb),             NULL,
+        "signal::hovering-over-link",                   G_CALLBACK(webview_hoverlink_cb),            NULL,
+        "signal::console-message",                      G_CALLBACK(webview_console_cb),              NULL,
+        "signal::create-web-view",                      G_CALLBACK(webview_open_in_new_window_cb),   NULL,
+        "signal::event",                                G_CALLBACK(notify_event_cb),                 NULL,
     NULL);
     /* webview adjustment */
-    g_object_connect((GObject*)adjust_v,
-        "signal::value-changed",                        (GCallback)webview_scroll_cb,               NULL,
+    g_object_connect(G_OBJECT(adjust_v),
+        "signal::value-changed",                        G_CALLBACK(webview_scroll_cb),               NULL,
     NULL);
     /* inputbox */
-    g_object_connect((GObject*)inputbox,
-        "signal::activate",                             (GCallback)inputbox_activate_cb,            NULL,
-        "signal::key-press-event",                      (GCallback)inputbox_keypress_cb,            NULL,
-        "signal::key-release-event",                    (GCallback)inputbox_keyrelease_cb,          NULL,
+    g_object_connect(G_OBJECT(inputbox),
+        "signal::activate",                             G_CALLBACK(inputbox_activate_cb),            NULL,
+        "signal::key-press-event",                      G_CALLBACK(inputbox_keypress_cb),            NULL,
+        "signal::key-release-event",                    G_CALLBACK(inputbox_keyrelease_cb),          NULL,
 #ifdef ENABLE_INCREMENTAL_SEARCH
-        "signal::changed",                              (GCallback)inputbox_changed_cb,             NULL,
+        "signal::changed",                              G_CALLBACK(inputbox_changed_cb),             NULL,
 #endif
     NULL);
 }
