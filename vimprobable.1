@@ -190,6 +190,34 @@ Shortcut: d
 
 Print the current URL
 
+.SH SEARCHENGINES
+
+Searchengines let you submit queries to web search engines and similar sites
+without having to type the complete URL or visit the page first.
+
+For example, if
+.I ex
+is defined as the shortcut for the search at example.com, you can use "ex
+search term" instead of an URL to search there for "search term".
+
+The following search engines (and shortcuts) are already defined in config.h:
+
+.IP i
+http://ixquick.com/do/metasearch.pl?query=%s
+.IP s
+https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s
+.IP w
+https://secure.wikimedia.org/wikipedia/en/w/index.php?title=Special%%3ASearch&search=%s&go=Go
+.IP wd
+https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go
+
+.P
+
+.B Default search engine
+
+If Vimprobable doesn't recognize an address as a valid URL or query to one of the
+defined search engines, it will use the default search engine instead.
+
 .SH FILES
 
 Please make sure you create these files before running the browser. 
