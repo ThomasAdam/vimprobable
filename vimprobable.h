@@ -1,9 +1,9 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009, 2010 by Hannes Schueller
-    (c) 2009, 2010 by Matto Fransen
-    (c) 2010 by Hans-Peter Deifel
-    (c) 2010 by Thomas Adam
+    (c) 2009-2011 by Hannes Schueller
+    (c) 2009-2010 by Matto Fransen
+    (c) 2010-2011 by Hans-Peter Deifel
+    (c) 2010-2011 by Thomas Adam
     see LICENSE file
 */
 
