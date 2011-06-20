@@ -1050,7 +1050,7 @@ open_arg(const Arg *arg) {
     char *argv[6];
     char *s = arg->s, *p = NULL, *new;
     Arg a = { .i = NavigationReload };
-    int len, i;
+    int len;
     char *search_uri, *search_term;
 
     if (embed) {
