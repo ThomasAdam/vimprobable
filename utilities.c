@@ -500,7 +500,7 @@ give_feedback(const char *feedback)
 { 
     Arg a = { .i = Info };
 
-    a.s = g_strdup_printf(feedback);
+    a.s = g_strdup_printf("%s", feedback);
     echo(&a);
     g_free(a.s);
 }
