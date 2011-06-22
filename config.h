@@ -9,7 +9,7 @@
 */
 
 /* Vimprobable version number */
-#define VERSION "0.9.9.0"
+#define VERSION "0.9.9.1"
 #define INTERNAL_VERSION "Vimprobable2/"VERSION
 
 /* general settings */
@@ -21,10 +21,10 @@ static const gboolean enableJava        = TRUE; /* FALSE disables Java applets *
 static const gboolean enablePagecache   = FALSE; /* TRUE turns on the page cache. */
 
 /* appearance */
-char statusbgcolor[]                    = "#000000";            /* background color for status bar */
-char statuscolor[]                      = "#ffffff";            /* color for status bar */
-char sslbgcolor[]                       = "#b0ff00";            /* background color for status bar with SSL url */
-char sslcolor[]                         = "#000000";            /* color for status bar with SSL url */
+char statusbgcolor[MAX_SETTING_SIZE]    = "#000000";            /* background color for status bar */
+char statuscolor[MAX_SETTING_SIZE]      = "#ffffff";            /* color for status bar */
+char sslbgcolor[MAX_SETTING_SIZE]       = "#b0ff00";            /* background color for status bar with SSL url */
+char sslcolor[MAX_SETTING_SIZE]         = "#000000";            /* color for status bar with SSL url */
 
                                         /*  normal,                 warning,                error       */
 static const char *urlboxfont[]         = { "monospace normal 8",   "monospace normal 8",   "monospace bold 8"};
@@ -88,7 +88,7 @@ static Searchengine searchengines[] = {
     { "wd",         "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
 };
 
-static char defaultsearch[1024] = "i";
+static char defaultsearch[MAX_SETTING_SIZE] = "i";
 
 /* command mapping */
 Command commands[COMMANDSIZE] = {
