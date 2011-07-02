@@ -1292,9 +1292,13 @@ gboolean
 quickmark(const Arg *a) {
     int i, b;
     b = atoi(a->s);
-    char *fn = strcat(QUICKMARK_FILE);
+    char *fn = g_strdup_printf(QUICKMARK_FILE);
     FILE *fp;
     fp = fopen(fn, "r");
+
+    g_free(fn);
+    fn = NULL;
+
     char buf[100];
  
     if (fp != NULL && b < 10) {
