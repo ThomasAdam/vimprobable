@@ -96,19 +96,9 @@ function vimprobable_fire(n)
             if (tag == "textarea" || tag == "input")
                 console.log('insertmode_on');
         } else {
-            if (el.onclick) {
-                var evObj = document.createEvent('MouseEvents');
-                evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
-                el.dispatchEvent(evObj);
-            } else if (el.href) {
-                if (el.href.match(/^javascript:/)) {
-                    var evObj = document.createEvent('MouseEvents');
-                    evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
-                    el.dispatchEvent(evObj);
-                } else {
-                    /* send signal to open link */
-                    return "open;" + el.href;
-                }
+            if (!el.onclick && el.href && !el.href.match('/^javascript:/')) {
+                /* send signal to open link */
+                return "open;" + el.href;
             } else {
                 var evObj = document.createEvent('MouseEvents');
                 evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
