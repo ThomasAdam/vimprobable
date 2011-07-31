@@ -370,7 +370,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeInsert:
         if (IS_ESCAPE(event)) {
             a.i = Silent;
-            a.s = g_strdup("vimprobable_clearfocus()");
+            a.s = g_strdup("hints.clearFocus();");
             script(&a);
             a.i = ModeNormal;
             return set(&a);
@@ -472,7 +472,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
 #endif
     } else if (count && (text[0] == '.' || text[0] == ',')) {
         a.i = Silent;
-        a.s = g_strdup_printf("vimprobable_fire(%d)", count);
+        a.s = g_strdup_printf("hints.fire(%d);", count);
         script(&a);
         update_state();
     } else
@@ -520,7 +520,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
                 (event->keyval == GDK_BackSpace)) {
             count /= 10;
             a.i = Silent;
-            a.s = g_strdup_printf("vimprobable_update_hints(%d)", count);
+            a.s = g_strdup_printf("hints.updateHints(%d);", count);
             script(&a);
             update_state();
             return TRUE;
@@ -531,7 +531,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             /* allow a zero as non-first number */
             count = (count ? count * 10 : 0) + numval;
             a.i = Silent;
-            a.s = g_strdup_printf("vimprobable_update_hints(%d)", count);
+            a.s = g_strdup_printf("hints.updateHints(%d);", count);
             script(&a);
             update_state();
             return TRUE;
@@ -598,18 +598,18 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
     } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
             (text[0] == '.' || text[0] == ',')) {
         a.i = Silent;
-        a.s = g_strdup("vimprobable_cleanup()");
+        a.s = g_strdup("hints.clearHints();");
         script(&a);
 
         a.i = Silent;
-        a.s = g_strconcat("vimprobable_show_hints('", text + 1, "')", NULL);
+        a.s = g_strconcat("hints.createHints('", text + 1, "');", NULL);
         script(&a);
 
         return TRUE;
     } else if (length == 0 && followTarget[0]) {
         mode = ModeNormal;
         a.i = Silent;
-        a.s = g_strdup("vimprobable_clear()");
+        a.s = g_strdup("hints.clearHints();");
         script(&a);
         count = 0;
         update_state();
@@ -928,7 +928,7 @@ input(const Arg *arg) {
         memset(followTarget, 0, 8);
         strncpy(followTarget, arg->s[0] == '.' ? "current" : "new", 8);
         a.i = Silent;
-        a.s = g_strdup("vimprobable_show_hints()");
+        a.s = g_strdup("hints.createHints();");
         script(&a);
     }
 
@@ -1317,7 +1317,7 @@ script(const Arg *arg) {
     if (value) {
         if (strncmp(value, "fire;", 5) == 0) {
             count = 0;
-            a.s = g_strconcat("vimprobable_fire(", (value + 5), ")", NULL);
+            a.s = g_strconcat("hints.fire(", (value + 5), ");", NULL);
             a.i = Silent;
             script(&a);
         } else if (strncmp(value, "open;", 5) == 0) {
@@ -1569,7 +1569,7 @@ static gboolean
 focus_input(const Arg *arg) {
     static Arg a;
 
-    a.s = g_strconcat("vimprobable_focus_input()", NULL);
+    a.s = g_strconcat("hints.focusInput();", NULL);
     a.i = Silent;
     script(&a);
     update_state();
