@@ -19,6 +19,8 @@ function Hints() {
             var width = window.innerWidth;
             var scrollX = document.defaultView.scrollX;
             var scrollY = document.defaultView.scrollY;
+            this.genHintContainer();
+
             /* prefixing html: will result in namespace error */
             var hinttags;
             if (typeof(inputText) == "undefined" || inputText == "") {
@@ -28,12 +30,15 @@ function Hints() {
                 hinttags = "//*[(@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href) and contains(., '" + inputText + "')] | //input[not(@type='hidden') and contains(., '" + inputText + "')] | //a[contains(., '" + inputText + "')] | //area[contains(., '" + inputText + "')] | //iframe[contains(@name, '" + inputText + "')] | //textarea[contains(., '" + inputText + "')] | //button[contains(@value, '" + inputText + "')] | //select[contains(., '" + inputText + "')]";
             }
 
-            /* iterator type isn't suitable here, because: "DOMException NVALID_STATE_ERR: The document has been mutated since the result was returned." */
+            /*
+            iterator type isn't suitable here, because: "DOMException NVALID_STATE_ERR:
+            The document has been mutated since the result was returned."
+            */
             var r = document.evaluate(hinttags, document,
                 function(p) {
                     return 'http://www.w3.org/1999/xhtml';
                 }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-            this.hintContainer = document.createElement("div");
+
             /* due to the different XPath result type, we will need two counter variables */
             this.hintCount = 0;
             var i;
@@ -74,15 +79,9 @@ function Hints() {
                 elem.style.background = "#ff0";
                 this.hintCount++;
             }
-            i = 0;
-            while (typeof(this.hintElements[i]) != "undefined") {
-                this.hintElements[i].className += " hinting_mode_hint";
-                i++;
-            }
-            document.getElementsByTagName("body")[0].appendChild(this.hintContainer);
             this.clearFocus();
             this.focusedHint = null;
-            if (i == 1) {
+            if (this.hintCount == 1) {
                 /* just one hinted element - might as well follow it */
                 return this.fire(1);
             }
@@ -125,7 +124,7 @@ function Hints() {
         this.hintContainer.parentNode.removeChild(this.hintContainer);
         window.onkeyup = null;
     };
-    
+
     this.fire = function (n)
     {
         if (typeof(this.hintElements[n - 1]) != "undefined") {
@@ -193,6 +192,19 @@ function Hints() {
                 }
             }
         }
+    };
+
+    this.genHintContainer = function ()
+    {
+        var body = document.getElementsByTagName('body')[0];
+        if (document.getElementById('hint_container'))
+            return;
+
+        this.hintContainer = document.createElement('div');
+        this.hintContainer.id = "hint_container";
+
+        if (body)
+            body.appendChild(this.hintContainer);
     };
 }
 hints = new Hints();
