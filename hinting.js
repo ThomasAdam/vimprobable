@@ -5,12 +5,12 @@
     see LICENSE file
 */
 function Hints() {
-    var hintElement;
-    var vimprobable_j;
-    var vimprobable_a;
-    var vimprobable_h;
-    var vimprobable_colors;
-    var vimprobable_backgrounds;
+    var hintContainer;
+    var hintElements;
+    var hintCount;
+    var focusedHint;
+    var colors;
+    var backgrounds;
 
     this.createHints = function (inputText)
     {
@@ -33,17 +33,17 @@ function Hints() {
                 function(p) {
                     return 'http://www.w3.org/1999/xhtml';
                 }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-            this.hintElement = document.createElement("div");
+            this.hintContainer = document.createElement("div");
             /* due to the different XPath result type, we will need two counter variables */
-            this.vimprobable_j = 0;
+            this.hintCount = 0;
             var i;
-            this.vimprobable_a = [];
-            this.vimprobable_colors = [];
-            this.vimprobable_backgrounds = [];
+            this.hintElements = [];
+            this.colors = [];
+            this.backgrounds = [];
             for (i = 0; i < r.snapshotLength; i++)
             {
                 var elem = r.snapshotItem(i);
-                rect = elem.getBoundingClientRect();
+                var rect = elem.getBoundingClientRect();
                 if (!rect || rect.top > height || rect.bottom < 0 || rect.left > width || rect.right < 0 || !(elem.getClientRects()[0]))
                     continue;
                 var computedStyle = document.defaultView.getComputedStyle(elem, null);
@@ -51,11 +51,11 @@ function Hints() {
                     continue;
                 var leftpos = Math.max((rect.left + scrollX), scrollX);
                 var toppos = Math.max((rect.top + scrollY), scrollY);
-                this.vimprobable_a.push(elem);
+                this.hintElements.push(elem);
                 /* making this block DOM compliant */
                 var hint = document.createElement("span");
                 hint.setAttribute("class", "hinting_mode_hint");
-                hint.setAttribute("id", "vimprobablehint" + this.vimprobable_j);
+                hint.setAttribute("id", "vimprobablehint" + this.hintCount);
                 hint.style.position = "absolute";
                 hint.style.left = leftpos + "px";
                 hint.style.top =  toppos + "px";
@@ -63,25 +63,25 @@ function Hints() {
                 hint.style.color = "#fff";
                 hint.style.font = "bold 10px monospace";
                 hint.style.zIndex = "99";
-                var text = document.createTextNode(this.vimprobable_j + 1);
+                var text = document.createTextNode(this.hintCount + 1);
                 hint.appendChild(text);
-                this.hintElement.appendChild(hint);
+                this.hintContainer.appendChild(hint);
                 /* remember site-defined colour of this element */
-                this.vimprobable_colors[this.vimprobable_j] = elem.style.color;
-                this.vimprobable_backgrounds[this.vimprobable_j] = elem.style.background;
+                this.colors[this.hintCount] = elem.style.color;
+                this.backgrounds[this.hintCount] = elem.style.background;
                 /* make the link black to ensure it's readable */
                 elem.style.color = "#000";
                 elem.style.background = "#ff0";
-                this.vimprobable_j++;
+                this.hintCount++;
             }
             i = 0;
-            while (typeof(this.vimprobable_a[i]) != "undefined") {
-                this.vimprobable_a[i].className += " hinting_mode_hint";
+            while (typeof(this.hintElements[i]) != "undefined") {
+                this.hintElements[i].className += " hinting_mode_hint";
                 i++;
             }
-            document.getElementsByTagName("body")[0].appendChild(this.hintElement);
+            document.getElementsByTagName("body")[0].appendChild(this.hintContainer);
             this.clearFocus();
-            this.vimprobable_h = null;
+            this.focusedHint = null;
             if (i == 1) {
                 /* just one hinted element - might as well follow it */
                 return this.fire(1);
@@ -91,17 +91,17 @@ function Hints() {
 
     this.updateHints = function (n)
     {
-        if(this.vimprobable_h != null) {
-            this.vimprobable_h.className = this.vimprobable_h.className.replace("_focus","");
-            this.vimprobable_h.style.background = "#ff0";
+        if(this.focusedHint != null) {
+            this.focusedHint.className = this.focusedHint.className.replace("_focus","");
+            this.focusedHint.style.background = "#ff0";
         }
-        if (this.vimprobable_j - 1 < n * 10 && typeof(this.vimprobable_a[n - 1]) != "undefined") {
+        if (this.hintCount - 1 < n * 10 && typeof(this.hintElements[n - 1]) != "undefined") {
             /* return signal to follow the link */
             return "fire;" + n;
         } else {
-            if (typeof(this.vimprobable_a[n - 1]) != "undefined") {
-                (this.vimprobable_h = this.vimprobable_a[n - 1]).className = this.vimprobable_a[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-                this.vimprobable_h.style.background = "#8f0";
+            if (typeof(this.hintElements[n - 1]) != "undefined") {
+                (this.focusedHint = this.hintElements[n - 1]).className = this.hintElements[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+                this.focusedHint.style.background = "#8f0";
             }
         }
     };
@@ -114,23 +114,23 @@ function Hints() {
 
     this.clearHints = function ()
     {
-        for(e in this.vimprobable_a) {
-            if (typeof(this.vimprobable_a[e].className) != "undefined") {
-                this.vimprobable_a[e].className = this.vimprobable_a[e].className.replace(/hinting_mode_hint/,'');
+        for(e in this.hintElements) {
+            if (typeof(this.hintElements[e].className) != "undefined") {
+                this.hintElements[e].className = this.hintElements[e].className.replace(/hinting_mode_hint/,'');
                 /* reset to site-defined colour */
-                this.vimprobable_a[e].style.color = this.vimprobable_colors[e];
-                this.vimprobable_a[e].style.background = this.vimprobable_backgrounds[e];
+                this.hintElements[e].style.color = this.colors[e];
+                this.hintElements[e].style.background = this.backgrounds[e];
             }
         }
-        this.hintElement.parentNode.removeChild(this.hintElement);
+        this.hintContainer.parentNode.removeChild(this.hintContainer);
         window.onkeyup = null;
     };
     
     this.fire = function (n)
     {
-        if (typeof(this.vimprobable_a[n - 1]) != "undefined") {
-            el = this.vimprobable_a[n - 1];
-            tag = el.nodeName.toLowerCase();
+        if (typeof(this.hintElements[n - 1]) != "undefined") {
+            var el = this.hintElements[n - 1];
+            var tag = el.nodeName.toLowerCase();
             this.clearHints();
             if(tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
                 el.focus();
