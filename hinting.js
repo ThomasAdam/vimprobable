@@ -12,7 +12,7 @@ function Hints() {
     var colors;
     var backgrounds;
 
-    this.createHints = function (inputText)
+    this.createHints = function(inputText)
     {
         if (document.getElementsByTagName("body")[0] === null || typeof(document.getElementsByTagName("body")[0]) != "object")
             return;
@@ -21,7 +21,7 @@ function Hints() {
         var width = window.innerWidth;
         var scrollX = document.defaultView.scrollX;
         var scrollY = document.defaultView.scrollY;
-        this.genHintContainer();
+        this._genHintContainer();
 
         /* prefixing html: will result in namespace error */
         var hinttags;
@@ -38,7 +38,7 @@ function Hints() {
         */
         var r = document.evaluate(hinttags, document,
             function(p) {
-                return 'http://www.w3.org/1999/xhtml';
+                return "http://www.w3.org/1999/xhtml";
             }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
         /* due to the different XPath result type, we will need two counter variables */
@@ -89,34 +89,32 @@ function Hints() {
         }
     };
 
-    this.updateHints = function (n)
+    this.updateHints = function(n)
     {
-        if(this.focusedHint != null) {
+        if (this.focusedHint != null) {
             this.focusedHint.className = this.focusedHint.className.replace("_focus","");
             this.focusedHint.style.background = "#ff0";
         }
         if (this.hintCount - 1 < n * 10 && typeof(this.hintElements[n - 1]) != "undefined") {
             /* return signal to follow the link */
             return "fire;" + n;
-        } else {
-            if (typeof(this.hintElements[n - 1]) != "undefined") {
-                (this.focusedHint = this.hintElements[n - 1]).className = this.hintElements[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-                this.focusedHint.style.background = "#8f0";
-            }
+        } else if (typeof(this.hintElements[n - 1]) != "undefined") {
+            (this.focusedHint = this.hintElements[n - 1]).className = this.hintElements[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+            this.focusedHint.style.background = "#8f0";
         }
     };
 
-    this.clearFocus = function ()
+    this.clearFocus = function()
     {
         if (document.activeElement && document.activeElement.blur)
             document.activeElement.blur();
     };
 
-    this.clearHints = function ()
+    this.clearHints = function()
     {
-        for(e in this.hintElements) {
+        for (e in this.hintElements) {
             if (typeof(this.hintElements[e].className) != "undefined") {
-                this.hintElements[e].className = this.hintElements[e].className.replace(/hinting_mode_hint/,'');
+                this.hintElements[e].className = this.hintElements[e].className.replace(/hinting_mode_hint/,"");
                 /* reset to site-defined colour */
                 this.hintElements[e].style.color = this.colors[e];
                 this.hintElements[e].style.background = this.backgrounds[e];
@@ -126,7 +124,7 @@ function Hints() {
         window.onkeyup = null;
     };
 
-    this.fire = function (n)
+    this.fire = function(n)
     {
         if (typeof(this.hintElements[n - 1]) == "undefined")
             return;
@@ -134,20 +132,20 @@ function Hints() {
         var el = this.hintElements[n - 1];
         var tag = el.nodeName.toLowerCase();
         this.clearHints();
-        if(tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
+        if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
             el.focus();
             return;
         }
-        if (!el.onclick && el.href && !el.href.match('/^javascript:/')) {
+        if (!el.onclick && el.href && !el.href.match("/^javascript:/")) {
             /* send signal to open link */
             return "open;" + el.href;
         }
-        var evObj = document.createEvent('MouseEvents');
-        evObj.initMouseEvent('click', true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
+        var evObj = document.createEvent("MouseEvents");
+        evObj.initMouseEvent("click", true, true, window, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
         el.dispatchEvent(evObj);
     };
 
-    this.focusInput = function ()
+    this.focusInput = function()
     {
         if (document.getElementsByTagName("body")[0] === null || typeof(document.getElementsByTagName("body")[0]) != "object")
             return;
@@ -156,7 +154,7 @@ function Hints() {
         var hinttags = "//input[@type='text'] | //input[@type='password'] | //textarea";
         var r = document.evaluate(hinttags, document,
             function(p) {
-                return 'http://www.w3.org/1999/xhtml';
+                return "http://www.w3.org/1999/xhtml";
             }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         var i;
         var j = 0;
@@ -185,13 +183,13 @@ function Hints() {
             first.focus();
     };
 
-    this.genHintContainer = function ()
+    this._genHintContainer = function()
     {
-        var body = document.getElementsByTagName('body')[0];
-        if (document.getElementById('hint_container'))
+        var body = document.getElementsByTagName("body")[0];
+        if (document.getElementById("hint_container"))
             return;
 
-        this.hintContainer = document.createElement('div');
+        this.hintContainer = document.createElement("div");
         this.hintContainer.id = "hint_container";
 
         if (body)
