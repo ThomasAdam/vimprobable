@@ -41,6 +41,15 @@ function Hints() {
                 return "http://www.w3.org/1999/xhtml";
             }, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
+        /* generate basic hint element which will be cloned and updated later */
+        var hintSpan = document.createElement("span");
+        hintSpan.setAttribute("class", "hinting_mode_hint");
+        hintSpan.style.position = "absolute";
+        hintSpan.style.background = "red";
+        hintSpan.style.color = "#fff";
+        hintSpan.style.font = "bold 10px monospace";
+        hintSpan.style.zIndex = "1000000";
+
         /* due to the different XPath result type, we will need two counter variables */
         this.hintCount = 0;
         var i;
@@ -60,16 +69,10 @@ function Hints() {
             var toppos = Math.max((rect.top + scrollY), scrollY);
             this.hintElements.push(elem);
             /* making this block DOM compliant */
-            var hint = document.createElement("span");
-            hint.setAttribute("class", "hinting_mode_hint");
+            var hint = hintSpan.cloneNode(false);
             hint.setAttribute("id", "vimprobablehint" + this.hintCount);
-            hint.style.position = "absolute";
             hint.style.left = leftpos + "px";
             hint.style.top =  toppos + "px";
-            hint.style.background = "red";
-            hint.style.color = "#fff";
-            hint.style.font = "bold 10px monospace";
-            hint.style.zIndex = "99";
             var text = document.createTextNode(this.hintCount + 1);
             hint.appendChild(text);
             this.hintContainer.appendChild(hint);
@@ -82,26 +85,41 @@ function Hints() {
             this.hintCount++;
         }
         this.clearFocus();
-        this.focusedHint = null;
+        this.focusHint();
         if (this.hintCount == 1) {
             /* just one hinted element - might as well follow it */
             return this.fire(1);
         }
     };
 
-    this.updateHints = function(n)
+    /* set focus on hint with given number */
+    this.focusHint = function(n)
     {
+        if (!n) {
+            this.focusedHint = null;
+            return;
+        }
+
+        /* reset previous focused hint */
         if (this.focusedHint != null) {
-            this.focusedHint.className = this.focusedHint.className.replace("_focus","");
+            this.focusedHint.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
             this.focusedHint.style.background = "#ff0";
         }
+
+        if (typeof(this.hintElements[n - 1]) != "undefined") {
+            this.focusedHint = this.hintElements[n - 1];
+            this.focusedHint.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+            this.focusedHint.style.background = "#8f0";
+        }
+    };
+
+    this.updateHints = function(n)
+    {
         if (this.hintCount - 1 < n * 10 && typeof(this.hintElements[n - 1]) != "undefined") {
             /* return signal to follow the link */
             return "fire;" + n;
-        } else if (typeof(this.hintElements[n - 1]) != "undefined") {
-            (this.focusedHint = this.hintElements[n - 1]).className = this.hintElements[n - 1].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-            this.focusedHint.style.background = "#8f0";
         }
+        this.focusHint(n);
     };
 
     this.clearFocus = function()
