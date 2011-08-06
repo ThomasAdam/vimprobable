@@ -11,7 +11,7 @@ function Hints() {
     var focusedHint;
     var colors;
     var backgrounds;
-    var currentFocusNum = 1;
+    var currentFocusNum = 1;    /* holds the number of the active hint */
 
     this.createHints = function(inputText)
     {
@@ -49,7 +49,7 @@ function Hints() {
         hintSpan.style.background = "red";
         hintSpan.style.color = "#fff";
         hintSpan.style.font = "bold 10px monospace";
-        hintSpan.style.zIndex = "1000000";
+        hintSpan.style.zIndex = "10000000";
 
         /* due to the different XPath result type, we will need two counter variables */
         this.hintCount = 0;
@@ -119,6 +119,11 @@ function Hints() {
     this.focusNextHint = function()
     {
         this.focusHint(++this.currentFocusNum);
+    };
+
+    this.focusPreviousHint = function()
+    {
+        this.focusHint(--this.currentFocusNum);
     };
 
     this.updateHints = function(n)
