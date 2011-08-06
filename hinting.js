@@ -11,6 +11,7 @@ function Hints() {
     var focusedHint;
     var colors;
     var backgrounds;
+    var currentFocusNum = 1;
 
     this.createHints = function(inputText)
     {
@@ -97,8 +98,10 @@ function Hints() {
     {
         if (!n) {
             this.focusedHint = null;
-            return;
+            var n = 1;
         }
+
+        this.currentFocusNum = n;
 
         /* reset previous focused hint */
         if (this.focusedHint != null) {
@@ -111,6 +114,11 @@ function Hints() {
             this.focusedHint.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
             this.focusedHint.style.background = "#8f0";
         }
+    };
+
+    this.focusNextHint = function()
+    {
+        this.focusHint(++this.currentFocusNum);
     };
 
     this.updateHints = function(n)
@@ -144,6 +152,9 @@ function Hints() {
 
     this.fire = function(n)
     {
+        if (!n) {
+            var n = this.currentFocusNum;
+        }
         if (typeof(this.hintElements[n - 1]) == "undefined")
             return;
 

@@ -441,9 +441,9 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         search_direction = forward;
         search_handle = g_strdup(&text[1]);
 #endif
-    } else if (count && (text[0] == '.' || text[0] == ',')) {
+    } else if (text[0] == '.' || text[0] == ',') {
         a.i = Silent;
-        a.s = g_strdup_printf("hints.fire(%d);", count);
+        a.s = g_strdup_printf("hints.fire();");
         script(&a);
         update_state();
     } else
