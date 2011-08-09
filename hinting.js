@@ -6,12 +6,12 @@
 */
 function Hints() {
     var hintContainer;
-    var hintElements;
     var hintCount;
     var focusedHint;
-    var colors;
-    var backgrounds;
     var currentFocusNum = 1;    /* holds the number of the active hint */
+
+    // hints[] = [elem, number, text, span, backgroundColor, color]
+    var hints = [];
 
     this.createHints = function(inputText)
     {
@@ -54,9 +54,7 @@ function Hints() {
         /* due to the different XPath result type, we will need two counter variables */
         this.hintCount = 0;
         var i;
-        this.hintElements = [];
-        this.colors = [];
-        this.backgrounds = [];
+        this.hints = [];
         for (i = 0; i < r.snapshotLength; i++)
         {
             var elem = r.snapshotItem(i);
@@ -68,7 +66,10 @@ function Hints() {
                 continue;
             var leftpos = Math.max((rect.left + scrollX), scrollX);
             var toppos = Math.max((rect.top + scrollY), scrollY);
-            this.hintElements.push(elem);
+
+            /* process elements text */
+            var text = _getTextFromElement(elem);
+
             /* making this block DOM compliant */
             var hint = hintSpan.cloneNode(false);
             hint.setAttribute("id", "vimprobablehint" + this.hintCount);
@@ -77,13 +78,11 @@ function Hints() {
             var text = document.createTextNode(this.hintCount + 1);
             hint.appendChild(text);
             hintContainer.appendChild(hint);
-            /* remember site-defined colour of this element */
-            this.colors[this.hintCount] = elem.style.color;
-            this.backgrounds[this.hintCount] = elem.style.background;
+            this.hintCount++;
+            this.hints.push([elem, this.hintCount, text, hint, elem.style.background, elem.style.color]);
             /* make the link black to ensure it's readable */
             elem.style.color = "#000";
             elem.style.background = "#ff0";
-            this.hintCount++;
         }
         this.clearFocus();
         this.focusHint();
@@ -97,21 +96,21 @@ function Hints() {
     this.focusHint = function(n)
     {
         if (!n) {
-            this.focusedHint = null;
             var n = 1;
+            this.focusedHint = null;
         }
 
         this.currentFocusNum = n;
 
         /* reset previous focused hint */
         if (this.focusedHint != null) {
-            this.focusedHint.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
+            this.focusedHint.className = this.focusedHint.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
             this.focusedHint.style.background = "#ff0";
         }
 
-        if (typeof(this.hintElements[n - 1]) != "undefined") {
-            this.focusedHint = this.hintElements[n - 1];
-            this.focusedHint.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+        if (typeof(this.hints[n - 1][0]) != "undefined") {
+            this.focusedHint = this.hints[n - 1][0];
+            this.focusedHint.className = this.focusedHint.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
             this.focusedHint.style.background = "#8f0";
         }
     };
@@ -128,7 +127,7 @@ function Hints() {
 
     this.updateHints = function(n)
     {
-        if (this.hintCount - 1 < n * 10 && typeof(this.hintElements[n - 1]) != "undefined") {
+        if (this.hintCount - 1 < n * 10 && typeof(this.hints[n - 1][0]) != "undefined") {
             /* return signal to follow the link */
             return "fire;" + n;
         }
@@ -143,12 +142,17 @@ function Hints() {
 
     this.clearHints = function()
     {
-        for (e in this.hintElements) {
-            if (typeof(this.hintElements[e].className) != "undefined") {
-                this.hintElements[e].className = this.hintElements[e].className.replace(/hinting_mode_hint/,"");
-                /* reset to site-defined colour */
-                this.hintElements[e].style.color = this.colors[e];
-                this.hintElements[e].style.background = this.backgrounds[e];
+        console.log('clearHints');
+        for (e in this.hints) {
+            var hint = this.hints[e];
+            if (typeof(hint[3].className) != "undefined") {
+                /* reset class of hint span */
+                /*
+                hint[3].className = hint[3].className.replace("/hinting_mode_hint/", "");
+                */
+
+                hint[0].style.background = hint[4];
+                hint[0].style.color = hint[5];
             }
         }
         hintContainer.parentNode.removeChild(hintContainer);
@@ -160,10 +164,10 @@ function Hints() {
         if (!n) {
             var n = this.currentFocusNum;
         }
-        if (typeof(this.hintElements[n - 1]) == "undefined")
+        if (typeof(this.hints[n - 1][0]) == "undefined")
             return;
 
-        var el = this.hintElements[n - 1];
+        var el = this.hints[n - 1][0];
         var tag = el.nodeName.toLowerCase();
         this.clearHints();
         if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
@@ -217,7 +221,7 @@ function Hints() {
             first.focus();
     };
 
-    var _generateHintContainer = function()
+    function _generateHintContainer()
     {
         var body = document.getElementsByTagName("body")[0];
         if (document.getElementById("hint_container"))
@@ -228,6 +232,23 @@ function Hints() {
 
         if (body)
             body.appendChild(hintContainer);
-    };
+    }
+
+    function _getTextFromElement(elem)
+    {
+        var tagname = elem.tagName.toLowerCase();
+        if (tagname == "input" || tagname == "textarea") {
+            text = elem.value;
+        } else if (tagname == "select") {
+            if (elem.selectedIndex >= 0) {
+                text = elem.item(elem.selectedIndex).text;
+            } else{
+                text = "";
+            }
+        } else {
+            text = elem.textContent;
+        }
+        return text.toLowerCase();;
+    }
 }
 hints = new Hints();
