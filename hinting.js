@@ -7,10 +7,9 @@
 function Hints() {
     var hintContainer;
     var hintCount;
-    var focusedHint;
-    var currentFocusNum = 1;    /* holds the number of the active hint */
+    var currentFocusNum = 1;
 
-    // hints[] = [elem, number, text, span, backgroundColor, color]
+    /* hints[] = [elem, number, text, span, backgroundColor, color] */
     var hints = [];
 
     this.createHints = function(inputText)
@@ -85,7 +84,7 @@ function Hints() {
             elem.style.background = "#ff0";
         }
         this.clearFocus();
-        this.focusHint();
+        this.focusHint(1);
         if (this.hintCount == 1) {
             /* just one hinted element - might as well follow it */
             return this.fire(1);
@@ -95,34 +94,37 @@ function Hints() {
     /* set focus on hint with given number */
     this.focusHint = function(n)
     {
-        if (!n) {
-            var n = 1;
-            this.focusedHint = null;
-        }
-
-        this.currentFocusNum = n;
-
         /* reset previous focused hint */
-        if (this.focusedHint != null) {
-            this.focusedHint.className = this.focusedHint.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
-            this.focusedHint.style.background = "#ff0";
+        var hint = this.hints[currentFocusNum - 1][0];
+        if (typeof(hint) != "undefined") {
+            hint.className = hint.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
+            hint.style.background = "#ff0";
         }
 
-        if (typeof(this.hints[n - 1][0]) != "undefined") {
-            this.focusedHint = this.hints[n - 1][0];
-            this.focusedHint.className = this.focusedHint.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-            this.focusedHint.style.background = "#8f0";
+        currentFocusNum = n;
+        /* allow cycling through hints */
+        if (currentFocusNum > this.hintCount) {
+            currentFocusNum = 1;
+        } else if (currentFocusNum < 1) {
+            currentFocusNum = this.hintCount;
+        }
+
+        /* mark new hint as focused */
+        var hint = this.hints[currentFocusNum - 1][0];
+        if (typeof(hint) != "undefined") {
+            hint.className = hint.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+            hint.style.background = "#8f0";
         }
     };
 
     this.focusNextHint = function()
     {
-        this.focusHint(++this.currentFocusNum);
+        this.focusHint(currentFocusNum + 1);
     };
 
     this.focusPreviousHint = function()
     {
-        this.focusHint(--this.currentFocusNum);
+        this.focusHint(currentFocusNum - 1);
     };
 
     this.updateHints = function(n)
@@ -142,15 +144,9 @@ function Hints() {
 
     this.clearHints = function()
     {
-        console.log('clearHints');
         for (e in this.hints) {
             var hint = this.hints[e];
             if (typeof(hint[3].className) != "undefined") {
-                /* reset class of hint span */
-                /*
-                hint[3].className = hint[3].className.replace("/hinting_mode_hint/", "");
-                */
-
                 hint[0].style.background = hint[4];
                 hint[0].style.color = hint[5];
             }
