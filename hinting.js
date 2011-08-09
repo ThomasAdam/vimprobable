@@ -22,7 +22,7 @@ function Hints() {
         var width = window.innerWidth;
         var scrollX = document.defaultView.scrollX;
         var scrollY = document.defaultView.scrollY;
-        this._genHintContainer();
+        _generateHintContainer();
 
         /* prefixing html: will result in namespace error */
         var hinttags;
@@ -76,7 +76,7 @@ function Hints() {
             hint.style.top =  toppos + "px";
             var text = document.createTextNode(this.hintCount + 1);
             hint.appendChild(text);
-            this.hintContainer.appendChild(hint);
+            hintContainer.appendChild(hint);
             /* remember site-defined colour of this element */
             this.colors[this.hintCount] = elem.style.color;
             this.backgrounds[this.hintCount] = elem.style.background;
@@ -151,7 +151,7 @@ function Hints() {
                 this.hintElements[e].style.background = this.backgrounds[e];
             }
         }
-        this.hintContainer.parentNode.removeChild(this.hintContainer);
+        hintContainer.parentNode.removeChild(hintContainer);
         window.onkeyup = null;
     };
 
@@ -217,17 +217,17 @@ function Hints() {
             first.focus();
     };
 
-    this._genHintContainer = function()
+    var _generateHintContainer = function()
     {
         var body = document.getElementsByTagName("body")[0];
         if (document.getElementById("hint_container"))
             return;
 
-        this.hintContainer = document.createElement("div");
-        this.hintContainer.id = "hint_container";
+        hintContainer = document.createElement("div");
+        hintContainer.id = "hint_container";
 
         if (body)
-            body.appendChild(this.hintContainer);
+            body.appendChild(hintContainer);
     };
 }
 hints = new Hints();
