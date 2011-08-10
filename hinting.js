@@ -178,7 +178,7 @@ function Hints() {
     this.fire = function(n)
     {
         if (!n) {
-            var n = this.currentFocusNum;
+            var n = currentFocusNum;
         }
         var hint = _getHintByNumber(n);
         if (typeof(hint[0]) == "undefined")
