@@ -465,9 +465,17 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             script(&a);
             update_state();
             return TRUE;
-        } else if (event->keyval == GDK_ISO_Left_Tab) {
+        }
+        if (event->keyval == GDK_ISO_Left_Tab) {
             a.i = Silent;
             a.s = g_strdup_printf("hints.focusPreviousHint();");
+            script(&a);
+            update_state();
+            return TRUE;
+        }
+        if (event->keyval == GDK_Return) {
+            a.i = Silent;
+            a.s = g_strdup_printf("hints.fire();");
             script(&a);
             update_state();
             return TRUE;
