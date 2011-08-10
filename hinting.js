@@ -53,7 +53,7 @@ function Hints() {
         /* due to the different XPath result type, we will need two counter variables */
         this.hintCount = 0;
         var i;
-        this.hints = [];
+        hints = [];
         for (i = 0; i < r.snapshotLength; i++)
         {
             var elem = r.snapshotItem(i);
@@ -78,7 +78,7 @@ function Hints() {
             hint.appendChild(text);
             hintContainer.appendChild(hint);
             this.hintCount++;
-            this.hints.push([elem, this.hintCount, text, hint, elem.style.background, elem.style.color]);
+            hints.push([elem, this.hintCount, text, hint, elem.style.background, elem.style.color]);
             /* make the link black to ensure it's readable */
             elem.style.color = "#000";
             elem.style.background = "#ff0";
@@ -95,58 +95,78 @@ function Hints() {
     this.focusHint = function(n)
     {
         /* reset previous focused hint */
-        var hint = this.hints[currentFocusNum - 1][0];
-        if (typeof(hint) != "undefined") {
-            hint.className = hint.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
-            hint.style.background = "#ff0";
+        var hint = _getHintByNumber(currentFocusNum);
+        if (hint !== null) {
+            hint[0].className = hint[0].className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
+            hint[0].style.background = "#ff0";
         }
 
         currentFocusNum = n;
-        /* allow cycling through hints */
-        if (currentFocusNum > this.hintCount) {
-            currentFocusNum = 1;
-        } else if (currentFocusNum < 1) {
-            currentFocusNum = this.hintCount;
-        }
 
         /* mark new hint as focused */
-        var hint = this.hints[currentFocusNum - 1][0];
-        if (typeof(hint) != "undefined") {
-            hint.className = hint.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-            hint.style.background = "#8f0";
+        var hint = _getHintByNumber(currentFocusNum);
+        if (hint !== null) {
+            hint[0].className = hint[0].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+            hint[0].style.background = "#8f0";
         }
     };
 
     this.focusNextHint = function()
     {
-        this.focusHint(currentFocusNum + 1);
+        var index = _getHintIdByNumber(currentFocusNum);
+
+        if (typeof(hints[index + 1]) != "undefined") {
+            this.focusHint(hints[index + 1][1]);
+        } else {
+            this.focusHint(hints[0][1]);
+        }
     };
 
     this.focusPreviousHint = function()
     {
-        this.focusHint(currentFocusNum - 1);
+        var index = _getHintIdByNumber(currentFocusNum);
+
+        if (typeof(hints[index - 1][1]) != "undefined") {
+            this.focusHint(hints[index - 1][1]);
+        } else {
+            this.focusHint(hints[hints.length - 1][1]);
+        }
     };
 
     this.updateHints = function(n)
     {
-        if (this.hintCount - 1 < n * 10 && typeof(this.hints[n - 1][0]) != "undefined") {
-            /* return signal to follow the link */
-            return "fire;" + n;
+        /* remove none matching hints */
+        var remove = [];
+        for (e in hints) {
+            var hint = hints[e];
+            if (0 != hint[1].toString().indexOf(n.toString())) {
+                remove.push(hint[1]);
+            }
         }
+
+        for (var i = 0; i < remove.length; ++i) {
+            _removeHint(remove[i]);
+        }
+
+        if (hints.length === 1) {
+            return "fire;" + hints[0][1];
+        }
+
         this.focusHint(n);
     };
 
     this.clearFocus = function()
     {
-        if (document.activeElement && document.activeElement.blur)
+        if (document.activeElement && document.activeElement.blur) {
             document.activeElement.blur();
+        }
     };
 
     this.clearHints = function()
     {
-        for (e in this.hints) {
-            var hint = this.hints[e];
-            if (typeof(hint[3].className) != "undefined") {
+        for (e in hints) {
+            var hint = hints[e];
+            if (typeof(hint[0]) != "undefined") {
                 hint[0].style.background = hint[4];
                 hint[0].style.color = hint[5];
             }
@@ -160,10 +180,11 @@ function Hints() {
         if (!n) {
             var n = this.currentFocusNum;
         }
-        if (typeof(this.hints[n - 1][0]) == "undefined")
+        var hint = _getHintByNumber(n);
+        if (typeof(hint[0]) == "undefined")
             return;
 
-        var el = this.hints[n - 1][0];
+        var el = hint[0];
         var tag = el.nodeName.toLowerCase();
         this.clearHints();
         if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
@@ -220,8 +241,9 @@ function Hints() {
     function _generateHintContainer()
     {
         var body = document.getElementsByTagName("body")[0];
-        if (document.getElementById("hint_container"))
+        if (document.getElementById("hint_container")) {
             return;
+        }
 
         hintContainer = document.createElement("div");
         hintContainer.id = "hint_container";
@@ -230,21 +252,58 @@ function Hints() {
             body.appendChild(hintContainer);
     }
 
-    function _getTextFromElement(elem)
+    function _getTextFromElement(el)
     {
-        var tagname = elem.tagName.toLowerCase();
+        var tagname = el.tagName.toLowerCase();
         if (tagname == "input" || tagname == "textarea") {
-            text = elem.value;
+            text = el.value;
         } else if (tagname == "select") {
-            if (elem.selectedIndex >= 0) {
-                text = elem.item(elem.selectedIndex).text;
+            if (el.selectedIndex >= 0) {
+                text = el.item(el.selectedIndex).text;
             } else{
                 text = "";
             }
         } else {
-            text = elem.textContent;
+            text = el.textContent;
         }
         return text.toLowerCase();;
+    }
+
+    function _getHintByNumber(n)
+    {
+        var index = _getHintIdByNumber(n);
+        if (index !== null) {
+            return hints[index];
+        }
+        return null;
+    }
+
+    function _getHintIdByNumber(n)
+    {
+        for (var i = 0; i < hints.length; ++i) {
+            var hint = hints[i];
+            if (hint[1] === n) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    function _removeHint(n)
+    {
+        var index = _getHintIdByNumber(n);
+        if (index === null) {
+            return;
+        }
+        var hint = hints[index];
+        if (hint[1] == n) {
+            hint[0].style.background = hint[4];
+            hint[0].style.color = hint[5];
+            hintContainer.removeChild(hint[3]);
+
+            /* remove hints from all hints */
+            hints.splice(index, 1);
+        }
     }
 }
 hints = new Hints();
