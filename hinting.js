@@ -7,8 +7,6 @@
 function Hints() {
     var hintContainer;
     var currentFocusNum = 1;
-
-    /* hints[] = [elem, number, text, span, backgroundColor, color] */
     var hints;
 
     this.createHints = function(inputText)
@@ -88,7 +86,14 @@ function Hints() {
 
                 hintContainer.appendChild(hint);
                 hintCount++;
-                hints.push([elem, hintCount, text, hint, elem.style.background, elem.style.color]);
+                hints.push({
+                    elem:       elem,
+                    number:     hintCount,
+                    text:       text,
+                    span:       hint,
+                    background: elem.style.background,
+                    foreground: elem.style.color}
+                );
 
                 /* make the link black to ensure it's readable */
                 elem.style.color = "#000";
@@ -127,8 +132,8 @@ function Hints() {
         /* reset previous focused hint */
         var hint = _getHintByNumber(currentFocusNum);
         if (hint !== null) {
-            hint[0].className = hint[0].className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
-            hint[0].style.background = "#ff0";
+            hint.elem.className = hint.elem.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
+            hint.elem.style.background = "#ff0";
         }
 
         currentFocusNum = n;
@@ -136,8 +141,8 @@ function Hints() {
         /* mark new hint as focused */
         var hint = _getHintByNumber(currentFocusNum);
         if (hint !== null) {
-            hint[0].className = hint[0].className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-            hint[0].style.background = "#8f0";
+            hint.elem.className = hint.elem.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
+            hint.elem.style.background = "#8f0";
         }
     };
 
@@ -146,9 +151,9 @@ function Hints() {
         var index = _getHintIdByNumber(currentFocusNum);
 
         if (typeof(hints[index + 1]) != "undefined") {
-            this.focusHint(hints[index + 1][1]);
+            this.focusHint(hints[index + 1].number);
         } else {
-            this.focusHint(hints[0][1]);
+            this.focusHint(hints[0].number);
         }
     };
 
@@ -156,10 +161,10 @@ function Hints() {
     {
         var index = _getHintIdByNumber(currentFocusNum);
 
-        if (typeof(hints[index - 1][1]) != "undefined") {
-            this.focusHint(hints[index - 1][1]);
+        if (typeof(hints[index - 1].number) != "undefined") {
+            this.focusHint(hints[index - 1].number);
         } else {
-            this.focusHint(hints[hints.length - 1][1]);
+            this.focusHint(hints[hints.length - 1].number);
         }
     };
 
@@ -169,8 +174,8 @@ function Hints() {
         var remove = [];
         for (e in hints) {
             var hint = hints[e];
-            if (0 != hint[1].toString().indexOf(n.toString())) {
-                remove.push(hint[1]);
+            if (0 != hint.number.toString().indexOf(n.toString())) {
+                remove.push(hint.number);
             }
         }
 
@@ -179,7 +184,7 @@ function Hints() {
         }
 
         if (hints.length === 1) {
-            return "fire;" + hints[0][1];
+            return "fire;" + hints[0].number;
         }
 
         this.focusHint(n);
@@ -196,10 +201,10 @@ function Hints() {
     {
         for (e in hints) {
             var hint = hints[e];
-            if (typeof(hint[0]) != "undefined") {
-                hint[0].style.background = hint[4];
-                hint[0].style.color = hint[5];
-                hint[3].parentNode.removeChild(hint[3]);
+            if (typeof(hint.elem) != "undefined") {
+                hint.elem.style.background = hint.background;
+                hint.elem.style.color = hint.foreground;
+                hint.span.parentNode.removeChild(hint.span);
             }
         }
         hintContainer.parentNode.removeChild(hintContainer);
@@ -213,10 +218,10 @@ function Hints() {
             var n = currentFocusNum;
         }
         var hint = _getHintByNumber(n);
-        if (typeof(hint[0]) == "undefined")
+        if (typeof(hint.elem) == "undefined")
             return;
 
-        var el = hint[0];
+        var el = hint.elem;
         var tag = el.nodeName.toLowerCase();
         this.clearHints();
 
@@ -301,7 +306,7 @@ function Hints() {
     {
         for (var i = 0; i < hints.length; ++i) {
             var hint = hints[i];
-            if (hint[1] === n) {
+            if (hint.number === n) {
                 return i;
             }
         }
@@ -315,10 +320,10 @@ function Hints() {
             return;
         }
         var hint = hints[index];
-        if (hint[1] == n) {
-            hint[0].style.background = hint[4];
-            hint[0].style.color = hint[5];
-            hint[3].parentNode.removeChild(hint[3]);
+        if (hint.number === n) {
+            hint.elem.style.background = hint.background;
+            hint.elem.style.color = hint.foreground;
+            hint.span.parentNode.removeChild(hint.span);
 
             /* remove hints from all hints */
             hints.splice(index, 1);
