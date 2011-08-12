@@ -5,6 +5,8 @@
     see LICENSE file
 */
 function Hints() {
+    const maxAllowedHints = 500;
+
     var hintContainer;
     var currentFocusNum = 1;
     var hints;
@@ -61,6 +63,9 @@ function Hints() {
             var rect, elem, text, node, show_text;
             for (var i = 0; i < res.snapshotLength; i++)
             {
+                if (hintCount >= maxAllowedHints)
+                    break;
+
                 elem = res.snapshotItem(i);
                 rect = elem.getBoundingClientRect();
                 if (!rect || rect.left > maxX || rect.right < minX || rect.top > maxY || rect.bottom < minY)
