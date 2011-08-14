@@ -22,6 +22,9 @@ function Hints() {
         hints = [];
 
         function helper (win, offsetX, offsetY) {
+            if (topwin.location !== win.location) {
+                return;
+            }
             var doc = win.document;
 
             var win_height = win.height;
