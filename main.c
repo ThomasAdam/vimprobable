@@ -138,6 +138,7 @@ static char *winid = NULL;
 static char rememberedURI[1024] = "";
 static char followTarget[8] = "";
 char *error_msg = NULL;
+char *config_base = NULL;
 
 GList *activeDownloads;
 
@@ -2315,7 +2316,7 @@ main(int argc, char *argv[]) {
     static GOptionEntry opts[] = {
             { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
             { "embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "embedded", NULL },
-	    { "configfile", 'c', 0, G_OPTION_ARG_STRING, &cfile, "config file", NULL },
+            { "configfile", 'c', 0, G_OPTION_ARG_STRING, &cfile, "config file", NULL },
             { NULL }
     };
     static GError *err;
@@ -2333,10 +2334,15 @@ main(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
 
-    if (cfile)
-	    configfile = g_strdup_printf(cfile);
+    if( getenv("XDG_CONFIG_HOME") )
+        config_base = g_strdup_printf("%s", getenv("XDG_CONFIG_HOME"));
     else
-	    configfile = g_strdup_printf(RCFILE);
+        config_base = g_strdup_printf("%s/.config/", getenv("HOME"));
+
+    if (cfile)
+        configfile = g_strdup_printf(cfile);
+    else
+        configfile = g_strdup_printf(RCFILE);
 
     if (!g_thread_supported())
         g_thread_init(NULL);

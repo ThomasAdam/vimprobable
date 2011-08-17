@@ -19,6 +19,7 @@ extern KeyList *keylistroot;
 extern Key keys[];
 extern char *error_msg;
 extern gboolean complete_case_sensitive;
+extern char *config_base;
 static GList *dynamic_searchengines = NULL;
 
 gboolean read_rcfile(const char *config)

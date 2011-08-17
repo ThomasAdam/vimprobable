@@ -8,7 +8,7 @@
 */
 
 /* config file */
-#define             RCFILE                      "%s/.config/vimprobable/vimprobablerc", getenv("HOME")
+#define             RCFILE                      "%s/vimprobable/vimprobablerc", config_base
 
 /* max entries in command history */
 #define COMMANDHISTSIZE 50
