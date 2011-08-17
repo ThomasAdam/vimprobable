@@ -10,9 +10,13 @@ function Hints() {
     var hintContainer;
     var currentFocusNum = 1;
     var hints;
+    var mode;
 
-    this.createHints = function(inputText)
+    this.createHints = function(inputText, hintMode)
     {
+        if (hintMode) {
+            mode = hintMode;
+        }
         var topwin = window;
         var top_height = topwin.innerHeight;
         var top_width = topwin.innerWidth;
@@ -151,6 +155,7 @@ function Hints() {
         }
     };
 
+    /* set focus to next avaiable hint */
     this.focusNextHint = function()
     {
         var index = _getHintIdByNumber(currentFocusNum);
@@ -162,6 +167,7 @@ function Hints() {
         }
     };
 
+    /* set focus to previous avaiable hint */
     this.focusPreviousHint = function()
     {
         var index = _getHintIdByNumber(currentFocusNum);
@@ -173,6 +179,7 @@ function Hints() {
         }
     };
 
+    /* filters hints matching given number */
     this.updateHints = function(n)
     {
         /* remove none matching hints */
@@ -189,10 +196,10 @@ function Hints() {
         }
 
         if (hints.length === 1) {
-            return "fire;" + hints[0].number;
+            this.fire(hints[0].number);
+        } else {
+            this.focusHint(n);
         }
-
-        this.focusHint(n);
     };
 
     this.clearFocus = function()
@@ -202,6 +209,7 @@ function Hints() {
         }
     };
 
+    /* remove all hints and set previous style to them */
     this.clearHints = function()
     {
         for (e in hints) {
@@ -216,9 +224,10 @@ function Hints() {
         window.onkeyup = null;
     };
 
+    /* fires the modeevent on hint with given number */
     this.fire = function(n)
     {
-        var doc;
+        var doc, result;
         if (!n) {
             var n = currentFocusNum;
         }
@@ -232,16 +241,18 @@ function Hints() {
 
         if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
             el.focus();
-            return;
+            return "0";
         }
-        if (!el.onclick && el.href && !el.href.match("/^javascript:/")) {
-            /* send signal to open link */
-            return "open;" + el.href;
+
+        switch (mode)
+        {
+            case "f": result = _open(el); break;
+            case "F": result = _openNewWindow(el); break;
+            default:  result = _getElemtSource(el);
         }
-        doc = el.ownerDocument;
-        var evObj = doc.createEvent("MouseEvents");
-        evObj.initMouseEvent("click", true, true, el.contentWindow, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
-        el.dispatchEvent(evObj);
+        this.clearHints();
+
+        return result;
     };
 
     this.focusInput = function()
@@ -282,6 +293,7 @@ function Hints() {
             first.focus();
     };
 
+    /* retrieves text content fro given element */
     function _getTextFromElement(el)
     {
         if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
@@ -298,6 +310,7 @@ function Hints() {
         return text.toLowerCase();;
     }
 
+    /* retrieves the hint for given hint number */
     function _getHintByNumber(n)
     {
         var index = _getHintIdByNumber(n);
@@ -307,6 +320,7 @@ function Hints() {
         return null;
     }
 
+    /* retrieves the id of hint with given number */
     function _getHintIdByNumber(n)
     {
         for (var i = 0; i < hints.length; ++i) {
@@ -318,6 +332,7 @@ function Hints() {
         return null;
     }
 
+    /* removes hint with given number from hints array */
     function _removeHint(n)
     {
         var index = _getHintIdByNumber(n);
@@ -333,6 +348,48 @@ function Hints() {
             /* remove hints from all hints */
             hints.splice(index, 1);
         }
+    }
+
+    /* opens given element */
+    function _open(elem)
+    {
+        _clickElement(elem);
+        return "0";
+    }
+
+    /* opens given element into new window */
+    function _openNewWindow(elem)
+    {
+        var oldTarget = elem.target;
+
+        /* set target to open in new window */
+        elem.target = "_blank";
+        _clickElement(elem);
+        elem.target = oldTarget;
+
+        return "0";
+    }
+
+    /* fire moudedown and click event on given element */
+    function _clickElement(elem)
+    {
+        doc = elem.ownerDocument;
+        view = elem.contentWindow;
+
+        var evObj = doc.createEvent("MouseEvents");
+        evObj.initMouseEvent("mousedown", true, true, view, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
+        elem.dispatchEvent(evObj);
+
+        var evObj = doc.createEvent("MouseEvents");
+        evObj.initMouseEvent("click", true, true, view, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, null);
+        elem.dispatchEvent(evObj);
+    }
+
+    /* retrieves the url of given element */
+    function _getElemtSource(elem)
+    {
+        var url = elem.href || elem.src;
+        return url;
     }
 }
 hints = new Hints();

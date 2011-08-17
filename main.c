@@ -625,7 +625,11 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         script(&a);
 
         a.i = Silent;
-        a.s = g_strconcat("hints.createHints('", text + 1, "');", NULL);
+        if (text[0] == '.') {
+            a.s = g_strconcat("hints.createHints('", text + 1, "', 'f');", NULL);
+        } else {
+            a.s = g_strconcat("hints.createHints('", text + 1, "', 'F');", NULL);
+        }
         script(&a);
 
         return TRUE;
@@ -948,10 +952,12 @@ input(const Arg *arg) {
 
     if (arg->s[0] == '.' || arg->s[0] == ',') {
         mode = ModeHints;
-        memset(followTarget, 0, 8);
-        strncpy(followTarget, arg->s[0] == '.' ? "current" : "new", 8);
         a.i = Silent;
-        a.s = g_strdup("hints.createHints();");
+        if (arg->s[0] == '.') {
+            a.s = g_strdup("hints.createHints('', 'f');");
+        } else {
+            a.s = g_strdup("hints.createHints('', 'F');");
+        }
         script(&a);
     }
 
@@ -1336,24 +1342,6 @@ script(const Arg *arg) {
         a.s = g_strdup(value);
         echo(&a);
         g_free(a.s);
-    }
-    if (value) {
-        if (strncmp(value, "fire;", 5) == 0) {
-            count = 0;
-            a.s = g_strconcat("hints.fire(", (value + 5), ");", NULL);
-            a.i = Silent;
-            script(&a);
-        } else if (strncmp(value, "open;", 5) == 0) {
-            count = 0;
-            a.i = ModeNormal;
-            set(&a);
-            if (strncmp(followTarget, "new", 3) == 0)
-                a.i = TargetNew;
-            else
-                a.i = TargetCurrent;
-            a.s = (value + 5);
-            open_arg(&a);
-        }
     }
     if (arg->s)
         g_free(arg->s);
