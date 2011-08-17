@@ -49,25 +49,25 @@ static const char progressborderright   = ']';
 
 /* cookies */
 #define             ENABLE_COOKIE_SUPPORT
-#define             COOKIES_STORAGE_FILENAME    "%s/.config/vimprobable/cookies", getenv("HOME")
+#define             COOKIES_STORAGE_FILENAME    "%s/vimprobable/cookies", config_base
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
 
 /* bookmarks */
-#define             BOOKMARKS_STORAGE_FILENAME  "%s/.config/vimprobable/bookmarks", getenv("HOME")
+#define             BOOKMARKS_STORAGE_FILENAME  "%s/vimprobable/bookmarks", config_base
 
 /* history */
 #define             HISTORY_MAX_ENTRIES         1000
-#define             HISTORY_STORAGE_FILENAME    "%s/.config/vimprobable/history", getenv("HOME")
-#define             CLOSED_URL_FILENAME         "%s/.config/vimprobable/closed", getenv("HOME")
+#define             HISTORY_STORAGE_FILENAME    "%s/vimprobable/history", config_base
+#define             CLOSED_URL_FILENAME         "%s/vimprobable/closed", config_base
 
 /* quickmarks */
-#define             QUICKMARK_FILE              getenv("HOME"), "/.config/vimprobable/quickmarks"
+#define             QUICKMARK_FILE              "%s/vimprobable/quickmarks", config_base
 
 /* downloads directory */
 #define             DOWNLOADS_PATH              "%s", getenv("HOME")
 
 /* user styles */
-#define             USER_STYLES_FILENAME        "%s/.config/vimprobable/style.css", getenv("HOME")
+#define             USER_STYLES_FILENAME        "%s/vimprobable/style.css", config_base
 
 /* font size */
 #define             DEFAULT_FONT_SIZE           12

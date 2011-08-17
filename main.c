@@ -136,6 +136,7 @@ static char *winid = NULL;
 static char rememberedURI[1024] = "";
 static char followTarget[8] = "";
 char *error_msg = NULL;
+char *config_base = NULL;
 
 GList *activeDownloads;
 
@@ -2181,6 +2182,11 @@ main(int argc, char *argv[]) {
         printf("%s\n", INTERNAL_VERSION);
         return EXIT_SUCCESS;
     }
+
+    if (getenv("XDG_CONFIG_HOME"))
+        config_base = g_strdup_printf("%s", getenv("XDG_CONFIG_HOME"));
+    else
+        config_base = g_strdup_printf("%s/.config/", getenv("HOME"));
 
     if (!g_thread_supported())
         g_thread_init(NULL);
