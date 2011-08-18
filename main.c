@@ -625,10 +625,14 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         script(&a);
 
         a.i = Silent;
-        if (text[0] == '.') {
-            a.s = g_strconcat("hints.createHints('", text + 1, "', 'f');", NULL);
-        } else {
-            a.s = g_strconcat("hints.createHints('", text + 1, "', 'F');", NULL);
+        switch (text[0]) {
+            case '.':
+                a.s = g_strconcat("hints.createHints('", text + 1, "', 'f');", NULL);
+                break;
+
+            case ',':
+                a.s = g_strconcat("hints.createHints('", text + 1, "', 'F');", NULL);
+                break;
         }
         script(&a);
 
@@ -952,11 +956,17 @@ input(const Arg *arg) {
 
     if (arg->s[0] == '.' || arg->s[0] == ',') {
         mode = ModeHints;
+        memset(followTarget, 0, 8);
+        strncpy(followTarget, "current", 8);
         a.i = Silent;
-        if (arg->s[0] == '.') {
-            a.s = g_strdup("hints.createHints('', 'f');");
-        } else {
-            a.s = g_strdup("hints.createHints('', 'F');");
+        switch (arg->s[0]) {
+            case '.':
+                a.s = g_strdup("hints.createHints('', 'f');");
+                break;
+
+            case ',':
+                a.s = g_strdup("hints.createHints('', 'F');");
+                break;
         }
         script(&a);
     }
