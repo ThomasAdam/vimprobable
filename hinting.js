@@ -233,7 +233,7 @@ function Hints() {
         }
         var hint = _getHintByNumber(n);
         if (typeof(hint.elem) == "undefined")
-            return;
+            return "done;";
 
         var el = hint.elem;
         var tag = el.nodeName.toLowerCase();
@@ -241,7 +241,7 @@ function Hints() {
 
         if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
             el.focus();
-            return "0";
+            return "done;";
         }
 
         switch (mode)
@@ -354,7 +354,7 @@ function Hints() {
     function _open(elem)
     {
         _clickElement(elem);
-        return "0";
+        return "done;";
     }
 
     /* opens given element into new window */
@@ -367,7 +367,7 @@ function Hints() {
         _clickElement(elem);
         elem.target = oldTarget;
 
-        return "0";
+        return "done;";
     }
 
     /* fire moudedown and click event on given element */
