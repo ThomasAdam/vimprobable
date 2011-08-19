@@ -172,8 +172,7 @@ function Hints() {
     this.focusPreviousHint = function()
     {
         var index = _getHintIdByNumber(currentFocusNum);
-
-        if (typeof(hints[index - 1].number) != "undefined") {
+        if (index != 0 && typeof(hints[index - 1].number) != "undefined") {
             this.focusHint(hints[index - 1].number);
         } else {
             this.focusHint(hints[hints.length - 1].number);
@@ -246,7 +245,6 @@ function Hints() {
 
         var el = hint.elem;
         var tag = el.nodeName.toLowerCase();
-        this.clearHints();
 
         if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
             el.focus();
