@@ -246,6 +246,8 @@ function Hints() {
         var el = hint.elem;
         var tag = el.nodeName.toLowerCase();
 
+        this.clearHints();
+
         if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
             el.focus();
             return "done;";
@@ -257,7 +259,6 @@ function Hints() {
             case "F": result = _openNewWindow(el); break;
             default:  result = _getElemtSource(el);
         }
-        this.clearHints();
 
         return result;
     };
