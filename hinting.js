@@ -9,7 +9,7 @@ function Hints() {
 
     var hintContainer;
     var currentFocusNum = 1;
-    var hints;
+    var hints = [];
     var mode;
 
     this.createHints = function(inputText, hintMode)
@@ -17,13 +17,14 @@ function Hints() {
         if (hintMode) {
             mode = hintMode;
         }
+
         var topwin = window;
         var top_height = topwin.innerHeight;
         var top_width = topwin.innerWidth;
         var xpath_expr;
 
         var hintCount = 0;
-        hints = [];
+        this.clearHints();
 
         function helper (win, offsetX, offsetY) {
             var doc = win.document;
@@ -182,6 +183,10 @@ function Hints() {
     /* filters hints matching given number */
     this.updateHints = function(n)
     {
+        if (n == 0) {
+            this.createHints();
+            return;
+        }
         /* remove none matching hints */
         var remove = [];
         for (e in hints) {
@@ -212,6 +217,9 @@ function Hints() {
     /* remove all hints and set previous style to them */
     this.clearHints = function()
     {
+        if (hints.length == 0) {
+            return;
+        }
         for (e in hints) {
             var hint = hints[e];
             if (typeof(hint.elem) != "undefined") {
@@ -220,6 +228,7 @@ function Hints() {
                 hint.span.parentNode.removeChild(hint.span);
             }
         }
+        hints = [];
         hintContainer.parentNode.removeChild(hintContainer);
         window.onkeyup = null;
     };
