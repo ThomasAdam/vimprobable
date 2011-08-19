@@ -1594,7 +1594,7 @@ static gboolean
 focus_input(const Arg *arg) {
     static Arg a;
 
-    a.s = g_strconcat("hints.focusInput();", NULL);
+    a.s = g_strdup("hints.focusInput();");
     a.i = Silent;
     script(&a);
     update_state();
