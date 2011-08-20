@@ -183,8 +183,7 @@ function Hints() {
     this.updateHints = function(n)
     {
         if (n == 0) {
-            this.createHints();
-            return;
+            return this.createHints();
         }
         /* remove none matching hints */
         var remove = [];
@@ -200,9 +199,9 @@ function Hints() {
         }
 
         if (hints.length === 1) {
-            this.fire(hints[0].number);
+            return this.fire(hints[0].number);
         } else {
-            this.focusHint(n);
+            return this.focusHint(n);
         }
     };
 
@@ -250,6 +249,9 @@ function Hints() {
 
         if (tag == "iframe" || tag == "frame" || tag == "textarea" || tag == "input" && (el.type == "text" || el.type == "password" || el.type == "checkbox" || el.type == "radio") || tag == "select") {
             el.focus();
+            if (tag == "input" || tag == "textarea") {
+                return "insert;"
+            }
             return "done;";
         }
 
@@ -289,6 +291,10 @@ function Hints() {
             }
             if (j == 1 && elem.style.display != "none" && elem.style.visibility != "hidden") {
                 elem.focus();
+                var tag = elem.nodeName.toLowerCase();
+                if (tag == "textarea" || tag == "input") {
+                    return "insert;";
+                }
                 break;
             }
             if (elem == document.activeElement) {
@@ -297,8 +303,13 @@ function Hints() {
             k++;
         }
         /* no appropriate field found focused - focus the first one */
-        if (j == 0 && first !== null)
+        if (j == 0 && first !== null) {
             first.focus();
+            var tag = elem.nodeName.toLowerCase();
+            if (tag == "textarea" || tag == "input") {
+                return "insert;";
+            }
+        }
     };
 
     /* retrieves text content fro given element */

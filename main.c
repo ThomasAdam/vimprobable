@@ -587,14 +587,13 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         switch (text[0]) {
             case '.':
                 a.s = g_strconcat("hints.createHints('", text + 1, "', 'f');", NULL);
-                count = 0;
                 break;
 
             case ',':
                 a.s = g_strconcat("hints.createHints('", text + 1, "', 'F');", NULL);
-                count = 0;
                 break;
         }
+        count = 0;
         script(&a);
 
         return TRUE;
@@ -931,14 +930,13 @@ input(const Arg *arg) {
         switch (arg->s[0]) {
             case '.':
                 a.s = g_strdup("hints.createHints('', 'f');");
-                count = 0;
                 break;
 
             case ',':
                 a.s = g_strdup("hints.createHints('', 'F');");
-                count = 0;
                 break;
         }
+        count = 0;
         script(&a);
     }
 
@@ -1280,6 +1278,16 @@ script(const Arg *arg) {
         a.i = arg->i;
         a.s = g_strdup(value);
         echo(&a);
+    }
+    /* switch mode according to scripts return value */
+    if (value) {
+        if (strncmp(value, "done;", 5) == 0) {
+            a.i = ModeNormal;
+            set(&a);
+        } else if (strncmp(value, "insert;", 7) == 0) {
+            a.i = ModeInsert;
+            set(&a);
+        }
     }
     if (arg->s)
         g_free(arg->s);
