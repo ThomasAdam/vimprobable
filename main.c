@@ -621,10 +621,6 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
     } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
             (text[0] == '.' || text[0] == ',')) {
         a.i = Silent;
-        a.s = g_strdup("hints.clearHints();");
-        script(&a);
-
-        a.i = Silent;
         switch (text[0]) {
             case '.':
                 a.s = g_strconcat("hints.createHints('", text + 1, "', 'f');", NULL);
