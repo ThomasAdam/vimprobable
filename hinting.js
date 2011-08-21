@@ -114,8 +114,8 @@ function Hints() {
 
             /* recurse into any iframe or frame element */
             var frameTags = ["frame","iframe"];
-            for (var i in frameTags) {
-                var frames = doc.getElementsByTagName(frameTags[i]);
+            for (var f = 0; f < frameTags.length; ++f) {
+                var frames = doc.getElementsByTagName(frameTags[f]);
                 for (var i = 0, nframes = frames.length; i < nframes; ++i) {
                     elem = frames[i];
                     rect = elem.getBoundingClientRect();
@@ -187,8 +187,8 @@ function Hints() {
         }
         /* remove none matching hints */
         var remove = [];
-        for (e in hints) {
-            var hint = hints[e];
+        for (var i = 0; i < hints.length; ++i) {
+            var hint = hints[i];
             if (0 != hint.number.toString().indexOf(n.toString())) {
                 remove.push(hint.number);
             }
@@ -218,8 +218,8 @@ function Hints() {
         if (hints.length == 0) {
             return;
         }
-        for (e in hints) {
-            var hint = hints[e];
+        for (var i = 0; i < hints.length; ++i) {
+            var hint = hints[i];
             if (typeof(hint.elem) != "undefined") {
                 hint.elem.style.background = hint.background;
                 hint.elem.style.color = hint.foreground;
