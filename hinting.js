@@ -372,6 +372,9 @@ function Hints() {
     /* opens given element */
     function _open(elem)
     {
+        if (elem.target == "_blank") {
+            elem.removeAttribute("target");
+        }
         _clickElement(elem);
         return "done;";
     }
