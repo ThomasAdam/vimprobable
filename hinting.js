@@ -89,9 +89,6 @@ function Hints() {
                 var leftpos = Math.max((rect.left + scrollX), scrollX);
                 var toppos = Math.max((rect.top + scrollY), scrollY);
 
-                /* process elements text */
-                text = _getTextFromElement(elem);
-
                 /* making this block DOM compliant */
                 var hint = hintSpan.cloneNode(false);
                 hint.setAttribute("id", "vimprobablehint" + hintCount);
@@ -105,7 +102,6 @@ function Hints() {
                 hints.push({
                     elem:       elem,
                     number:     hintCount,
-                    text:       text,
                     span:       hint,
                     background: elem.style.background,
                     foreground: elem.style.color}
