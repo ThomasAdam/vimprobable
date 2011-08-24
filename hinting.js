@@ -5,7 +5,17 @@
     see LICENSE file
 */
 function Hints() {
-    const maxAllowedHints = 500;
+    var config = {
+        maxAllowedHints: 500,
+        hintCss: "z-index:10000000;font-family:monospace;font-size:10px;"
+               + "font-weight:bold;color:white;background-color:red;"
+               + "padding:0px 1px;position:absolute;",
+        hintClass: "hinting_mode_hint",
+        hintClassFocus: "hinting_mode_hint_focus",
+        elemBackground: "#ff0",
+        elemBackgroundFocus: "#8f0",
+        elemColor: "#000"
+    };
 
     var hintContainer;
     var currentFocusNum = 1;
@@ -57,18 +67,14 @@ function Hints() {
 
             /* generate basic hint element which will be cloned and updated later */
             var hintSpan = doc.createElement("span");
-            hintSpan.setAttribute("class", "hinting_mode_hint");
-            hintSpan.style.position = "absolute";
-            hintSpan.style.background = "red";
-            hintSpan.style.color = "#fff";
-            hintSpan.style.font = "bold 10px monospace";
-            hintSpan.style.zIndex = "10000000";
+            hintSpan.setAttribute("class", config.hintClass);
+            hintSpan.style.cssText = config.hintCss;
 
             /* due to the different XPath result type, we will need two counter variables */
             var rect, elem, text, node, show_text;
             for (var i = 0; i < res.snapshotLength; i++)
             {
-                if (hintCount >= maxAllowedHints)
+                if (hintCount >= config.maxAllowedHints)
                     break;
 
                 elem = res.snapshotItem(i);
@@ -106,8 +112,8 @@ function Hints() {
                 );
 
                 /* make the link black to ensure it's readable */
-                elem.style.color = "#000";
-                elem.style.background = "#ff0";
+                elem.style.color = config.elemColor;
+                elem.style.background = config.elemBackground;
             }
 
             doc.documentElement.appendChild(hintContainer);
@@ -142,8 +148,8 @@ function Hints() {
         /* reset previous focused hint */
         var hint = _getHintByNumber(currentFocusNum);
         if (hint !== null) {
-            hint.elem.className = hint.elem.className.replace("hinting_mode_hint_focus", "hinting_mode_hint");
-            hint.elem.style.background = "#ff0";
+            hint.elem.className = hint.elem.className.replace(config.hintClassFocus, config.hintClass);
+            hint.elem.style.background = config.elemBackground;
         }
 
         currentFocusNum = n;
@@ -151,8 +157,8 @@ function Hints() {
         /* mark new hint as focused */
         var hint = _getHintByNumber(currentFocusNum);
         if (hint !== null) {
-            hint.elem.className = hint.elem.className.replace("hinting_mode_hint", "hinting_mode_hint_focus");
-            hint.elem.style.background = "#8f0";
+            hint.elem.className = hint.elem.className.replace(config.hintClass, config.hintClassFocus);
+            hint.elem.style.background = config.elemBackgroundFocus;
         }
     };
 
