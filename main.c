@@ -951,6 +951,14 @@ input(const Arg *arg) {
      */
     set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
 
+    /* to avoid things like :open URL :open URL2  or :open :open URL */
+    gtk_entry_set_text(GTK_ENTRY(inputbox), "");
+    gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
+    if (arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(webview)))
+        gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
+    gtk_widget_grab_focus(inputbox);
+    gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
+
     if (arg->s[0] == '.' || arg->s[0] == ',') {
         mode = ModeHints;
         memset(followTarget, 0, 8);
@@ -968,14 +976,6 @@ input(const Arg *arg) {
         count = 0;
         script(&a);
     }
-
-    /* to avoid things like :open URL :open URL2  or :open :open URL */
-    gtk_entry_set_text(GTK_ENTRY(inputbox), "");
-    gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
-    if (arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(webview)))
-        gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
-    gtk_widget_grab_focus(inputbox);
-    gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
 
     return TRUE;
 }
