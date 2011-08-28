@@ -1082,7 +1082,7 @@ yank(const Arg *arg) {
             content = gtk_clipboard_wait_for_text(clipboards[1]);
         if (content) {
             feedback = g_strconcat("Yanked ", content, NULL);
-            g_free(content);
+            g_free((gpointer *)content);
             give_feedback(feedback);
         }
     }
