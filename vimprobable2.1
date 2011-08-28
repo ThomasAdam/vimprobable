@@ -3,7 +3,7 @@
 .\"
 .TH VIMPROBABLE2 1 "JANUARY 2010" "Linux User Manuals"
 .SH NAME
-Vimprobable \- A WWW browser based on webkit with keybindings inspired by vim, the great editor.
+Vimprobable \- A WWW browser based on webkit with keybindings inspired by Vim, the great editor.
 
 .SH SYNOPSIS
 .B vimprobable2
@@ -31,12 +31,12 @@ Prints the version of Vimprobable.
 .SH DESCRIPTION
 Vimprobable is a WWW browser that is build around the webkit library. Vimprobable is fast. 
 Vimprobable comes without buttons and other graphic widgets. It is aimed at being controlled 
-as mouseless as possible. It uses keybindings that are inspired by vim, the great editor.
+as mouselessly as possible. It uses keybindings that are inspired by Vim, the great editor.
 .PP
-Just like vim, moving through the webpage can be done by entering commands by the keyboard.
+Just like Vim, moving through a webpage can be done by entering commands by the keyboard.
 Most of these commands require just one or two keystrokes.
 .PP
-Vimprobable mimics the ex-commandmode of vim. By entering a colon (:) commands like open,
+Vimprobable mimics the ex-commandmode of Vim. By entering a colon (:) commands like open,
 set and map can be entered.
 
 .SH QUICK START
@@ -59,8 +59,12 @@ Scroll up
 Close current window
 
 .SH KEYBOARD BINDINGS
-The default keyboard bindings are explained in this sections. These keybindings
-can be changed.
+The default keyboard bindings are explained in this section. These keybindings
+can be changed - either at runtime by altering
+.I vimprobablerc
+or editing
+.I keymap.h
+in the source directory (in which case you will need to recompile to see changes take effect).
 
 .IP "Move through current page"
 Vimprobable recognizes the following motion commands:
@@ -93,7 +97,7 @@ Zoom full content in
 .I "    " zo
 Zoom text out
 
-.I "    " zo
+.I "    " zO
 Zoom full content out
 
 .I "    " zz
@@ -135,7 +139,7 @@ Insert URL from keyboard and load it
 Insert URL from keyboard and load it into new window
 
 .I "    " u
-Open a new window with the URL which has been closed last
+Open a new window with the URL which was closed last
 
 
 .IP Search
@@ -194,7 +198,7 @@ Open all bookmarks containing a certain tag in new windows.
 
 .IP ":fo[rward] and :ba[ck]"
 
-The commands :fo, :forward, :ba and :backward moves through the browse-history
+The commands :fo, :forward, :ba and :backward move through the browse-history
 
 .IP ":re[load], :re! and :reload!"
 
@@ -212,13 +216,15 @@ Toggles between normal view and sourcecode view.
 
 .IP ":set"
 
-Change default settings on the fly. See man vimprobablerc for the list of
-settings to be changed.
+Change default settings on the fly. See 
+.I man vimprobablerc 
+for the list of settings to be changed.
 
 .IP ":map"
 
-Change default keybindings on the fly. See man vimprobablerc for the list of
-mappings to be changed.
+Change default keybindings on the fly. See 
+.I man vimprobablerc 
+for the list of mappings to be changed.
 
 .IP ":quit"
 
@@ -309,7 +315,7 @@ on how to set this default.
 
 .SH FILES
 
-Please make sure you create these files before running the browser. 
+Please make sure you create these files before first running the browser. 
 Everything but the history, bookmarks and closed files is optional. The cookies
 file is required if you want to use cookies.
 
@@ -336,6 +342,8 @@ There has not been any significant bug-hunting yet.
 Hannes Schueller and Matto Fransen
 .SH "SEE ALSO"
 .BR vimprobablerc (1),
+
+
 
 
 
