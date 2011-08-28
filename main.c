@@ -49,7 +49,7 @@ static gboolean webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebF
 static void webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data);
 static void webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data);
 static void window_destroyed_cb(GtkWidget *window, gpointer func_data);
-static gboolean blank_cb();
+static gboolean blank_cb(void);
 
 /* functions */
 static gboolean bookmark(const Arg *arg);
@@ -300,7 +300,7 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
 }
 
 gboolean
-blank_cb() {
+blank_cb(void) {
     return TRUE;
 }
 
@@ -1134,7 +1134,7 @@ yank(const Arg *arg) {
             content = gtk_clipboard_wait_for_text(clipboards[1]);
         if (content) {
             feedback = g_strconcat("Yanked ", content, NULL);
-            g_free(content);
+            g_free((gpointer *)content);
             give_feedback(feedback);
         }
     }
