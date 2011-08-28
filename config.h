@@ -9,7 +9,7 @@
 */
 
 /* Vimprobable version number */
-#define VERSION "0.9.9.1"
+#define VERSION "0.9.10.0"
 #define INTERNAL_VERSION "Vimprobable2/"VERSION
 
 /* general settings */
