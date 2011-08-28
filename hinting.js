@@ -2,6 +2,7 @@
     (c) 2009 by Leon Winter
     (c) 2009-2010 by Hannes Schueller
     (c) 2010 by Hans-Peter Deifel
+    (c) 2011 Daniel Carl
     see LICENSE file
 */
 function Hints() {
