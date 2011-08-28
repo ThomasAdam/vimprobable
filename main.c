@@ -6,6 +6,7 @@
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
     (c) 2011 by Albert Kim
+    (c) 2011 by Daniel Carl
     see LICENSE file
 */
 
