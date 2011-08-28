@@ -73,7 +73,7 @@ static const char progressborderright   = ']';
 #define             DEFAULT_FONT_SIZE           12
 
 /* Vimprobable version number */
-#define             VERSION                     "0.9.21.0"
+#define             VERSION                     "0.9.22.0"
 #define             INTERNAL_VERSION            "Vimprobable/" VERSION
 
 /* user agent */
