@@ -1021,7 +1021,6 @@ open_arg(const Arg *arg) {
         *(p + 1) = '\0';
         len = strlen(s);
         new = NULL, p = strchr(s, ' ');
-        printf("s: '%s'\n", s);
         if (p)                                                           /* check for search engines */
             for(i = 0; i < LENGTH(searchengines); i++)
                 if (!strncmp(s, searchengines[i].handle, p - s)) {
