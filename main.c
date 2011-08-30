@@ -737,7 +737,7 @@ complete(const Arg *arg) {
     } else if (arg->i == HideCompletion)
         return TRUE;
     if (!widgets) {
-        prefix = g_strdup_printf(str);
+        prefix = g_strdup(str);
         widgets = malloc(sizeof(GtkWidget*) * listlen);
         suggestions = malloc(sizeof(char*) * listlen);
         top_border = gtk_event_box_new();
@@ -1007,7 +1007,7 @@ number(const Arg *arg) {
 
     if (!source)
         return TRUE;
-    uri = g_strdup_printf(source); /* copy string */
+    uri = g_strdup(source); /* copy string */
     p =& uri[0];
     while(*p != '\0') /* goto the end of the string */
         ++p;
@@ -1216,7 +1216,7 @@ search(const Arg *arg) {
 
     if (arg->s) {
         free(search_handle);
-        search_handle = g_strdup_printf(arg->s);
+        search_handle = g_strdup(arg->s);
     }
     if (!search_handle)
         return TRUE;
@@ -2361,7 +2361,7 @@ main(int argc, char *argv[]) {
         config_base = g_strdup_printf("%s/.config/", getenv("HOME"));
 
     if (cfile)
-        configfile = g_strdup_printf(cfile);
+        configfile = g_strdup(cfile);
     else
         configfile = g_strdup_printf(RCFILE);
 
