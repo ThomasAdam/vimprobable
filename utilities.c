@@ -560,6 +560,8 @@ complete_list(const char *searchfor, const int mode, Listelement *elementlist)
                 memset(readelement, 0, MAXTAGSIZE + 1);
                 if (strchr(candidatepointer->element, ' ') != NULL) {
                     i = strcspn(candidatepointer->element, " ");
+                    if (i > MAXTAGSIZE)
+                        i = MAXTAGSIZE;
                     strncpy(readelement, candidatepointer->element, i);
                 } else {
                     strncpy(readelement, candidatepointer->element, MAXTAGSIZE);
