@@ -205,6 +205,7 @@ webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointe
 
     update_url(uri);
     script(&a);
+    g_free(a.s);
 }
 
 void
@@ -215,6 +216,7 @@ webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer
         history();
     update_state();
     script(&a);
+    g_free(a.s);
 }
 
 static gboolean
@@ -380,6 +382,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             a.i = Silent;
             a.s = g_strdup("hints.clearFocus();");
             script(&a);
+            g_free(a.s);
             a.i = ModeNormal;
             return set(&a);
         }
@@ -482,6 +485,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         a.i = Silent;
         a.s = g_strdup_printf("hints.fire();");
         script(&a);
+        g_free(a.s);
         update_state();
     } else
         return;
@@ -500,6 +504,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             a.i = Silent;
             a.s = g_strdup_printf("hints.focusNextHint();");
             script(&a);
+            g_free(a.s);
             update_state();
             return TRUE;
         }
@@ -507,6 +512,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             a.i = Silent;
             a.s = g_strdup_printf("hints.focusPreviousHint();");
             script(&a);
+            g_free(a.s);
             update_state();
             return TRUE;
         }
@@ -514,6 +520,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             a.i = Silent;
             a.s = g_strdup_printf("hints.fire();");
             script(&a);
+            g_free(a.s);
             update_state();
             return TRUE;
         }
@@ -553,6 +560,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             a.i = Silent;
             a.s = g_strdup_printf("hints.updateHints(%d);", count);
             script(&a);
+            g_free(a.s);
             update_state();
             return TRUE;
         }
@@ -564,6 +572,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             a.i = Silent;
             a.s = g_strdup_printf("hints.updateHints(%d);", count);
             script(&a);
+            g_free(a.s);
             update_state();
             return TRUE;
         }
@@ -640,6 +649,7 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         }
         count = 0;
         script(&a);
+        g_free(a.s);
 
         return TRUE;
     } else if (length == 0 && followTarget[0]) {
@@ -647,6 +657,7 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         a.i = Silent;
         a.s = g_strdup("hints.clearHints();");
         script(&a);
+        g_free(a.s);
         count = 0;
         update_state();
     }
@@ -983,6 +994,7 @@ input(const Arg *arg) {
         }
         count = 0;
         script(&a);
+        g_free(a.s);
     }
 
     return TRUE;
@@ -1361,8 +1373,6 @@ script(const Arg *arg) {
     jsapi_evaluate_script(arg->s, &value, &message);
     if (message) {
         set_error(message);
-	if (arg->s)
-	    g_free(arg->s);
         return FALSE;
     }
     if (arg->i != Silent && value) {
@@ -1381,8 +1391,6 @@ script(const Arg *arg) {
             set(&a);
         }
     }
-    if (arg->s)
-        g_free(arg->s);
     g_free(value);
     return TRUE;
 }
@@ -1621,6 +1629,7 @@ focus_input(const Arg *arg) {
     a.s = g_strdup("hints.focusInput();");
     a.i = Silent;
     script(&a);
+    g_free(a.s);
     update_state();
     return TRUE;
 }
@@ -1799,8 +1808,9 @@ process_line(char *line) {
         if (length >= len && !strncmp(c, commands[i].cmd, len) && (c[len] == ' ' || !c[len])) {
             found = TRUE;
             a.i = commands[i].arg.i;
-            a.s = length > len + 1 ? &c[len + 1] : commands[i].arg.s;
+            a.s = g_strdup(length > len + 1 ? &c[len + 1] : commands[i].arg.s);
             success = commands[i].func(&a);
+            g_free(a.s);
             break;
         }
     }
