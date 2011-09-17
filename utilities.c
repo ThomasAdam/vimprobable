@@ -112,6 +112,7 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
     /* save quickmarks */
     strcpy( qmarks[mark-1], uri );
     fp = fopen(filename, "w");
+    g_free((gpointer *)filename);
     if (fp == NULL) return FALSE;
     for( i=0; i < 10; ++i ) 
         fprintf(fp, "%s\n", qmarks[i]);
@@ -525,7 +526,7 @@ complete_list(const char *searchfor, const int mode, Listelement *elementlist)
     }
     f = fopen(filename, "r");
     if (f == NULL) {
-        g_free((gpointer)filename);
+        g_free((gpointer *)filename);
         return (elementlist);
     }
 
