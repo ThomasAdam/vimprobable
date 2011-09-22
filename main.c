@@ -120,6 +120,7 @@ static GtkWidget *status_state;
 static WebKitWebView *webview;
 static SoupSession *session;
 static GtkClipboard *clipboards[2];
+static GdkKeymap *keymap;
 
 static char **args;
 static unsigned int mode = ModeNormal;
@@ -331,14 +332,21 @@ download_progress(WebKitDownload *d, GParamSpec *pspec) {
 gboolean
 process_keypress(GdkEventKey *event) {
     KeyList *current;
+    guint keyval;
+    GdkModifierType irrelevant;
+
+    /* Get a mask of modifiers that shouldn't be considered for this event.
+     * E.g.: It shouldn't matter whether ';' is shifted or not. */
+    gdk_keymap_translate_keyboard_state(keymap, event->hardware_keycode,
+            event->state, event->group, &keyval, NULL, NULL, &irrelevant);
 
     current = keylistroot;
     while (current != NULL) {
-        if (current->Element.mask == CLEAN(event->state)
+        if (current->Element.mask == (CLEAN(event->state) & ~irrelevant)
                 && (current->Element.modkey == current_modkey
                     || (!current->Element.modkey && !current_modkey)
                     || current->Element.modkey == GDK_VoidSymbol )    /* wildcard */
-                && current->Element.key == event->keyval
+                && current->Element.key == keyval
                 && current->Element.func)
             if (current->Element.func(&current->Element.arg)) {
                 current_modkey = count = 0;
@@ -2115,6 +2123,8 @@ setup_gui() {
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
     gtk_widget_set_name(GTK_WIDGET(window), "Vimprobable2");
     gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
+
+    keymap = gdk_keymap_get_default();
 
 #ifdef DISABLE_SCROLLBAR
     viewport = gtk_scrolled_window_new(NULL, NULL);
