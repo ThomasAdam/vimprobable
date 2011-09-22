@@ -3,13 +3,16 @@ TARGET = vimprobable2
 # Objectfiles, needed for $(TARGET)
 OBJ = main.o utilities.o callbacks.o
 # Manpages
-MAN = vimprobable2.1 vimprobablerc.1
+MAN1 = vimprobable2.1
+MAN5 = vimprobablerc.5
 # Used libraries to get needed CFLAGS and LDFLAGS form pkg-config
 LIBS = gtk+-2.0 webkit-1.0 libsoup-2.4
 # Files to removo by clean target
 CLEAN = $(TARGET) $(OBJ) $(DEPS) javascript.h
 # Files to install by install target or remove by uninstall target
-INSTALL = $(BINDIR)/$(TARGET) $(addprefix $(MANDIR)/man1/,$(MAN))
+MANINSTALL = $(addprefix $(MANDIR)/man1/,$(MAN1)) \
+             $(addprefix $(MANDIR)/man5/,$(MAN5))
+INSTALL = $(BINDIR)/$(TARGET) $(MANINSTALL)
 
 # DEBUG build?  Off by default
 V_DEBUG = 0
@@ -63,8 +66,13 @@ $(DESTDIR)/$(BINDIR)/%: ./%
 	-strip -s '$@'
 	chmod $(EXECMOD) '$@'
 
-# pattern rule to install manpages
+# pattern rules to install manpages
 $(DESTDIR)/$(MANDIR)/man1/%: ./%
+	-[ -e '$(@D)' ] || mkdir -p '$(@D)' && chmod $(DMOD) '$(@D)'
+	cp -f '$<' '$@'
+	chmod $(FMOD) '$@'
+
+$(DESTDIR)/$(MANDIR)/man5/%: ./%
 	-[ -e '$(@D)' ] || mkdir -p '$(@D)' && chmod $(DMOD) '$(@D)'
 	cp -f '$<' '$@'
 	chmod $(FMOD) '$@'
