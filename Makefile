@@ -57,7 +57,7 @@ clean:
 	-rm -f $(CLEAN)
 install: $(addprefix $(DESTDIR)/,$(INSTALL))
 uninstall:
-	rm -f $(INSTALL)
+	rm -f $(addprefix $(DESTDIR)/,$(INSTALL))
 
 # pattern rule to inslall executabels
 $(DESTDIR)/$(BINDIR)/%: ./%
