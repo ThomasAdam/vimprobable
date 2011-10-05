@@ -553,10 +553,11 @@ complete_list(const char *searchfor, const int mode, Listelement *elementlist)
         }
         candidatepointer = candidatelist;
         while (candidatepointer != NULL) {
+            strncpy(s, candidatepointer->element, sizeof(s));
             if (!complete_case_sensitive) {
-               g_strdown(candidatepointer->element);
+                g_strdown(s);
             }
-            if (!strlen(searchfor) || strstr(candidatepointer->element, searchfor) != NULL) {
+            if (!strlen(searchfor) || strstr(s, searchfor) != NULL) {
                 /* only use string up to the first space */
                 memset(readelement, 0, MAXTAGSIZE + 1);
                 if (strchr(candidatepointer->element, ' ') != NULL) {
