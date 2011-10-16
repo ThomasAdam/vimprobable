@@ -10,17 +10,18 @@ already a wealth of documentation on the Internet.
 
 The main Vimprobable git repository [2] has two main branches:
 
+master
 vimprobable1
-vimprobable2
 
-which reflect the two supported versions of Vimprobable.
+where master is for development on vimprobable2 and vimprobable1 is obviously
+for vimprobable1 only.
 
-When submitting a patch, the feature should be made on top of the
-vimprobable2 branch, unless there is a good reason for knowing that the fix
-is wholly applicable to vimprobable1.  In the general case though, most
-features are submitted against vimprobable2, and then manually ported to
-vimprobable1 where applicable by the maintainer.  Not all features of
-Vimprobable2 are applicable to Vimprobable1.
+When submitting a patch, the feature should be made on top of the master
+branch, unless there is a good reason for knowing that the fix is wholly
+applicable to vimprobable1.  In the general case though, most features are
+submitted against master, and then manually ported to vimprobable1 where
+applicable by the maintainer.  Not all features of Vimprobable2 are applicable
+to Vimprobable1.
 
 Preamble
 ========
@@ -58,7 +59,7 @@ from one another -- hence, for any feature or patch developed, they should
 be done in their own topic branch, which is branched from the current HEAD
 of origin/vimprobable.  Hence:
 
-$ git checkout vimprobable2
+$ git checkout master
 $ git pull
 $ git checkout my-new-feature
 
@@ -100,11 +101,11 @@ Working out what's changed
 
 Once you're happy with the commits on the "my-new-feature" branch, you'll
 obviously want to check that they still work on top of any new code that
-might have been committed to the vimprobable* branches since you creates the
+might have been committed to the upstream branches since you creates the
 "my-new-feature" branch.  This is important as you'll be basing your patches
 against that.  Hence:
 
-$ git checkout vimprobable2
+$ git checkout master
 $ git pull
 $ git checkout my-new-feature
 
@@ -132,7 +133,7 @@ in a local topic branch; "my-new-feature", and you want to submit them to
 the list.  You've already updated your copy of the vimprobable2 branch, and
 your "my-new-feature" branch is checked-out, hence:
 
-$ git format-patch -M -n --cover-letter -o patch_store vimprobable2
+$ git format-patch -M -n --cover-letter -o patch_store master
 
 Which will place a series of numbered commits in a directory called
 "patch_store".  These can then be sent to the list [3] using the 
@@ -152,6 +153,6 @@ References
 ==========
 
 [1] http://git-scm.com
-[2] http://www.vimprobable.org/vimprobable.git
-[3] vimprobable-users@vimprobable.org
+[2] https://sourceforge.net/p/vimprobable/code/
+[3] vimprobable-users@lists.sourceforge.net
 [4] http://repo.or.cz -- or -- http://github.com
