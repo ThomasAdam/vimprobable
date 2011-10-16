@@ -159,7 +159,7 @@ static SoupCookieJar *file_cookie_jar = NULL;
 static time_t cookie_timeout = 4800;
 static char *cookie_store;
 static void setup_cookies(void);
-static const char *get_cookies(SoupURI *soup_uri);
+static char *get_cookies(SoupURI *soup_uri);
 static void load_all_cookies(void);
 static void new_generic_request(SoupSession *soup_ses, SoupMessage *soup_msg, gpointer unused);
 static void update_cookie_jar(SoupCookieJar *jar, SoupCookie *old, SoupCookie *new);
@@ -426,11 +426,14 @@ set_widget_font_and_color(GtkWidget *widget, const char *font_str, const char *b
 void
 webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer data) {
     const char *uri = webkit_web_view_get_uri(webview);
+    char *markup;
 
     memset(rememberedURI, 0, 1024);
     if (link) {
-        gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link));
+        markup = g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link);
+        gtk_label_set_markup(GTK_LABEL(status_url), markup);
         strncpy(rememberedURI, link, 1024);
+        g_free(markup);
     } else
         update_url(uri);
 }
@@ -678,16 +681,18 @@ GtkWidget * fill_eventbox(const char * completion_line) {
     GtkBox    * row;
     GtkWidget *row_eventbox, *el;
     GdkColor  color;
-    char      * markup;
+    char      *markup, *markup_tmp;
 
     row = GTK_BOX(gtk_hbox_new(FALSE, 0));
     row_eventbox = gtk_event_box_new();
     gdk_color_parse(completionbgcolor[0], &color);
     gtk_widget_modify_bg(row_eventbox, GTK_STATE_NORMAL, &color);
     el = gtk_label_new(NULL);
+    markup_tmp = g_markup_escape_text(completion_line, strlen(completion_line));
     markup = g_strconcat("<span font=\"", completionfont[0], "\" color=\"", completioncolor[0], "\">",
-        g_markup_escape_text(completion_line, strlen(completion_line)), "</span>", NULL);
+        markup_tmp, "</span>", NULL);
     gtk_label_set_markup(GTK_LABEL(el), markup);
+    g_free(markup_tmp);
     g_free(markup);
     gtk_misc_set_alignment(GTK_MISC(el), 0, 0);
     gtk_box_pack_start(row, el, TRUE, TRUE, 2);
@@ -811,6 +816,7 @@ complete(const Arg *arg) {
                     if (n < MAX_LIST_SIZE && strstr(browsersettings[i].name, searchfor) != NULL) {
                         /* match */
                         fill_suggline(suggline, command, browsersettings[i].name);
+                        /* FIXME(HP): This memory is never freed */
                         suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                         strncpy(suggurls[n], suggline, 512);
                         suggestions[n] = suggurls[n];
@@ -837,6 +843,7 @@ complete(const Arg *arg) {
             elementpointer = elementlist;
             while (elementpointer != NULL) {
                 fill_suggline(suggline, command, elementpointer->element);
+                /* FIXME(HP): This memory is never freed */
                 suggurls[n] = (char *)malloc(sizeof(char) * 512 + 1);
                 strncpy(suggurls[n], suggline, 512);
                 suggestions[n] = suggurls[n];
@@ -1379,8 +1386,10 @@ script(const Arg *arg) {
     jsapi_evaluate_script(arg->s, &value, &message);
     if (message) {
         set_error(message);
+        g_free(message);
         return FALSE;
     }
+    g_free(message);
     if (arg->i != Silent && value) {
         a.i = arg->i;
         a.s = g_strdup(value);
@@ -1964,6 +1973,7 @@ void
 update_url(const char *uri) {
     gboolean ssl = g_str_has_prefix(uri, "https://");
     GdkColor color;
+    gchar *markup;
 #ifdef ENABLE_HISTORY_INDICATOR
     char before[] = " [";
     char after[] = "]";
@@ -1973,14 +1983,16 @@ update_url(const char *uri) {
     if (!back && !fwd)
         before[0] = after[0] = '\0';
 #endif
-    gtk_label_set_markup(GTK_LABEL(status_url), g_markup_printf_escaped(
+    markup = g_markup_printf_escaped(
 #ifdef ENABLE_HISTORY_INDICATOR
         "<span font=\"%s\">%s%s%s%s%s</span>", statusfont, uri,
         before, back ? "+" : "", fwd ? "-" : "", after
 #else
         "<span font=\"%s\">%s</span>", statusfont, uri
 #endif
-    ));
+    );
+    gtk_label_set_markup(GTK_LABEL(status_url), markup);
+    g_free(markup);
     gdk_color_parse(ssl ? sslbgcolor : statusbgcolor, &color);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
     gdk_color_parse(ssl ? sslcolor : statuscolor, &color);
@@ -2054,6 +2066,7 @@ update_state() {
 
     markup = g_markup_printf_escaped("<span font=\"%s\">%s</span>", statusfont, status->str);
     gtk_label_set_markup(GTK_LABEL(status_state), markup);
+    g_free(markup);
 
     g_string_free(status, TRUE);
 }
@@ -2154,6 +2167,7 @@ setup_settings() {
     file_url = g_strdup_printf("file://%s", filename);
     g_object_set(G_OBJECT(settings), "user-stylesheet-uri", file_url, NULL);
     g_free(file_url);
+    g_free(filename);
     g_object_set(G_OBJECT(settings), "user-agent", useragent, NULL);
     g_object_get(G_OBJECT(settings), "zoom-step", &zoomstep, NULL);
     webkit_web_view_set_settings(webview, settings);
@@ -2168,10 +2182,12 @@ setup_settings() {
                 strcpy(new, "http://");
                 memcpy(&new[sizeof("http://") - 1], filename, len + 1);
                 proxy_uri = soup_uri_new(new);
+                g_free(new);
             } else {
                 proxy_uri = soup_uri_new(filename);
             }
             g_object_set(session, "proxy-uri", proxy_uri, NULL);
+            soup_uri_free(proxy_uri);
         }
     }
 }
@@ -2256,22 +2272,24 @@ void
 new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused) {
 	SoupMessageHeaders *soup_msg_h;
 	SoupURI *uri;
-	const char *cookie_str;
+	char *cookie_str;
 
 	soup_msg_h = soup_msg->request_headers;
 	soup_message_headers_remove(soup_msg_h, "Cookie");
 	uri = soup_message_get_uri(soup_msg);
-	if( (cookie_str = get_cookies(uri)) )
+	if( (cookie_str = get_cookies(uri)) ) {
 		soup_message_headers_append(soup_msg_h, "Cookie", cookie_str);
+		g_free(cookie_str);
+	}
 
 	g_signal_connect_after(G_OBJECT(soup_msg), "got-headers", G_CALLBACK(handle_cookie_request), NULL);
 
 	return;
 }
 
-const char *
+char *
 get_cookies(SoupURI *soup_uri) {
-	const char *cookie_str;
+	char *cookie_str;
 
 	cookie_str = soup_cookie_jar_get_cookies(file_cookie_jar, soup_uri, TRUE);
 
@@ -2281,12 +2299,11 @@ get_cookies(SoupURI *soup_uri) {
 void
 handle_cookie_request(SoupMessage *soup_msg, gpointer unused)
 {
-	GSList *resp_cookie = NULL;
+	GSList *resp_cookie = NULL, *cookie_list;
 	SoupCookie *cookie;
 
-	for(resp_cookie = soup_cookies_from_response(soup_msg);
-		resp_cookie;
-		resp_cookie = g_slist_next(resp_cookie))
+	cookie_list = soup_cookies_from_response(soup_msg);
+	for(resp_cookie = cookie_list; resp_cookie; resp_cookie = g_slist_next(resp_cookie))
 	{
 		SoupDate *soup_date;
 		cookie = soup_cookie_copy((SoupCookie *)resp_cookie->data);
@@ -2294,9 +2311,12 @@ handle_cookie_request(SoupMessage *soup_msg, gpointer unused)
 		if (cookie_timeout && cookie->expires == NULL) {
 			soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout * 10);
 			soup_cookie_set_expires(cookie, soup_date);
+			soup_date_free(soup_date);
 		}
 		soup_cookie_jar_add_cookie(file_cookie_jar, cookie);
 	}
+
+	soup_cookies_free(cookie_list);
 
 	return;
 }
@@ -2320,10 +2340,12 @@ update_cookie_jar(SoupCookieJar *jar, SoupCookie *old, SoupCookie *new)
 void
 load_all_cookies(void)
 {
+	GSList *cookie_list;
 	file_cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
 
 	/* Put them back in the session store. */
 	GSList *cookies_from_file = soup_cookie_jar_all_cookies(file_cookie_jar);
+	cookie_list = cookies_from_file;
 
 	for (; cookies_from_file;
 	       cookies_from_file = cookies_from_file->next)
@@ -2332,6 +2354,7 @@ load_all_cookies(void)
 	}
 
 	soup_cookies_free(cookies_from_file);
+	g_slist_free(cookie_list);
 
 	return;
 }
