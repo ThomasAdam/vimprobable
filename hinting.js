@@ -55,11 +55,7 @@ function Hints() {
             hintContainer = doc.createElement("div");
             hintContainer.id = "hint_container";
 
-            if (typeof(inputText) == "undefined" || inputText == "") {
-                xpath_expr = "//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href] | //input[not(@type='hidden')] | //a[href] | //area | //textarea | //button | //select";
-            } else {
-                xpath_expr = "//*[(@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href) and contains(., '" + inputText + "')] | //input[not(@type='hidden') and contains(., '" + inputText + "')] | //a[@href and contains(., '" + inputText + "')] | //area[contains(., '" + inputText + "')] |  //textarea[contains(., '" + inputText + "')] | //button[contains(@value, '" + inputText + "')] | //select[contains(., '" + inputText + "')]";
-            }
+            xpath_expr = _getXpathXpression(inputText);
 
             var res = doc.evaluate(xpath_expr, doc,
                 function (p) {
@@ -419,5 +415,29 @@ function Hints() {
         var url = elem.href || elem.src;
         return url;
     }
+
+    /* retrieves the xpath expression according to mode */
+    function _getXpathXpression(text)
+    {
+        var expr;
+        if (typeof(text) == "undefined") {
+            text = "";
+        }
+        if (mode == "f" || mode == "F") {
+            if (text == "") {
+                expr = "//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href] | //input[not(@type='hidden')] | //a[href] | //area | //textarea | //button | //select";
+            } else {
+                expr = "//*[(@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href) and contains(., '" + text + "')] | //input[not(@type='hidden') and contains(., '" + text + "')] | //a[@href and contains(., '" + text + "')] | //area[contains(., '" + text + "')] |  //textarea[contains(., '" + text + "')] | //button[contains(@value, '" + text + "')] | //select[contains(., '" + text + "')]";
+            }
+        } else {
+            if (text == "") {
+                expr = "//*[@role='link' or @href] | //a[href] | //area | //img[not(ancestor::a)]";
+            } else {
+                expr = "//*[(@role='link' or @href) and contains(., '" + text + "')] | //a[@href and contains(., '" + text + "')] | //area[contains(., '" + text + "')] | //img[not(ancestor::a) and contains(., '" + text + "')]";
+            }
+        }
+        return expr;
+    }
+
 }
 hints = new Hints();
