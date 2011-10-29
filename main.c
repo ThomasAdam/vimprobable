@@ -1,4 +1,3 @@
-
 /*
     (c) 2009 by Leon Winter
     (c) 2009-2011 by Hannes Schueller
@@ -278,6 +277,7 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     gchar *uri, *path;
     uint32_t size;
     Arg a;
+    WebKitDownloadStatus status;
 
     filename = webkit_download_get_suggested_filename(download);
     if (filename == NULL || strlen(filename) == 0) {
@@ -298,6 +298,9 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     activeDownloads = g_list_prepend(activeDownloads, download);
     g_signal_connect(download, "notify::progress", G_CALLBACK(download_progress), NULL);
     g_signal_connect(download, "notify::status", G_CALLBACK(download_progress), NULL);
+    status = webkit_download_get_status(download);
+    if (status == WEBKIT_DOWNLOAD_STATUS_CREATED)
+        webkit_download_start(download);
     update_state();
     return TRUE;
 }
@@ -362,10 +365,17 @@ process_keypress(GdkEventKey *event) {
 gboolean
 webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     Arg a = { .i = ModeNormal, .s = NULL };
+    guint keyval;
+    GdkModifierType irrelevant;
+
+    /* Get a mask of modifiers that shouldn't be considered for this event.
+     * E.g.: It shouldn't matter whether ';' is shifted or not. */
+    gdk_keymap_translate_keyboard_state(keymap, event->hardware_keycode,
+            event->state, event->group, &keyval, NULL, NULL, &irrelevant);
 
     switch (mode) {
     case ModeNormal:
-        if (CLEAN(event->state) == 0) {
+        if ((CLEAN(event->state) & ~irrelevant) == 0) {
             if (IS_ESCAPE(event)) {
                 a.i = Info;
                 a.s = g_strdup("");
@@ -493,7 +503,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         search_direction = forward;
         search_handle = g_strdup(&text[1]);
 #endif
-    } else if (text[0] == '.' || text[0] == ',') {
+    } else if (text[0] == '.' || text[0] == ',' || text[0] == ';') {
         a.i = Silent;
         a.s = g_strdup_printf("hints.fire();");
         script(&a);
@@ -648,7 +658,7 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
         webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
         return TRUE;
     } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
-            (text[0] == '.' || text[0] == ',')) {
+            (text[0] == '.' || text[0] == ',' || text[0] == ';')) {
         a.i = Silent;
         switch (text[0]) {
             case '.':
@@ -658,10 +668,33 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
             case ',':
                 a.s = g_strconcat("hints.createHints('", text + 1, "', 'F');", NULL);
                 break;
+
+            case ';':
+                a.s = NULL;
+                switch (text[1]) {
+                    case 's':
+                        a.s = g_strconcat("hints.createHints('", text + 2, "', 's');", NULL);
+                        break;
+                    case 'y':
+                        a.s = g_strconcat("hints.createHints('", text + 2, "', 'y');", NULL);
+                        break;
+                    case 'o':
+                        a.s = g_strconcat("hints.createHints('", text + 2, "', 'f');", NULL);
+                        break;
+                    case 't': case 'w':
+                        a.s = g_strconcat("hints.createHints('", text + 2, "', 'F');", NULL);
+                        break;
+                    case 'O': case 'T': case 'W':
+                        a.s = g_strconcat("hints.createHints('", text + 2, "', 'O');", NULL);
+                        break;                    
+                }
+                break;
         }
         count = 0;
-        script(&a);
-        g_free(a.s);
+        if (a.s) {
+            script(&a);
+            g_free(a.s);
+        }
 
         return TRUE;
     } else if (length == 0 && followTarget[0]) {
@@ -1002,7 +1035,7 @@ input(const Arg *arg) {
     }
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
 
-    if (arg->s[0] == '.' || arg->s[0] == ',') {
+    if (arg->s[0] == '.' || arg->s[0] == ',' || arg->s[0] == ';') {
         mode = ModeHints;
         memset(followTarget, 0, 8);
         strncpy(followTarget, "current", 8);
@@ -1015,10 +1048,35 @@ input(const Arg *arg) {
             case ',':
                 a.s = g_strdup("hints.createHints('', 'F');");
                 break;
+
+            case ';':
+                a.s = NULL;
+                if (arg->s[1]) {
+                    switch (arg->s[1]) {
+                        case 's':
+                            a.s = g_strdup("hints.createHints('', 's');");
+                            break;
+                        case 'y':
+                            a.s = g_strdup("hints.createHints('', 'y');");
+                            break;
+                        case 'o':
+                            a.s = g_strdup("hints.createHints('', 'f');");
+                            break;
+                        case 't': case 'w':
+                            a.s = g_strdup("hints.createHints('', 'F');");
+                            break;
+                        case 'O': case 'T': case 'W':
+                            a.s = g_strdup("hints.createHints('', 'O');");
+                            break;
+                    }
+                }
+                break;
         }
         count = 0;
-        script(&a);
-        g_free(a.s);
+        if (a.s) {
+            script(&a);
+            g_free(a.s);
+        }
     }
 
     return TRUE;
@@ -1152,18 +1210,7 @@ gboolean
 yank(const Arg *arg) {
     const char *url, *feedback, *content;
 
-    if (arg->i & SourceURL) {
-        url = webkit_web_view_get_uri(webview);
-        if (!url)
-            return TRUE;
-        feedback = g_strconcat("Yanked ", url, NULL);
-        give_feedback(feedback);
-        g_free((gpointer *)feedback);
-        if (arg->i & ClipboardPrimary)
-            gtk_clipboard_set_text(clipboards[0], url, -1);
-        if (arg->i & ClipboardGTK)
-            gtk_clipboard_set_text(clipboards[1], url, -1);
-    } else {
+    if (arg->i & SourceSelection) {
         webkit_web_view_copy_clipboard(webview);
         if (arg->i & ClipboardPrimary)
             content = gtk_clipboard_wait_for_text(clipboards[0]);
@@ -1175,6 +1222,20 @@ yank(const Arg *arg) {
             give_feedback(feedback);
             g_free((gpointer *)feedback);
         }
+    } else {
+        if (arg->i & SourceURL) {
+            url = webkit_web_view_get_uri(webview);
+        } else {
+            url = arg->s;
+        }
+        if (!url)
+            return TRUE;
+        feedback = g_strconcat("Yanked ", url, NULL);
+        give_feedback(feedback);
+        if (arg->i & ClipboardPrimary)
+            gtk_clipboard_set_text(clipboards[0], url, -1);
+        if (arg->i & ClipboardGTK)
+            gtk_clipboard_set_text(clipboards[1], url, -1);
     }
     return TRUE;
 }
@@ -1394,7 +1455,10 @@ quickmark(const Arg *a) {
 gboolean
 script(const Arg *arg) {
     gchar *value = NULL, *message = NULL;
+    char text[1024] = "";
     Arg a;
+    WebKitNetworkRequest *request;
+    WebKitDownload *download;
 
     if (!arg->s) {
         set_error("Missing argument.");
@@ -1420,6 +1484,40 @@ script(const Arg *arg) {
             set(&a);
         } else if (strncmp(value, "insert;", 7) == 0) {
             a.i = ModeInsert;
+            set(&a);
+        } else if (strncmp(value, "save;", 5) == 0) {
+            /* forced download */
+            a.i = ModeNormal;
+            set(&a);
+            request = webkit_network_request_new((value + 5));
+            download = webkit_download_new(request);
+            webview_download_cb(webview, download, (gpointer *)NULL);
+        } else if (strncmp(value, "yank;", 5) == 0) {
+            /* yank link URL to clipboard */
+            a.i = ModeNormal;
+            set(&a);
+            a.i = ClipboardPrimary | ClipboardGTK;
+            a.s = (value + 5);
+            yank(&a);
+        } else if (strncmp(value, "colon;", 6) == 0) {
+            /* use link URL for colon command */
+            strncpy(text, (char *)gtk_entry_get_text(GTK_ENTRY(inputbox)), 1023);
+            a.i = ModeNormal;
+            set(&a);
+            switch (text[1]) {
+                case 'O':
+                    a.s = g_strconcat(":open ", (value + 6), NULL);
+                    break;
+                case 'T': case 'W':
+                    a.s = g_strconcat(":tabopen ", (value + 6), NULL);
+                    break;
+            }
+            if (a.s) {
+                input(&a);
+                g_free(a.s);
+            }
+        } else if (strncmp(value, "error;", 6) == 0) {
+            a.i = Error;
             set(&a);
         }
     }

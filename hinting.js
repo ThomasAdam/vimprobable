@@ -262,6 +262,9 @@ function Hints() {
         {
             case "f": result = _open(el); break;
             case "F": result = _openNewWindow(el); break;
+            case "s": result = "save;" + _getElemtSource(el); break;
+            case "y": result = "yank;" + _getElemtSource(el); break;
+            case "O": "colon;" + _getElemtSource(el); break;
             default:  result = _getElemtSource(el);
         }
 
@@ -394,7 +397,7 @@ function Hints() {
 
         return "done;";
     }
-
+    
     /* fire moudedown and click event on given element */
     function _clickElement(elem)
     {
