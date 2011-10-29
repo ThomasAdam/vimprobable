@@ -45,17 +45,16 @@ Any command listed under colon commands in vimprobable2(1) will be accepted in t
 
 .SH FORMAT MODIFIED KEYS
 
-It is possible to map keys modified with eiter Control, Shift or Modkeys.
+It is possible to map keys modified with eiter Control or Modkeys.
 To map a key modified with Control, use this format: <C-h>
 where C stands for the Control-key and h for the h-key.
-or <S-k> where S stands for the Shift-key and k for the k-key.
 <M1-j> maps the combination of Mod1 and the j-key. Mod1 is
 usually the "Alt" key, Mod4 the "Windows" key.
 
 Examples:
 <C-h> : Ctrl-h
 <C-k> : Ctrl-k
-z<S-i>: z followed by Shift-i
+z<M1-i>: z followed by Alt-i
 
 .RE 
 
@@ -207,7 +206,7 @@ Example:
 To map the 'R' key to reload to current page, add the following
 line into ~/.config/vimprobable/vimprobablerc:
 
-map <S-R> reload
+map R reload
 
 .SH MAPPING COLON COMMANDS
 
