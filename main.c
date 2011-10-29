@@ -126,7 +126,7 @@ static char **args;
 static unsigned int mode = ModeNormal;
 static unsigned int count = 0;
 static float zoomstep;
-static char *modkeys;
+char *modkeys;
 static char current_modkey;
 static char *search_handle;
 static gboolean search_direction;
@@ -341,6 +341,7 @@ process_keypress(GdkEventKey *event) {
             event->state, event->group, &keyval, NULL, NULL, &irrelevant);
 
     current = keylistroot;
+
     while (current != NULL) {
         if (current->Element.mask == (CLEAN(event->state) & ~irrelevant)
                 && (current->Element.modkey == current_modkey

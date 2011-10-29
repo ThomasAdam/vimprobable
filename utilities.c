@@ -22,6 +22,8 @@ extern gboolean complete_case_sensitive;
 extern char *config_base;
 static GList *dynamic_searchengines = NULL;
 
+void add_modkeys(char key);
+
 gboolean read_rcfile(const char *config)
 {
 	int t;
@@ -278,6 +280,8 @@ changemapping(Key *search_key, int maprecord, char *cmd) {
         newkey->Element.func = process_line_arg;
         newkey->Element.arg  = a;
     }
+    add_modkeys(newkey->Element.modkey);
+
     newkey->next           = NULL;
 
     if (keylistroot == NULL) keylistroot = newkey;
@@ -285,6 +289,21 @@ changemapping(Key *search_key, int maprecord, char *cmd) {
     if (current != NULL) current->next = newkey;
 
     return TRUE;
+}
+
+void add_modkeys(char key)
+{
+    unsigned int k, len;
+    extern char *modkeys;
+    len = strlen( modkeys );
+    while (k < len )
+    { 
+	if ( modkeys[k] == key ) return;
+	k++;
+    }
+    modkeys = realloc(modkeys, len + 1);
+    modkeys[len++] = key;
+    modkeys[len] = '\0';
 }
 
 gboolean
