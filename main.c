@@ -1003,7 +1003,6 @@ gboolean
 input(const Arg *arg) {
     int pos = 0;
     count = 0;
-    gchar* x_clipboard_text;
     const char *url;
     int index = Info;
     Arg a;
@@ -1026,13 +1025,7 @@ input(const Arg *arg) {
     if (arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(webview)))
         gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
 
-    x_clipboard_text = gtk_clipboard_wait_for_text(gtk_clipboard_get(GDK_SELECTION_PRIMARY));
     gtk_widget_grab_focus(inputbox);
-    if (x_clipboard_text != NULL) {
-      /* reset x clipboard */
-      gtk_clipboard_set_text(gtk_clipboard_get(GDK_SELECTION_PRIMARY), x_clipboard_text, -1);
-      g_free(x_clipboard_text);
-    }
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
 
     if (arg->s[0] == '.' || arg->s[0] == ',' || arg->s[0] == ';') {
@@ -2266,6 +2259,7 @@ setup_gui() {
     gtk_widget_grab_focus(GTK_WIDGET(webview));
     gtk_widget_show_all(GTK_WIDGET(window));
     set_widget_font_and_color(inputbox, urlboxfont[0], urlboxbgcolor[0], urlboxcolor[0]);
+    g_object_set(gtk_widget_get_settings(inputbox), "gtk-entry-select-on-focus", FALSE, NULL);
 }
 
 void
