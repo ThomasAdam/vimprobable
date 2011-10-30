@@ -2265,6 +2265,7 @@ setup_gui() {
     gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(box));
     gtk_widget_grab_focus(GTK_WIDGET(webview));
     gtk_widget_show_all(GTK_WIDGET(window));
+    set_widget_font_and_color(inputbox, urlboxfont[0], urlboxbgcolor[0], urlboxcolor[0]);
 }
 
 void
