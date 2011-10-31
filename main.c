@@ -2305,23 +2305,7 @@ setup_settings() {
     webkit_web_view_set_settings(webview, settings);
 
     /* proxy */
-    if (use_proxy == TRUE) {
-        filename = (char *)g_getenv("http_proxy");
-        if (filename != NULL && 0 < (len = strlen(filename))) {
-            if (strstr(filename, "://") == NULL) {
-                /* prepend http:// */
-                new = g_malloc(sizeof("http://") + len);
-                strcpy(new, "http://");
-                memcpy(&new[sizeof("http://") - 1], filename, len + 1);
-                proxy_uri = soup_uri_new(new);
-                g_free(new);
-            } else {
-                proxy_uri = soup_uri_new(filename);
-            }
-            g_object_set(session, "proxy-uri", proxy_uri, NULL);
-            soup_uri_free(proxy_uri);
-        }
-    }
+    toggle_proxy(use_proxy);
 }
 
 void
