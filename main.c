@@ -2058,7 +2058,6 @@ toggle_proxy(gboolean onoff) {
 
     if (onoff == FALSE)  {
         g_object_set(session, "proxy-uri", NULL, NULL);
-        give_feedback("Proxy deactivated");
     } else  {
         filename = (char *)g_getenv("http_proxy");
 
@@ -2080,7 +2079,6 @@ toggle_proxy(gboolean onoff) {
                 proxy_uri = soup_uri_new(filename);
             }
             g_object_set(session, "proxy-uri", proxy_uri, NULL);
-            give_feedback("Proxy activated");
         } 
     }
 }
