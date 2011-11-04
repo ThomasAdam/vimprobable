@@ -1880,29 +1880,21 @@ process_set_line(char *line) {
                 webkit_web_view_set_settings(webview, settings);
             }
 
-            /* process acceptlanguage*/
-            if (strlen(my_pair.what) == 14 && strncmp("acceptlanguage", my_pair.what, 14) == 0) {
-                g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
-            }
-
-            /* toggle proxy usage? */
-            if (strlen(my_pair.what) == 5 && strncmp("proxy", my_pair.what, 5) == 0) {
+            if (strlen(my_pair.what) == 14) {
+                if (strncmp("acceptlanguage", my_pair.what, 14) == 0) {
+                    g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
+                } else if (strncmp("completioncase", my_pair.what, 14) == 0) {
+                    complete_case_sensitive = boolval;
+                }
+            } else if (strlen(my_pair.what) == 5 && strncmp("proxy", my_pair.what, 5) == 0) {
                 toggle_proxy(boolval);
-            }
-
-            /* Toggle scrollbars. */
-            if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0)
+            } else if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0) {
                 toggle_scrollbars(boolval);
-
-            /* Toggle widgets */
-            if (strlen(my_pair.what) == 9 && strncmp("statusbar", my_pair.what, 9) == 0)
+            } else if (strlen(my_pair.what) == 9 && strncmp("statusbar", my_pair.what, 9) == 0) {
                 gtk_widget_set_visible(GTK_WIDGET(statusbar), boolval);
-            if (strlen(my_pair.what) == 8 && strncmp("inputbox", my_pair.what, 8) == 0)
+            } else if (strlen(my_pair.what) == 8 && strncmp("inputbox", my_pair.what, 8) == 0) {
                 gtk_widget_set_visible(inputbox, boolval);
-
-            /* case sensitivity of completion */
-            if (strlen(my_pair.what) == 14 && strncmp("completioncase", my_pair.what, 14) == 0)
-                complete_case_sensitive = boolval;
+            }
 
             /* reload page? */
             if (browsersettings[i].reload)
