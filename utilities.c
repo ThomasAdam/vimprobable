@@ -12,9 +12,9 @@
 #include "main.h"
 #include "utilities.h"
 
-extern char commandhistory[COMMANDHISTSIZE][255];
+extern GList *commandhistory;
+extern int commandpointer;
 extern Command commands[COMMANDSIZE];
-extern int lastcommand, maxcommands, commandpointer;
 extern KeyList *keylistroot;
 extern Key keys[];
 extern char *error_msg;
@@ -50,21 +50,18 @@ gboolean read_rcfile(const char *config)
 
 void save_command_history(char *line)
 {
-	char *c;
+	char *c = line;
 
-	c = line;
 	while (isspace(*c) && *c)
 		c++;
 	if (!strlen(c))
 		return;
-	strncpy(commandhistory[lastcommand], ":", 1);
-	strncat(commandhistory[lastcommand], c, 254);
-	lastcommand++;
-	if (maxcommands < COMMANDHISTSIZE - 1)
-		maxcommands++;
-	if (lastcommand == COMMANDHISTSIZE)
-		lastcommand = 0;
-	commandpointer = lastcommand;
+
+    if (COMMANDHISTSIZE <= g_list_length(commandhistory)) {
+        /* if list is too long - remove items from beginning */
+        commandhistory = g_list_delete_link(commandhistory, g_list_first(commandhistory));
+    }
+    commandhistory = g_list_append(commandhistory, g_strdup(c));
 }
 
 gboolean

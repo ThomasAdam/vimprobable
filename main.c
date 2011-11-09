@@ -146,10 +146,9 @@ GList *activeDownloads;
 #include "config.h"
 #include "keymap.h"
 
-char commandhistory[COMMANDHISTSIZE][255];
-int  lastcommand    = 0;
-int  maxcommands    = 0;
-int  commandpointer = 0;
+GList *commandhistory = NULL;
+int commandpointer = 0;
+
 KeyList *keylistroot = NULL;
 
 /* Cookie support. */
@@ -555,6 +554,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             a.i = HideCompletion;
             complete(&a);
             a.i = ModeNormal;
+            commandpointer = 0;
             return set(&a);
         break;
         case GDK_Tab:
@@ -1640,24 +1640,23 @@ fake_key_event(const Arg *a) {
 
 gboolean
 commandhistoryfetch(const Arg *arg) {
-    if (arg->i == DirectionPrev) {
-        commandpointer--;
-        if (commandpointer < 0)
-            commandpointer = maxcommands - 1;
-    } else {
-        commandpointer++;
-        if (commandpointer == COMMANDHISTSIZE || commandpointer == maxcommands)
-            commandpointer = 0;
+    const int length = g_list_length(commandhistory);
+
+    if (length > 0) {
+        if (arg->i == DirectionPrev) {
+            commandpointer = (length + commandpointer - 1) % length;
+        } else {
+            commandpointer = (length + commandpointer + 1) % length;
+        }
+
+        const char* command = (char *)g_list_nth_data(commandhistory, commandpointer);
+        gtk_entry_set_text(GTK_ENTRY(inputbox), g_strconcat(":", command, NULL));
+        gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
+        return TRUE;
     }
 
-    if (commandpointer < 0)
-        return FALSE;
-
-    gtk_entry_set_text(GTK_ENTRY(inputbox), commandhistory[commandpointer ]);
-    gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
-    return TRUE;
+    return FALSE;
 }
-
 
 gboolean
 bookmark(const Arg *arg) {
