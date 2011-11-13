@@ -18,16 +18,9 @@ $_ = do { local $/; <JSFILE> };
 close(JSFILE);
 my $js_hints = escape_c_string($_);
 
-open(JSFILE, "input-focus.js") or die "Failed to open file: $!";
-$_ = do { local $/; <JSFILE> };
-close(JSFILE);
-my $js_input = escape_c_string($_);
-
 open(HFILE, ">javascript.h") or die "Failed to open javascript.h: $!";
 print HFILE "#define JS_SETUP_HINTS ";
 printf  HFILE "\"%s\"\n", $js_hints;
-print HFILE "#define JS_SETUP_INPUT_FOCUS ";
-printf  HFILE "\"%s\"\n", $js_input;
 close(HFILE);
 
 exit;
