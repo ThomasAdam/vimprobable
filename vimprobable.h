@@ -49,10 +49,11 @@ enum { NavigationCancel,
 /* bitmask:
     1 << 1:  ClipboardPrimary (X11)
     1 << 2:  ClipboardGTK
-    1 << 3:  0 = SourceSelection    1 = SourceURL
+    1 << 3:  SourceURL
+    1 << 4:  SourceSelection
 */
 enum { ClipboardPrimary = 1 << 1, ClipboardGTK = 1 << 2 };
-enum { SourceSelection, SourceURL = 1 << 3 };
+enum { SourceSelection = 1 << 4, SourceURL = 1 << 3 };
 /* bitmask:
     1 << 0:  0 = ZoomReset          1 = ZoomIn/Out
     1 << 1:  0 = ZoomOut            1 = ZoomIn
