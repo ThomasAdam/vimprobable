@@ -46,7 +46,7 @@ all: $(TARGET)
 -include $(DEPS)
 
 main.o: javascript.h
-javascript.h: input-focus.js hinting.js
+javascript.h: hinting.js
 	perl ./js-merge-helper.pl
 
 $(TARGET): $(OBJ)
