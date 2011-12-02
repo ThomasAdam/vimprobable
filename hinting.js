@@ -256,8 +256,8 @@ function Hints() {
 
         switch (mode)
         {
-            case "f": result = _open(el); break;
-            case "F": result = _openNewWindow(el); break;
+            case "f": case "i": result = _open(el); break;
+            case "F": case "I": result = _openNewWindow(el); break;
             case "s": result = "save;" + _getElemtSource(el); break;
             case "y": result = "yank;" + _getElemtSource(el); break;
             case "O": result = "colon;" + _getElemtSource(el); break;
@@ -423,18 +423,30 @@ function Hints() {
         if (typeof(text) == "undefined") {
             text = "";
         }
-        if (mode == "f" || mode == "F") {
-            if (text == "") {
-                expr = "//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href] | //input[not(@type='hidden')] | //a[href] | //area | //textarea | //button | //select";
-            } else {
-                expr = "//*[(@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href) and contains(., '" + text + "')] | //input[not(@type='hidden') and contains(., '" + text + "')] | //a[@href and contains(., '" + text + "')] | //area[contains(., '" + text + "')] |  //textarea[contains(., '" + text + "')] | //button[contains(@value, '" + text + "')] | //select[contains(., '" + text + "')]";
-            }
-        } else {
-            if (text == "") {
-                expr = "//*[@role='link' or @href] | //a[href] | //area | //img[not(ancestor::a)]";
-            } else {
-                expr = "//*[(@role='link' or @href) and contains(., '" + text + "')] | //a[@href and contains(., '" + text + "')] | //area[contains(., '" + text + "')] | //img[not(ancestor::a) and contains(., '" + text + "')]";
-            }
+        switch (mode) {
+            case "f":
+            case "F":
+                if (text == "") {
+                    expr = "//*[@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href] | //input[not(@type='hidden')] | //a[href] | //area | //textarea | //button | //select";
+                } else {
+                    expr = "//*[(@onclick or @onmouseover or @onmousedown or @onmouseup or @oncommand or @class='lk' or @role='link' or @href) and contains(., '" + text + "')] | //input[not(@type='hidden') and contains(., '" + text + "')] | //a[@href and contains(., '" + text + "')] | //area[contains(., '" + text + "')] |  //textarea[contains(., '" + text + "')] | //button[contains(@value, '" + text + "')] | //select[contains(., '" + text + "')]";
+                }
+                break;
+            case "i":
+            case "I":
+                if (text == "") {
+                    expr = "//img[@src]";
+                } else {
+                    expr = "//img[@src and contains(., '" + text + "')]";
+                }
+                break;
+            default:
+                if (text == "") {
+                    expr = "//*[@role='link' or @href] | //a[href] | //area | //img[not(ancestor::a)]";
+                } else {
+                    expr = "//*[(@role='link' or @href) and contains(., '" + text + "')] | //a[@href and contains(., '" + text + "')] | //area[contains(., '" + text + "')] | //img[not(ancestor::a) and contains(., '" + text + "')]";
+                }
+                break;
         }
         return expr;
     }

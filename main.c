@@ -702,7 +702,13 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
                         break;
                     case 'O': case 'T': case 'W':
                         a.s = g_strconcat("hints.createHints('", text + 2, "', 'O');", NULL);
-                        break;                    
+                        break;
+                    case 'i':
+                        a.s = g_strconcat("hints.createHints('", text + 2, "', 'i');", NULL);
+                        break;
+                    case 'I':
+                        a.s = g_strconcat("hints.createHints('", text + 2, "', 'I');", NULL);
+                        break;
                 }
                 break;
         }
@@ -1076,6 +1082,12 @@ input(const Arg *arg) {
                             break;
                         case 'O': case 'T': case 'W':
                             a.s = g_strdup("hints.createHints('', 'O');");
+                            break;
+                        case 'i':
+                            a.s = g_strdup("hints.createHints('', 'i');");
+                            break;
+                        case 'I':
+                            a.s = g_strdup("hints.createHints('', 'I');");
                             break;
                     }
                 }

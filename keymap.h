@@ -103,11 +103,13 @@ Key keys[] = {
 
     { 0,                    0,              GDK_period,     input,      {.s = "."} },
     { 0,                    0,              GDK_comma,      input,      {.s = ","} },
+    { 0,                    GDK_semicolon,  GDK_i,          input,      {.s = ";i"} },
     { 0,                    GDK_semicolon,  GDK_s,          input,      {.s = ";s"} },
     { 0,                    GDK_semicolon,  GDK_y,          input,      {.s = ";y"} },
     { 0,                    GDK_semicolon,  GDK_o,          input,      {.s = ";o"} },
     { 0,                    GDK_semicolon,  GDK_t,          input,      {.s = ";t"} },
     { 0,                    GDK_semicolon,  GDK_w,          input,      {.s = ";w"} },
+    { 0,                    GDK_semicolon,  GDK_I,          input,      {.s = ";I"} },
     { 0,                    GDK_semicolon,  GDK_O,          input,      {.s = ";O"} },
     { 0,                    GDK_semicolon,  GDK_T,          input,      {.s = ";T"} },
     { 0,                    GDK_semicolon,  GDK_W,          input,      {.s = ";W"} },
