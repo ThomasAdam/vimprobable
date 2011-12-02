@@ -260,7 +260,7 @@ function Hints() {
             case "F": result = _openNewWindow(el); break;
             case "s": result = "save;" + _getElemtSource(el); break;
             case "y": result = "yank;" + _getElemtSource(el); break;
-            case "O": "colon;" + _getElemtSource(el); break;
+            case "O": result = "colon;" + _getElemtSource(el); break;
             default:  result = _getElemtSource(el);
         }
 
