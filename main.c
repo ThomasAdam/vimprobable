@@ -2284,9 +2284,7 @@ setup_gui() {
 void
 setup_settings() {
     WebKitWebSettings *settings = (WebKitWebSettings*)webkit_web_settings_new();
-    SoupURI *proxy_uri;
-    char *filename, *file_url, *new;
-    int  len;
+    char *filename, *file_url;
 
     session = webkit_get_default_session();
     g_object_set(G_OBJECT(settings), "default-font-size", DEFAULT_FONT_SIZE, NULL);
