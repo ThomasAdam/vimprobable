@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii vimprobable2.1
 .\"
-.TH VIMPROBABLE2 1 "JANUARY 2010" "Linux User Manuals"
+.TH VIMPROBABLE2 1 "FEBRUARY 2012" "Linux User Manuals"
 .SH NAME
 Vimprobable \- A WWW browser based on webkit with keybindings inspired by Vim, the great editor.
 
@@ -313,22 +313,13 @@ https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&se
 .P
 
 You can always overwrite them or define your own in
-.I $HOME/.config/vimprobable/searchengines.
-In this file, every line defines one shortcut for one URL in the following
-format (without the angle brackets):
-
-.RS 4
-<shortcut> <URL with exactly one %s>
-.RE
-
-where the %s serves as a placeholder for the search term. Other percent signs
-in the URL have to be escaped as %%\&.
-
+.I $HOME/.config/vimprobable/vimprobablerc.
+See vimprobablerc (5) for details.
 .B Default search engine
 
 If Vimprobable doesn't recognize an address as a valid URL or query to one of the
 defined search engines, it will use the default search engine instead. See
-.BR vimprobablerc (1)
+.BR vimprobablerc (5)
 on how to set this default.
 
 .SH FILES
@@ -340,8 +331,6 @@ file is required if you want to use cookies.
 .I $HOME/.config/vimprobable/vimprobablerc
 
 .I $HOME/.config/vimprobable/bookmarks
-
-.I $HOME/.config/vimprobable/searchengines
 
 .I $HOME/.config/vimprobable/cookies
 

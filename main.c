@@ -1,6 +1,6 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009-2011 by Hannes Schueller
+    (c) 2009-2012 by Hannes Schueller
     (c) 2009-2010 by Matto Fransen
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
@@ -2491,7 +2491,6 @@ main(int argc, char *argv[]) {
     static gboolean ver = false;
     static gboolean configfile_exists = FALSE;
     static const char *cfile = NULL;
-    char *searchengines_file;
     static GOptionEntry opts[] = {
             { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
             { "embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "embedded", NULL },
@@ -2536,6 +2535,8 @@ main(int argc, char *argv[]) {
     setup_cookies();
 #endif
 
+    make_searchengines_list(searchengines, LENGTH(searchengines));
+
     /* Check if the specified file exists. */
     /* And only warn the user, if they explicitly asked for a config on the
      * command line.
@@ -2551,35 +2552,13 @@ main(int argc, char *argv[]) {
 
     /* read config file */
     /* But only report errors if we failed, and the file existed. */
-    if (!read_rcfile(configfile) && configfile_exists) {
+    if ((SUCCESS != read_rcfile(configfile)) && configfile_exists) {
         a.i = Error;
         a.s = g_strdup_printf("Error in config file '%s'", configfile);
         echo(&a);
         g_free(a.s);
         g_free(configfile);
     }
-
-    make_searchengines_list(searchengines, LENGTH(searchengines));
-
-    /* read searchengines. */
-    searchengines_file = g_strdup_printf(SEARCHENGINES_STORAGE_FILENAME);
-    switch (read_searchengines(searchengines_file)) {
-    case SYNTAX_ERROR:
-        a.i = Error;
-        a.s = g_strdup_printf("Syntax error in searchengines file '%s'", searchengines_file);
-        echo(&a);
-        g_free(a.s);
-        break;
-    case READING_FAILED:
-        a.i = Error;
-        a.s = g_strdup_printf("Could not read searchengines file '%s'", searchengines_file);
-        echo(&a);
-        g_free(a.s);
-        break;
-    default:
-        break;
-    }
-    g_free(searchengines_file);
 
     /* command line argument: URL */
     if (argc > 1) {

@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii vimprobablerc.5
 .\"
-.TH VIMPROBABLERC 5 "December 2009" "Linux User Manuals"
+.TH VIMPROBABLERC 5 "FEBRUARY 2012" "Linux User Manuals"
 .SH NAME
 vimprobablerc \- The configuration file for Vimprobable
 .SH DESCRIPTION
@@ -227,6 +227,18 @@ This maps the i key to manually activate INSERT mode.
 All settings can be changed on the fly by entering
 :set followed by one of the commands in the SETTINGS section
 above.
+
+.SH SEARCH ENGINES
+
+You can define new search engine shortcuts or override the pre-defined ones
+using the following format (without the angle brackets):
+
+.RS 4
+searchengine <shortcut> <URL with exactly one %s>
+.RE
+
+where the %s serves as a placeholder for the search term. Other percent signs
+in the URL have to be escaped as %%\&.
 
 .SH BUGS
 There has not been any significant bug-hunting yet.

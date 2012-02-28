@@ -1,6 +1,6 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009-2011 by Hannes Schueller
+    (c) 2009-2012 by Hannes Schueller
     (c) 2009-2010 by Matto Fransen
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
@@ -23,30 +23,6 @@ extern char *config_base;
 static GList *dynamic_searchengines = NULL;
 
 void add_modkeys(char key);
-
-gboolean read_rcfile(const char *config)
-{
-	int t;
-	char s[255];
-	FILE *fpin;
-	gboolean returnval = TRUE;
-
-	if ((fpin = fopen(config, "r")) == NULL)
-		return FALSE;
-	while (fgets(s, 254, fpin)) {
-		/*
-		 * ignore lines that begin with #, / and such 
-		 */
-		if (!isalpha(s[0]))
-			continue;
-		t = strlen(s);
-		s[t - 1] = '\0';
-		if (!process_line(s))
-			returnval = FALSE;
-	}
-	fclose(fpin);
-	return returnval;
-}
 
 void save_command_history(char *line)
 {
@@ -709,71 +685,6 @@ static gboolean sanity_check_search_url(const char *string)
     return !was_percent_char && percent_s_count == 1;
 }
 
-enum ConfigFileError
-read_searchengines(const char *filename)
-{
-    FILE *file;
-    char buffer[BUFFERSIZE], c;
-    int linum = 0, index;
-    gboolean found_malformed_lines = FALSE;
-    Searchengine *new;
-
-    if (access(filename, F_OK) != 0)
-        return FILE_NOT_FOUND;
-
-    file = fopen(filename, "r");
-    if (file == NULL)
-        return READING_FAILED;
-
-    while (fgets(buffer, BUFFERSIZE, file)) {
-        linum++;
-
-        /* skip empty lines */
-        if (!strcmp(buffer, "\n")) continue;
-
-        /* skip too long lines */
-        if (buffer[strlen(buffer)-1] != '\n') {
-            c = getc(file);
-            if (c != EOF) {  /* this is not the last line */
-                while ((c=getc(file)) != EOF && c != '\n');
-                fprintf(stderr, "searchengines: syntax error on line %d\n", linum);
-                found_malformed_lines = TRUE;
-                continue;
-            }
-        }
-
-        /* split line at whitespace */
-        index = split_string_at_whitespace(buffer);
-
-        if (index < 0 || buffer[0] == '\0' || buffer[index] == '\0'
-                || !sanity_check_search_url(buffer+index)) {
-            fprintf(stderr, "searchengines: syntax error on line %d\n", linum);
-            found_malformed_lines = TRUE;
-            continue;
-        }
-
-        new = malloc(sizeof(Searchengine));
-        if (new == NULL) {
-            fprintf(stderr, "Memory exhausted while loading search engines.\n");
-            exit(EXIT_FAILURE);
-        }
-
-        new->handle = g_strdup(buffer);
-        new->uri = g_strdup(buffer+index);
-
-        dynamic_searchengines = g_list_prepend(dynamic_searchengines, new);
-    }
-
-    if (ferror(file)) {
-        fclose(file);
-        return READING_FAILED;
-    }
-
-    fclose(file);
-
-    return found_malformed_lines ? SYNTAX_ERROR : SUCCESS;
-}
-
 void make_searchengines_list(Searchengine *searchengines, int length)
 {
     int i;
@@ -799,4 +710,58 @@ char *find_uri_for_searchengine(const char *handle)
     }
 
     return NULL;
+}
+
+enum ConfigFileError
+read_rcfile(const char *config)
+{
+	int t, linum = 0, index;
+	char s[255], *buffer;
+	FILE *fpin;
+	gboolean found_malformed_lines = FALSE;
+	Searchengine *new;
+
+   if (access(config, F_OK) != 0)
+        return FILE_NOT_FOUND;
+
+    fpin = fopen(config, "r");
+    if (fpin == NULL)
+        return READING_FAILED;
+
+	while (fgets(s, 254, fpin)) {
+		linum++;
+		/*
+		 * ignore lines that begin with #, / and such 
+		 */
+		if (!isalpha(s[0]))
+			continue;
+		t = strlen(s);
+		s[t - 1] = '\0';
+		if (strncmp(s, "searchengine", 12) == 0) {
+			buffer = (s + 12);
+			while (buffer[0] == ' ')
+				buffer++;
+			/* split line at whitespace */
+			index = split_string_at_whitespace(buffer);
+			if (index < 0 || buffer[0] == '\0' || buffer[index] == '\0'
+					|| !sanity_check_search_url(buffer+index)) {
+				fprintf(stderr, "searchengines: syntax error on line %d\n", linum);
+				found_malformed_lines = TRUE;
+				continue;
+			}
+			new = malloc(sizeof(Searchengine));
+			if (new == NULL) {
+				fprintf(stderr, "Memory exhausted while loading search engines.\n");
+				exit(EXIT_FAILURE);
+			}
+			new->handle = g_strdup(buffer);
+			new->uri = g_strdup(buffer+index);
+			dynamic_searchengines = g_list_prepend(dynamic_searchengines, new);
+		} else {
+			if (!process_line(s))
+				found_malformed_lines = TRUE;
+		}
+	}
+	fclose(fpin);
+    return found_malformed_lines ? SYNTAX_ERROR : SUCCESS;
 }

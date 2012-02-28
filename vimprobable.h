@@ -1,6 +1,6 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009-2011 by Hannes Schueller
+    (c) 2009-2012 by Hannes Schueller
     (c) 2009-2010 by Matto Fransen
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
@@ -175,9 +175,6 @@ enum ConfigFileError {
 #define             HISTORY_MAX_ENTRIES         1000
 #define             HISTORY_STORAGE_FILENAME    "%s/vimprobable/history", config_base
 #define             CLOSED_URL_FILENAME         "%s/vimprobable/closed", config_base
-
-/* searchengines */
-#define             SEARCHENGINES_STORAGE_FILENAME "%s/vimprobable/searchengines", config_base
 
 /* Command size */
 #define	            COMMANDSIZE	                1024
