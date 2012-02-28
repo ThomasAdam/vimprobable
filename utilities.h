@@ -33,3 +33,6 @@ void free_list(Listelement *elementlist);
 
 char *find_uri_for_searchengine(const char *handle);
 void make_searchengines_list(Searchengine *searchengines, int length);
+void make_uri_handlers_list(URIHandler *uri_handlers, int length);
+gboolean open_handler(char *uri);
+

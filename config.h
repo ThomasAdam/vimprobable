@@ -53,6 +53,19 @@ static const char progressbarcurrent    = '>';
 static const char progressbarspacer     = ' ';
 static const char progressborderright   = ']';
 
+/* external handlers:
+ * the handle (first string) contain what the handled links have to start with
+ * the handlers (second string) contain the external applications which should be called for this sort of link
+ *    %s can be used as a placeholder for the link argument after the handler
+ *    e.g.: "mailto:user@example.org
+ *       "handle" is "mailto:"
+ *       "%s" will translate to "user@example.org"
+ */
+static URIHandler uri_handlers[] = {
+    { "mailto:",          "x-terminal-emulator -e mutt %s" },
+    { "ftp://",           "x-terminal-emulator -e wget ftp://%s" },
+};
+
 /* cookies */
 #define             ENABLE_COOKIE_SUPPORT
 #define             COOKIES_STORAGE_FILENAME    "%s/vimprobable/cookies", config_base

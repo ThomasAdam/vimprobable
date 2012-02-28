@@ -138,6 +138,11 @@ typedef struct {
 	char *uri;
 } Searchengine;
 
+typedef struct {
+	char *handle;
+	char *handler;
+} URIHandler;
+
 struct map_pair {
 	char *line;
 	char what[20];

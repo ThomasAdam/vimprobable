@@ -240,6 +240,17 @@ searchengine <shortcut> <URL with exactly one %s>
 where the %s serves as a placeholder for the search term. Other percent signs
 in the URL have to be escaped as %%\&.
 
+.SH URI HANDLERS
+
+You can define external applications to handle requests for defined URI schemas
+using the following syntax (without the angle brackets):
+
+.RS 4
+handler <URI schema> <handler command with exactly one %s>
+.RE
+
+where the %s serves as a placeholder for the rest of the URI.
+
 .SH BUGS
 There has not been any significant bug-hunting yet.
 .SH AUTHORS

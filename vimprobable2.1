@@ -324,6 +324,26 @@ defined search engines, it will use the default search engine instead. See
 .BR vimprobablerc (5)
 on how to set this default.
 
+.SH URI HANDLERS
+
+You can define external applications to handle requests for defined URI schemas.
+
+The following URI handlers are already defined in config.h:
+
+.IP ftp://
+x-terminal-emulator -e wget %s
+.IP mailto:
+x-terminal-emulator -e mutt %s
+
+.P
+
+See 
+.BR vimprobablerc (5)
+for details how to add or override these settings.
+
+You can always overwrite them or define your own in
+.I $HOME/.config/vimprobable/vimprobablerc.
+
 .SH FILES
 
 Please make sure you create these files before first running the browser. 

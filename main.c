@@ -1144,7 +1144,7 @@ number(const Arg *arg) {
 
 gboolean
 open_arg(const Arg *arg) {
-    char *argv[6];
+    char *argv[64];
     char *s = arg->s, *p = NULL, *new;
     Arg a = { .i = NavigationReload };
     int len;
@@ -1172,7 +1172,12 @@ open_arg(const Arg *arg) {
             --p;
         *(p + 1) = '\0';
         len = strlen(s);
-        new = NULL, p = strchr(s, ' ');
+        new = NULL;
+        /* check for external handlers */
+        if (open_handler(s))
+            return TRUE;        
+        /* check for search engines */
+        p = strchr(s, ' ');
         if (p) {                                                         /* check for search engines */
             *p = '\0';
             search_uri = find_uri_for_searchengine(s);
@@ -2359,10 +2364,10 @@ setup_signals() {
 void
 setup_cookies()
 {
-	if (file_cookie_jar)
-		g_object_unref(file_cookie_jar);
+    if (file_cookie_jar)
+        g_object_unref(file_cookie_jar);
 
-	if (session_cookie_jar)
+    if (session_cookie_jar)
 		g_object_unref(session_cookie_jar);
 
 	session_cookie_jar = soup_cookie_jar_new();
@@ -2382,22 +2387,23 @@ setup_cookies()
  *      is limited to handling cookies.
  */
 void
-new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused) {
-	SoupMessageHeaders *soup_msg_h;
-	SoupURI *uri;
-	char *cookie_str;
+new_generic_request(SoupSession *session, SoupMessage *soup_msg, gpointer unused) 
+{
+    SoupMessageHeaders *soup_msg_h;
+    SoupURI *uri;
+    char *cookie_str;
 
-	soup_msg_h = soup_msg->request_headers;
-	soup_message_headers_remove(soup_msg_h, "Cookie");
-	uri = soup_message_get_uri(soup_msg);
-	if( (cookie_str = get_cookies(uri)) ) {
-		soup_message_headers_append(soup_msg_h, "Cookie", cookie_str);
-		g_free(cookie_str);
-	}
+    soup_msg_h = soup_msg->request_headers;
+    soup_message_headers_remove(soup_msg_h, "Cookie");
+    uri = soup_message_get_uri(soup_msg);
+    if ((cookie_str = get_cookies(uri))) {
+        soup_message_headers_append(soup_msg_h, "Cookie", cookie_str);
+        g_free(cookie_str);
+    }
 
-	g_signal_connect_after(G_OBJECT(soup_msg), "got-headers", G_CALLBACK(handle_cookie_request), NULL);
+    g_signal_connect_after(G_OBJECT(soup_msg), "got-headers", G_CALLBACK(handle_cookie_request), NULL);
 
-	return;
+    return;
 }
 
 char *
@@ -2536,6 +2542,7 @@ main(int argc, char *argv[]) {
 #endif
 
     make_searchengines_list(searchengines, LENGTH(searchengines));
+    make_uri_handlers_list(uri_handlers, LENGTH(uri_handlers));
 
     /* Check if the specified file exists. */
     /* And only warn the user, if they explicitly asked for a config on the

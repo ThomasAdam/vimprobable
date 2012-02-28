@@ -20,7 +20,7 @@ extern Key keys[];
 extern char *error_msg;
 extern gboolean complete_case_sensitive;
 extern char *config_base;
-static GList *dynamic_searchengines = NULL;
+static GList *dynamic_searchengines = NULL, *dynamic_uri_handlers = NULL;
 
 void add_modkeys(char key);
 
@@ -720,6 +720,7 @@ read_rcfile(const char *config)
 	FILE *fpin;
 	gboolean found_malformed_lines = FALSE;
 	Searchengine *new;
+	URIHandler *newhandler;
 
    if (access(config, F_OK) != 0)
         return FILE_NOT_FOUND;
@@ -757,6 +758,26 @@ read_rcfile(const char *config)
 			new->handle = g_strdup(buffer);
 			new->uri = g_strdup(buffer+index);
 			dynamic_searchengines = g_list_prepend(dynamic_searchengines, new);
+		} else if (strncmp(s, "handler", 7) == 0) {
+			buffer = (s + 7);
+			while (buffer[0] == ' ')
+				buffer++;
+			/* split line at whitespace */
+			index = split_string_at_whitespace(buffer);
+			if (index < 0 || buffer[0] == '\0' || buffer[index] == '\0'
+					|| !sanity_check_search_url(buffer+index)) { /* this sanity check is also valid for handler definitions */
+				fprintf(stderr, "URI handlers: syntax error on line %d\n", linum);
+				found_malformed_lines = TRUE;
+				continue;
+			}
+			newhandler = malloc(sizeof(URIHandler));
+			if (newhandler == NULL) {
+				fprintf(stderr, "Memory exhausted while loading uri handlers.\n");
+				exit(EXIT_FAILURE);
+			}
+			newhandler->handle = g_strdup(buffer);
+			newhandler->handler = g_strdup(buffer+index);
+			dynamic_uri_handlers = g_list_prepend(dynamic_uri_handlers, newhandler);
 		} else {
 			if (!process_line(s))
 				found_malformed_lines = TRUE;
@@ -765,3 +786,60 @@ read_rcfile(const char *config)
 	fclose(fpin);
     return found_malformed_lines ? SYNTAX_ERROR : SUCCESS;
 }
+
+void make_uri_handlers_list(URIHandler *uri_handlers, int length)
+{
+    int i;
+    for (i = 0; i < length; i++, uri_handlers++) {
+        dynamic_uri_handlers = g_list_prepend(dynamic_uri_handlers, uri_handlers);
+    }
+}
+
+gboolean
+open_handler(char *uri) {
+    char *argv[64];
+    char *p = NULL, *arg, arg_temp[MAX_SETTING_SIZE], *temp, temp2[MAX_SETTING_SIZE] = "", *temp3;
+    int j;
+    GList *l;
+
+    p = strchr(uri, ':');
+    if (p) {
+    	if (dynamic_uri_handlers != NULL) {
+        	for (l = dynamic_uri_handlers; l; l = g_list_next(l)) {
+            	URIHandler *s = (URIHandler *)l->data;
+            	if (strlen(uri) >= strlen(s->handle) && strncmp(s->handle, uri, strlen(s->handle)) == 0) {
+                	if (strlen(s->handler) > 0) {
+                    	arg = (uri + strlen(s->handle));
+                    	strncpy(temp2, s->handler, MAX_SETTING_SIZE);
+                    	temp = strtok(temp2, " ");
+                    	j = 0;
+                    	while (temp != NULL) {
+                        	if (strstr(temp, "%s")) {
+                            	temp3 = temp;
+                            	memset(arg_temp, 0, MAX_SETTING_SIZE);
+                            	while (strncmp(temp3, "%s", 2) != 0) {
+                                	strncat(arg_temp, temp3, 1);
+                                	temp3++;
+                            	}
+                            	strcat(arg_temp, arg);
+                            	temp3++;
+                            	temp3++;
+                            	strcat(arg_temp, temp3);
+                            	argv[j] = arg_temp;
+                        	} else {
+                            	argv[j] = temp;
+                        	}
+                        	temp = strtok(NULL, " ");
+                        	j++;
+                    	}
+                    	argv[j] =  NULL;
+                    	g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
+                	}
+                	return TRUE;
+            	}
+        	}
+    	}
+    }
+    return FALSE;
+}
+
