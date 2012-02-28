@@ -19,6 +19,7 @@ char acceptlanguage[MAX_SETTING_SIZE] = "";
 static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 static const gboolean enableJava        = TRUE; /* FALSE disables Java applets */
 static const gboolean enablePagecache   = FALSE; /* TRUE turns on the page cache. */
+static gboolean escape_input_on_load    = TRUE; /* TRUE will disable automatic focusing of input fields via Javascript*/
 
 /* appearance */
 char statusbgcolor[MAX_SETTING_SIZE]    = "#000000";            /* background color for status bar */
@@ -199,4 +200,5 @@ static Setting browsersettings[] = {
     { "statusbar",       NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "inputbox",        NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "completioncase",  NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "escapeinput",     NULL,               "",                           FALSE,          TRUE,            FALSE,          FALSE  },
 };
