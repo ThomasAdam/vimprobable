@@ -2054,7 +2054,6 @@ void
 toggle_proxy(gboolean onoff) {
     SoupURI *proxy_uri;
     char    *filename, *new;
-    int     len;
 
     if (onoff == FALSE)  {
         g_object_set(session, "proxy-uri", NULL, NULL);
@@ -2067,19 +2066,15 @@ toggle_proxy(gboolean onoff) {
         if (filename == NULL)
             filename = (char *)g_getenv("HTTP_PROXY");
 
-        if (filename != NULL && 0 < (len = strlen(filename))) {
-            if (strstr(filename, "://") == NULL) {
-                /* prepend http:// */
-                new = g_malloc(sizeof("http://") + len);
-                strcpy(new, "http://");
-                memcpy(&new[sizeof("http://") - 1], filename, len + 1);
-                proxy_uri = soup_uri_new(new);
-                g_free(new);
-            } else {
-                proxy_uri = soup_uri_new(filename);
-            }
+        if (filename != NULL && 0 < strlen(filename)) {
+            new = g_strrstr(filename, "http://") ? g_strdup(filename) : g_strdup_printf("http://%s", filename);
+            proxy_uri = soup_uri_new(new);
+
             g_object_set(session, "proxy-uri", proxy_uri, NULL);
-        } 
+
+            soup_uri_free(proxy_uri);
+            g_free(new);
+        }
     }
 }
 
