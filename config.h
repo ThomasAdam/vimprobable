@@ -85,6 +85,8 @@ static Searchengine searchengines[] = {
     { "i",          "http://ixquick.com/do/metasearch.pl?query=%s" },
     { "w",          "https://secure.wikimedia.org/wikipedia/en/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
     { "wd",         "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
+    { "d",          "https://duckduckgo.com/?q=%s&t=Vimprobable" },
+    { "dd",         "https://duckduckgo.com/html/?q=%s&t=Vimprobable" },
 };
 
 static char defaultsearch[MAX_SETTING_SIZE] = "i";
