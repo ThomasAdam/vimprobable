@@ -83,7 +83,6 @@ gboolean complete_case_sensitive        = TRUE;
 /* search engines */
 static Searchengine searchengines[] = {
     { "i",          "http://ixquick.com/do/metasearch.pl?query=%s" },
-    { "s",          "https://ssl.scroogle.org/cgi-bin/nbbwssl.cgi?Gw=%s" },
     { "w",          "https://secure.wikimedia.org/wikipedia/en/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
     { "wd",         "https://secure.wikimedia.org/wikipedia/de/w/index.php?title=Special%%3ASearch&search=%s&go=Go" },
 };
