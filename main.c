@@ -650,7 +650,7 @@ notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     } else {
         gchar *value = NULL, *message = NULL;
         jsapi_evaluate_script("window.getSelection().focusNode", &value, &message);
-        if (!strcmp(value, "[object HTMLFormElement]")) {
+        if (value && !strcmp(value, "[object HTMLFormElement]")) {
             Arg a = { .i = ModeInsert, .s = NULL };
             set(&a);
         }
