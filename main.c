@@ -1914,19 +1914,14 @@ process_set_line(char *line) {
                 }
             }
             if (browsersettings[i].var != NULL) {
-                /* write value into internal variable */
-                /*if (browsersettings[i].intval) {
-                    browsersettings[i].var = atoi(my_pair.value);
-                } else {*/
-                    strncpy(browsersettings[i].var, my_pair.value, MAX_SETTING_SIZE);
-                    if (strlen(my_pair.value) > MAX_SETTING_SIZE - 1) {
-                        /* in this case, \0 will not have been copied */
-                        browsersettings[i].var[MAX_SETTING_SIZE - 1] = '\0';
-                        /* in case this string is also used for a webkit setting, make sure it's consistent */
-                        my_pair.value[MAX_SETTING_SIZE - 1] = '\0';
-                        give_feedback("String too long; automatically truncated!");
-                    }
-                /*}*/
+                strncpy(browsersettings[i].var, my_pair.value, MAX_SETTING_SIZE);
+                if (strlen(my_pair.value) > MAX_SETTING_SIZE - 1) {
+                    /* in this case, \0 will not have been copied */
+                    browsersettings[i].var[MAX_SETTING_SIZE - 1] = '\0';
+                    /* in case this string is also used for a webkit setting, make sure it's consistent */
+                    my_pair.value[MAX_SETTING_SIZE - 1] = '\0';
+                    give_feedback("String too long; automatically truncated!");
+                }
             }
             if (strlen(browsersettings[i].webkit) > 0) {
                 /* activate appropriate webkit setting */
