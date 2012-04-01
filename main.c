@@ -1958,6 +1958,20 @@ process_set_line(char *line) {
                 escape_input_on_load = boolval;
             }
 
+            /* SSL certificate checking */
+            if (strlen(my_pair.what) == 9 && strncmp("strictssl", my_pair.what, 9) == 0) {
+                if (boolval) {
+                    strict_ssl = TRUE;
+                    g_object_set(G_OBJECT(session), "ssl-strict", TRUE, NULL);
+                } else {
+                    strict_ssl = FALSE;
+                    g_object_set(G_OBJECT(session), "ssl-strict", FALSE, NULL);
+                }
+            }
+            if (strlen(my_pair.what) == 8 && strncmp("cabundle", my_pair.what, 8) == 0) {
+                g_object_set(G_OBJECT(session), SOUP_SESSION_SSL_CA_FILE, ca_bundle, NULL);
+            }
+
             /* reload page? */
             if (browsersettings[i].reload)
                 webkit_web_view_reload(webview);
@@ -2128,6 +2142,12 @@ void
 update_url(const char *uri) {
     gboolean ssl = g_str_has_prefix(uri, "https://");
     GdkColor color;
+    WebKitWebFrame *frame;
+    WebKitWebDataSource *src;
+    WebKitNetworkRequest *request;
+    SoupMessage *msg;
+    gboolean ssl_error;
+    char *sslactivecolor;
     gchar *markup;
 #ifdef ENABLE_HISTORY_INDICATOR
     char before[] = " [";
@@ -2148,7 +2168,18 @@ update_url(const char *uri) {
     );
     gtk_label_set_markup(GTK_LABEL(status_url), markup);
     g_free(markup);
-    gdk_color_parse(ssl ? sslbgcolor : statusbgcolor, &color);
+    if (ssl) {
+        frame = webkit_web_view_get_main_frame(webview);
+        src = webkit_web_frame_get_data_source(frame);
+        request = webkit_web_data_source_get_request(src);
+        msg = webkit_network_request_get_message(request);
+        ssl_error = soup_message_get_flags(msg) ^ SOUP_MESSAGE_CERTIFICATE_TRUSTED;
+        if (ssl_error)
+            sslactivecolor = sslinvalidbgcolor;
+        else
+            sslactivecolor = sslbgcolor;
+    }
+    gdk_color_parse(ssl ? sslactivecolor : statusbgcolor, &color);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
     gdk_color_parse(ssl ? sslcolor : statuscolor, &color);
     gtk_widget_modify_fg(GTK_WIDGET(status_url), GTK_STATE_NORMAL, &color);
@@ -2315,6 +2346,8 @@ setup_settings() {
     char *filename, *file_url;
 
     session = webkit_get_default_session();
+    g_object_set(G_OBJECT(session), "ssl-ca-file", ca_bundle, NULL);
+    g_object_set(G_OBJECT(session), "ssl-strict", strict_ssl, NULL);
     g_object_set(G_OBJECT(settings), "default-font-size", DEFAULT_FONT_SIZE, NULL);
     g_object_set(G_OBJECT(settings), "enable-scripts", enablePlugins, NULL);
     g_object_set(G_OBJECT(settings), "enable-plugins", enablePlugins, NULL);

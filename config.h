@@ -25,6 +25,7 @@ static gboolean escape_input_on_load    = TRUE; /* TRUE will disable automatic f
 char statusbgcolor[MAX_SETTING_SIZE]    = "#000000";            /* background color for status bar */
 char statuscolor[MAX_SETTING_SIZE]      = "#ffffff";            /* color for status bar */
 char sslbgcolor[MAX_SETTING_SIZE]       = "#b0ff00";            /* background color for status bar with SSL url */
+char sslinvalidbgcolor[MAX_SETTING_SIZE]= "#ff0000";            /* background color for status bar with unverified SSL url */
 char sslcolor[MAX_SETTING_SIZE]         = "#000000";            /* color for status bar with SSL url */
 
                                         /*  normal,                 warning,                error       */
@@ -80,6 +81,10 @@ static URIHandler uri_handlers[] = {
 
 /* user styles */
 #define             USER_STYLESHEET             "%s/vimprobable/style.css", config_base
+
+/* ssl */
+static gboolean strict_ssl              = TRUE; /* FALSE will accept any SSL certificate at face value */
+static char ca_bundle[MAX_SETTING_SIZE] = "/etc/ssl/certs/ca-certificates.crt";
 
 /* proxy */
 static const gboolean use_proxy         = TRUE; /* TRUE if you're going to use a proxy (whose address
@@ -201,4 +206,6 @@ static Setting browsersettings[] = {
     { "inputbox",        NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "completioncase",  NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "escapeinput",     NULL,               "",                           FALSE,          TRUE,            FALSE,          FALSE  },
+    { "strictssl",       NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "cabundle",        ca_bundle,          "",                            FALSE,          FALSE,           FALSE,          FALSE  },
 };
