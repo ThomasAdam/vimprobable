@@ -2141,7 +2141,7 @@ update_url(const char *uri) {
     WebKitWebDataSource *src;
     WebKitNetworkRequest *request;
     SoupMessage *msg;
-    gboolean ssl_error;
+    gboolean ssl_ok;
     char *sslactivecolor;
     gchar *markup;
 #ifdef ENABLE_HISTORY_INDICATOR
@@ -2168,11 +2168,11 @@ update_url(const char *uri) {
         src = webkit_web_frame_get_data_source(frame);
         request = webkit_web_data_source_get_request(src);
         msg = webkit_network_request_get_message(request);
-        ssl_error = soup_message_get_flags(msg) ^ SOUP_MESSAGE_CERTIFICATE_TRUSTED;
-        if (ssl_error)
-            sslactivecolor = sslinvalidbgcolor;
-        else
+        ssl_ok = soup_message_get_flags(msg) & SOUP_MESSAGE_CERTIFICATE_TRUSTED;
+        if (ssl_ok)
             sslactivecolor = sslbgcolor;
+        else
+            sslactivecolor = sslinvalidbgcolor;
     }
     gdk_color_parse(ssl ? sslactivecolor : statusbgcolor, &color);
     gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
