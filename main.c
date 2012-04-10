@@ -1995,6 +1995,7 @@ process_line(char *line) {
         len = strlen(commands[i].cmd);
         if (length >= len && !strncmp(c, commands[i].cmd, len) && (c[len] == ' ' || !c[len])) {
             found = TRUE;
+            save_command_history(c);
             a.i = commands[i].arg.i;
             a.s = g_strdup(length > len + 1 ? &c[len + 1] : commands[i].arg.s);
             success = commands[i].func(&a);
@@ -2002,7 +2003,6 @@ process_line(char *line) {
             break;
         }
     }
-    save_command_history(c);
     if (!found) {
         a.i = Error;
         a.s = g_strdup_printf("Not a browser command: %s", c);
