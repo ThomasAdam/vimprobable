@@ -1978,7 +1978,7 @@ process_set_line(char *line) {
 
 gboolean
 process_line(char *line) {
-    char *c = line;
+    char *c = line, *command_hist;
     int i;
     size_t len, length = strlen(line);
     gboolean found = FALSE, success = FALSE;
@@ -1989,13 +1989,14 @@ process_line(char *line) {
     /* Ignore blank lines.  */
     if (c[0] == '\0')
         return TRUE;
+
+    command_hist = g_strdup(c);
     for (i = 0; i < LENGTH(commands); i++) {
         if (commands[i].cmd == NULL)
             break;
         len = strlen(commands[i].cmd);
         if (length >= len && !strncmp(c, commands[i].cmd, len) && (c[len] == ' ' || !c[len])) {
             found = TRUE;
-            save_command_history(c);
             a.i = commands[i].arg.i;
             a.s = g_strdup(length > len + 1 ? &c[len + 1] : commands[i].arg.s);
             success = commands[i].func(&a);
@@ -2003,6 +2004,10 @@ process_line(char *line) {
             break;
         }
     }
+
+    save_command_history(command_hist);
+    g_free(command_hist);
+
     if (!found) {
         a.i = Error;
         a.s = g_strdup_printf("Not a browser command: %s", c);
