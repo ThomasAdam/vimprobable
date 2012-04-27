@@ -1041,8 +1041,10 @@ echo(const Arg *arg) {
     if (index < Info || index > Error)
         return TRUE;
 
-    set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
-    gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
+    if (!gtk_widget_is_focus(GTK_WIDGET(inputbox))) {
+        set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
+        gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
+    }
 
     return TRUE;
 }
