@@ -444,8 +444,8 @@ process_map_line(char *line) {
          * Last, but not least, the second argument being < 0 signifies to the function that this is a 
          * command line mapping, not a mapping to an existing internal symbol. */
         cmd = (char *)malloc(sizeof(char) * strlen(my_pair.value));
+        memset(cmd, 0, strlen(my_pair.value));
         strncpy(cmd, (my_pair.value + 1), strlen(my_pair.value) - 1);
-        cmd[strlen(cmd)] = '\0';
         return process_mapping(my_pair.what, -1, cmd);
     }
     return FALSE;
