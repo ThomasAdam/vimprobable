@@ -1,6 +1,6 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009-2011 by Hannes Schueller
+    (c) 2009-2012 by Hannes Schueller
     (c) 2009-2010 by Matto Fransen
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
@@ -9,7 +9,7 @@
 */
 
 /* Vimprobable version number */
-#define VERSION "1.0.2"
+#define VERSION "1.0.3"
 #define INTERNAL_VERSION "Vimprobable2/"VERSION
 
 /* general settings */
