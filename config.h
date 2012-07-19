@@ -201,6 +201,7 @@ static Setting browsersettings[] = {
     { "defaultsearch",   defaultsearch,      "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "qmark",           NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "proxy",           NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
+    { "windowsize",      NULL,               "",                            FALSE,          FALSE,           FALSE,          FALSE  },
     { "scrollbars",      NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "statusbar",       NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "inputbox",        NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },

@@ -11,6 +11,7 @@
 */
 
 #include <X11/Xlib.h>
+#include <errno.h>
 #include "includes.h"
 #include "vimprobable.h"
 #include "utilities.h"
@@ -97,6 +98,7 @@ static gboolean process_set_line(char *line);
 void save_command_history(char *line);
 void toggle_proxy(gboolean onoff);
 void toggle_scrollbars(gboolean onoff);
+void set_default_winsize(const char * const size);
 
 gboolean process_keypress(GdkEventKey *event);
 void fill_suggline(char * suggline, const char * command, const char *fill_with);
@@ -1979,6 +1981,9 @@ process_set_line(char *line) {
             if (strlen(my_pair.what) == 8 && strncmp("cabundle", my_pair.what, 8) == 0) {
                 g_object_set(G_OBJECT(session), SOUP_SESSION_SSL_CA_FILE, ca_bundle, NULL);
             }
+            if (strlen(my_pair.what) == 10 && strncmp("windowsize", my_pair.what, 10) == 0) {
+                set_default_winsize(my_pair.value);
+            }
 
             /* reload page? */
             if (browsersettings[i].reload)
@@ -2149,6 +2154,27 @@ toggle_scrollbars(gboolean onoff) {
 	gtk_widget_set_scroll_adjustments (GTK_WIDGET(webview), adjust_h, adjust_v);
 
 	return;
+}
+
+void set_default_winsize(const char * const size) {
+    char *p;
+    int x = 640, y = 480;
+
+    x = strtol(size, &p, 10);
+    if (errno == ERANGE || x <= 0) {
+	    x = 640;
+	    goto out;
+    }
+
+    if (p == size || strlen(size) == p - size)
+	    goto out;
+
+    y = strtol(p + 1, NULL, 10);
+    if (errno == ERANGE || y <= 0)
+	    y = 480;
+
+out:
+    gtk_window_resize(GTK_WINDOW(window), x, y);
 }
 
 void
