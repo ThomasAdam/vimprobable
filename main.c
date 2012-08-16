@@ -2626,8 +2626,13 @@ main(int argc, char *argv[]) {
     if (!g_thread_supported())
         g_thread_init(NULL);
 
-    if (winid)
-        embed = atoi(winid);
+    if (winid) {
+        if (strncmp(winid, "0x", 2) == 0) {
+            embed = strtol(winid, NULL, 16);
+        } else {
+            embed = atoi(winid);
+        }
+    }
 
     setup_modkeys();
     make_keyslist();
