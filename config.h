@@ -84,6 +84,10 @@ static URIHandler uri_handlers[] = {
 /* user styles */
 #define             USER_STYLESHEET             "%s/vimprobable/style.css", config_base
 
+/* user javascript */
+#define             ENABLE_USER_SCRIPTFILE
+#define             USER_SCRIPTFILE             "%s/vimprobable/scripts.js", config_base
+
 /* ssl */
 static gboolean strict_ssl              = TRUE; /* FALSE will accept any SSL certificate at face value */
 static char ca_bundle[MAX_SETTING_SIZE] = "/etc/ssl/certs/ca-certificates.crt";

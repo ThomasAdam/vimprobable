@@ -87,6 +87,7 @@ static gboolean view_source(const Arg * arg);
 static gboolean zoom(const Arg *arg);
 static gboolean fake_key_event(const Arg *arg);
 
+static void clear_focus(void);
 static void update_url(const char *uri);
 static void setup_modkeys(void);
 static void setup_gui(void);
@@ -98,6 +99,7 @@ static void jsapi_evaluate_script(const gchar *script, gchar **value, gchar **me
 static void download_progress(WebKitDownload *d, GParamSpec *pspec);
 static void set_widget_font_and_color(GtkWidget *widget, const char *font_str,
                 const char *bg_color_str, const char *fg_color_str);
+static void scripts_run_user_file(void);
 
 static gboolean history(void);
 static gboolean process_set_line(char *line);
@@ -216,6 +218,7 @@ webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointe
     update_url(uri);
     script(&a);
     g_free(a.s);
+    scripts_run_user_file();
 
     if (mode == ModeInsert || mode == ModeHints) {
         Arg a = { .i = ModeNormal };
@@ -228,15 +231,10 @@ void
 webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
     WebKitWebSettings *settings = webkit_web_view_get_settings(webview);
     gboolean scripts;
-    
+
     g_object_get(settings, "enable-scripts", &scripts, NULL);
     if (escape_input_on_load && scripts && !manual_focus && !gtk_widget_is_focus(inputbox)) {
-        Arg a = { .i = Silent, .s = g_strdup("hints.clearFocus();") };
-        script(&a);
-        g_free(a.s);
-        a.i = ModeNormal;
-        a.s = NULL;
-        set(&a);
+        clear_focus();
     }
     if (HISTORY_MAX_ENTRIES > 0)
         history();
@@ -2000,6 +1998,19 @@ focus_input(const Arg *arg) {
     return TRUE;
 }
 
+static void
+clear_focus(void) {
+    static Arg a;
+
+    a.s = g_strdup("hints.clearFocus();");
+    a.i = Silent;
+    script(&a);
+    g_free(a.s);
+    a.i = ModeNormal;
+    a.s = NULL;
+    set(&a);
+}
+
 static gboolean
 browser_settings(const Arg *arg) {
     char line[255];
@@ -2614,6 +2625,33 @@ setup_signals() {
     g_signal_connect(G_OBJECT(inspector),
         "inspect-web-view",                             G_CALLBACK(inspector_inspect_web_view_cb),   NULL);
 }
+
+#ifdef ENABLE_USER_SCRIPTFILE
+static void
+scripts_run_user_file() {
+    gchar *js = NULL, *user_scriptfile = NULL;
+    GError *error = NULL;
+
+    user_scriptfile = g_strdup_printf(USER_SCRIPTFILE);
+
+    /* run the users script file */
+    if (g_file_test(user_scriptfile, G_FILE_TEST_IS_REGULAR)
+            && g_file_get_contents(user_scriptfile, &js, NULL, &error)) {
+
+        gchar *value = NULL, *message = NULL;
+
+        jsapi_evaluate_script(js, &value, &message);
+        if (message) {
+            fprintf(stderr, "%s", message);
+            g_free(message);
+        }
+    } else {
+        fprintf(stderr, "Cannot open %s: %s\n", user_scriptfile, error ? error->message : "file not found");
+    }
+
+    g_free(user_scriptfile);
+}
+#endif
 
 #ifdef ENABLE_COOKIE_SUPPORT
 void

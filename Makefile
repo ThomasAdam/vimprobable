@@ -1,7 +1,8 @@
 TARGET = vimprobable2
 
 # Objectfiles, needed for $(TARGET)
-OBJ = main.o utilities.o callbacks.o
+#OBJ = main.o utilities.o callbacks.o
+OBJ = $(patsubst %.c, %.o, $(wildcard *.c))
 # Manpages
 MAN1 = vimprobable2.1
 MAN5 = vimprobablerc.5
