@@ -188,7 +188,7 @@ enum ConfigFileError {
 #define             CLOSED_URL_FILENAME         "%s/vimprobable/closed", config_base
 
 /* Command size */
-#define	            COMMANDSIZE	                1024
+#define	            COMMANDSIZE	                43
 
 /* maximum size of internal string variable handled by :set
  * if you set this to anything lower than 8, colour values
