@@ -334,6 +334,8 @@ The following URI handlers are already defined in config.h:
 x-terminal-emulator -e wget %s
 .IP mailto:
 x-terminal-emulator -e mutt %s
+.IP vimprobableedit:
+x-terminal-emulator -e vi %s
 
 .P
 
@@ -343,6 +345,15 @@ for details how to add or override these settings.
 
 You can always overwrite them or define your own in
 .I $HOME/.config/vimprobable/vimprobablerc.
+
+The vimprobableedit protocol plays a special role.  It is used by
+vimprobable when an external editor is called from within a text field.
+Note that vimprobable will update the text field when the forked process
+terminates.  Editors that detach from the controlling terminal (vim -g
+does, for example) terminate immediately as far as vimprobable is
+concerned, which means your changes will not be pulled into the text
+field.  If your editor suffers from that disease, check of options that
+keep it from detaching; for vim, the -f option does this.
 
 .SH FILES
 
