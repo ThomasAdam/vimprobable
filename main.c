@@ -11,7 +11,10 @@
 */
 
 #include <X11/Xlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <errno.h>
+#include <stdlib.h>
 #include "includes.h"
 #include "vimprobable.h"
 #include "utilities.h"
@@ -61,6 +64,7 @@ static gboolean complete(const Arg *arg);
 static gboolean descend(const Arg *arg);
 gboolean echo(const Arg *arg);
 static gboolean focus_input(const Arg *arg);
+static gboolean open_editor(const Arg *arg);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
@@ -432,6 +436,9 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
             g_free(a.s);
             a.i = ModeNormal;
             return set(&a);
+        } else if (CLEAN(event->state) & GDK_CONTROL_MASK) {
+            /* keybindings of non-printable characters */
+            if (process_keypress(event) == TRUE) return TRUE;
         }
     case ModePassThrough:
         if (IS_ESCAPE(event)) {
@@ -1818,6 +1825,136 @@ view_source(const Arg * arg) {
     gboolean current_mode = webkit_web_view_get_view_source_mode(webview);
     webkit_web_view_set_view_source_mode(webview, !current_mode);
     webkit_web_view_reload(webview);
+    return TRUE;
+}
+
+/* open an external editor defined by the protocol handler for
+vimprobableedit on a text box or similar */
+static gboolean
+open_editor(const Arg *arg) {
+    FILE *fp;
+    char *text = NULL, s[255] = "";
+    gboolean success;
+    GString *new_text = g_string_new("");
+    GPid child_pid;
+    int child_status;
+    gchar *value = NULL, *message = NULL, *tag = NULL, *edit_url = NULL;
+    gchar temp_file_name[] = "/tmp/vimprobableeditXXXXXX";
+    int temp_file_handle = -1;
+
+    /* check if active element is suitable for text editing */
+    jsapi_evaluate_script("document.activeElement.tagName", &value, &message);
+    if (value == NULL)
+        return FALSE;
+    tag = g_strdup(value);
+    if (strcmp(tag, "INPUT") == 0) {
+        /* extra check: type == text */
+        jsapi_evaluate_script("document.activeElement.type", &value, &message);
+        if (strcmp(value, "text") != 0) {
+            g_free(value);
+            g_free(message);
+            return FALSE;
+        }
+    } else if (strcmp(tag, "TEXTAREA") != 0) {
+        g_free(value);
+        g_free(message);
+        return FALSE;
+    }
+    jsapi_evaluate_script("document.activeElement.value", &value, &message);
+    text = g_strdup(value);
+    if (text == NULL) {
+        g_free(value);
+        g_free(message);
+        return FALSE;
+    }
+
+    /* write text into temporary file */
+    temp_file_handle = mkstemp(temp_file_name);
+    if (temp_file_handle == -1) {
+        message = g_strdup_printf("Could not create temporary file: %s",
+            strerror(errno));
+        give_feedback(message);
+        g_free(value);
+        g_free(message);
+        g_free(text);
+        return FALSE;
+    }
+    if (write(temp_file_handle, text, strlen(text)) != strlen(text)) {
+        message = g_strdup_printf("Short write to temporary file: %s",
+            strerror(errno));
+        give_feedback(message);
+        g_free(value);
+        g_free(message);
+        g_free(text);
+        return FALSE;
+	}
+	close(temp_file_handle);
+    g_free(text);
+
+    /* spawn editor */
+    edit_url = g_strdup_printf("vimprobableedit:%s", temp_file_name);
+    success = open_handler_pid(edit_url, &child_pid);
+    g_free(edit_url);
+    if (!success) {
+        give_feedback("External editor open failed (no handler for"
+            " vimprobableedit protocol?)");
+        unlink(temp_file_name);
+        g_free(value);
+        g_free(message);
+        return FALSE;
+    }
+    
+    /* Wait for the child to exit */
+    /* TODO: use g_child_watch_add and make the rest a callback */
+    while (waitpid(child_pid, &child_status, 0)) {
+        if (errno!=EINTR) {
+            break;
+        }
+    }
+    g_spawn_close_pid (child_pid);
+
+    if (child_status) {
+        give_feedback("External editor returned with non-zero status,"
+            " discarding edits.");
+        unlink(temp_file_name);
+        g_free(value);
+        g_free(message);
+        return FALSE;
+    }
+
+    /* re-read the new contents of the file and put it into the HTML element */
+    if (!access(temp_file_name, R_OK) == 0) {
+        g_free(value);
+        g_free(message);
+        return FALSE;
+    }
+    fp = fopen(temp_file_name, "r");
+    if (fp == NULL) {
+        g_free(value);
+        g_free(message);
+        return FALSE;
+    }
+    jsapi_evaluate_script("document.activeElement.value = '';", &value, &message);
+    new_text = g_string_append(new_text, "\"");
+    while (fgets(s, 254, fp)) {
+        if (s[strlen(s)-1] == '\n') {
+            /* encode line breaks into the string as Javascript does not like actual line breaks */
+            new_text = g_string_append_len(new_text, s, strlen(s) - 1);
+            new_text = g_string_append(new_text, "\\n");
+        } else {
+            new_text = g_string_append(new_text, s);
+        }
+    }
+    new_text = g_string_append(new_text, "\"");
+    fclose(fp);
+    jsapi_evaluate_script(g_strconcat("document.activeElement.value = ", new_text->str, ";", NULL), &value, &message);
+
+    /* done */
+    g_string_free(new_text, TRUE);
+    g_free(value);
+    g_free(message);
+    g_free(tag);
+    unlink(temp_file_name);
     return TRUE;
 }
 

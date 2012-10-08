@@ -795,13 +795,22 @@ void make_uri_handlers_list(URIHandler *uri_handlers, int length)
     }
 }
 
+
+/* spawn a child process handling a protocol encoded in URI.
+
+On success, pid will contain the pid of the spawned child.
+If you pass NULL as child_pid, glib will reap the child. */
 gboolean
-open_handler(char *uri) {
+open_handler_pid(char *uri, GPid *child_pid) {
     char *argv[64];
     char *p = NULL, *arg, arg_temp[MAX_SETTING_SIZE], *temp, temp2[MAX_SETTING_SIZE] = "", *temp3;
     int j;
     GList *l;
+    GSpawnFlags flags = G_SPAWN_SEARCH_PATH; 
 
+    if (child_pid) {
+        flags |= G_SPAWN_DO_NOT_REAP_CHILD;
+    }
     p = strchr(uri, ':');
     if (p) {
     	if (dynamic_uri_handlers != NULL) {
@@ -821,7 +830,7 @@ open_handler(char *uri) {
                                 	strncat(arg_temp, temp3, 1);
                                 	temp3++;
                             	}
-                            	strcat(arg_temp, arg);
+                            	strcat(arg_temp, arg+1);
                             	temp3++;
                             	temp3++;
                             	strcat(arg_temp, temp3);
@@ -833,7 +842,8 @@ open_handler(char *uri) {
                         	j++;
                     	}
                     	argv[j] =  NULL;
-                    	g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
+                    	g_spawn_async(NULL, argv, NULL, flags,
+                    	    NULL, NULL, child_pid, NULL);
                 	}
                 	return TRUE;
             	}
@@ -843,3 +853,8 @@ open_handler(char *uri) {
     return FALSE;
 }
 
+
+gboolean
+open_handler(char *uri) {
+    return open_handler_pid(uri, NULL);
+}

@@ -114,6 +114,9 @@ Key keys[] = {
     { 0,                    GDK_semicolon,  GDK_T,          input,      {.s = ";T"} },
     { 0,                    GDK_semicolon,  GDK_W,          input,      {.s = ";W"} },
 
+    /* this needs to be a binding using CTRL for obvious reasons */
+    { GDK_CONTROL_MASK,     0,              GDK_t,          open_editor,{} },
+
     { 0,                    GDK_VoidSymbol, GDK_Escape,     set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     GDK_VoidSymbol, GDK_bracketleft,set,        {ModeNormal} },
     { GDK_CONTROL_MASK,     0,              GDK_z,          set,        {ModePassThrough} },
