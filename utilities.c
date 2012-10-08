@@ -829,7 +829,7 @@ open_handler_pid(char *uri, GPid *child_pid) {
                                 	strncat(arg_temp, temp3, 1);
                                 	temp3++;
                             	}
-                            	strcat(arg_temp, arg+1);
+                            	strcat(arg_temp, arg);
                             	temp3++;
                             	temp3++;
                             	strcat(arg_temp, temp3);

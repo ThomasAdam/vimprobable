@@ -66,6 +66,7 @@ static const char progressborderright   = ']';
  */
 static URIHandler uri_handlers[] = {
     { "mailto:",          "x-terminal-emulator -e mutt %s" },
+    { "vimprobableedit:", "x-terminal-emulator -e vi %s" },
     { "ftp://",           "x-terminal-emulator -e wget ftp://%s" },
 };
 
@@ -141,6 +142,7 @@ Command commands[COMMANDSIZE] = {
     { "bma",                                           	bookmark,         {0} },
     { "bookmark",                                      	bookmark,         {0} },
     { "source",                                        	view_source,      {0} },
+    { "openeditor",                                   	open_editor,      {0} },
     { "set",                                           	browser_settings, {0} },
     { "map",                                           	mappings,         {0} },
     { "jumpleft",                                       scroll,           {ScrollJumpTo   | DirectionLeft} },
