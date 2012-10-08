@@ -269,14 +269,13 @@ void add_modkeys(char key)
     unsigned int k, len;
     extern char *modkeys;
     len = strlen( modkeys );
-    while (k < len )
-    { 
-	if ( modkeys[k] == key ) return;
-	k++;
+    while (k < len ) { 
+        if ( modkeys[k] == key ) return;
+        k++;
     }
-    modkeys = realloc(modkeys, len + 1);
-    modkeys[len++] = key;
-    modkeys[len] = '\0';
+    modkeys = realloc(modkeys, len + 2);
+    modkeys[len] = key;
+    modkeys[len+1] = '\0';
 }
 
 gboolean

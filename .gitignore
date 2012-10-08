@@ -2,3 +2,6 @@
 vimprobable2
 javascript.h
 *.d
+*.swp
+.vimrc
+*.patch
