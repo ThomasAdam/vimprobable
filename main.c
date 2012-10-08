@@ -65,6 +65,7 @@ static gboolean descend(const Arg *arg);
 gboolean echo(const Arg *arg);
 static gboolean focus_input(const Arg *arg);
 static gboolean open_editor(const Arg *arg);
+void _resume_from_editor(GPid child_pid, int status, gpointer data);
 static gboolean input(const Arg *arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
@@ -1832,14 +1833,11 @@ view_source(const Arg * arg) {
 vimprobableedit on a text box or similar */
 static gboolean
 open_editor(const Arg *arg) {
-    FILE *fp;
-    char *text = NULL, s[255] = "";
+    char *text = NULL;
     gboolean success;
-    GString *new_text = g_string_new("");
     GPid child_pid;
-    int child_status;
     gchar *value = NULL, *message = NULL, *tag = NULL, *edit_url = NULL;
-    gchar temp_file_name[] = "/tmp/vimprobableeditXXXXXX";
+    gchar *temp_file_name = g_strdup("/tmp/vimprobableeditXXXXXX");
     int temp_file_handle = -1;
 
     /* check if active element is suitable for text editing */
@@ -1888,7 +1886,7 @@ open_editor(const Arg *arg) {
         g_free(text);
         return FALSE;
 	}
-	close(temp_file_handle);
+    close(temp_file_handle);
     g_free(text);
 
     /* spawn editor */
@@ -1904,58 +1902,79 @@ open_editor(const Arg *arg) {
         return FALSE;
     }
     
-    /* Wait for the child to exit */
-    /* TODO: use g_child_watch_add and make the rest a callback */
-    while (waitpid(child_pid, &child_status, 0)) {
-        if (errno!=EINTR) {
-            break;
-        }
-    }
-    g_spawn_close_pid (child_pid);
+    g_child_watch_add(child_pid, _resume_from_editor, temp_file_name);
+
+    /* temp_file_name is freed in _resume_from_editor */
+    g_free(value);
+    g_free(message);
+    g_free(tag);
+    return TRUE;
+}
+
+
+/* pick up from where open_editor left the work to the glib event loop.
+
+This is called when the external editor exits. 
+
+The data argument points to allocated memory containing the temporary file
+name. */
+void 
+_resume_from_editor(GPid child_pid, int child_status, gpointer data) {
+    FILE *fp;
+    GString *new_text = g_string_new("");
+    g_spawn_close_pid(child_pid);
+    gchar *value = NULL, *message = NULL;
+    gchar *temp_file_name = data;
+    gchar buffer[255] = "";
 
     if (child_status) {
         give_feedback("External editor returned with non-zero status,"
             " discarding edits.");
-        unlink(temp_file_name);
-        g_free(value);
-        g_free(message);
-        return FALSE;
+        goto error_exit;
     }
 
     /* re-read the new contents of the file and put it into the HTML element */
     if (!access(temp_file_name, R_OK) == 0) {
-        g_free(value);
-        g_free(message);
-        return FALSE;
+        message = g_strdup_printf("Could not access temporary file: %s",
+            strerror(errno));
+        goto error_exit;
     }
     fp = fopen(temp_file_name, "r");
     if (fp == NULL) {
-        g_free(value);
-        g_free(message);
-        return FALSE;
+        /* this would be too weird to even emit an error message */
+        goto error_exit;
     }
-    jsapi_evaluate_script("document.activeElement.value = '';", &value, &message);
+    jsapi_evaluate_script("document.activeElement.value = '';", 
+        &value, &message);
     new_text = g_string_append(new_text, "\"");
-    while (fgets(s, 254, fp)) {
-        if (s[strlen(s)-1] == '\n') {
+    while (fgets(buffer, 254, fp)) {
+        if (buffer[strlen(buffer)-1] == '\n') {
             /* encode line breaks into the string as Javascript does not like actual line breaks */
-            new_text = g_string_append_len(new_text, s, strlen(s) - 1);
+            new_text = g_string_append_len(
+                new_text, buffer, strlen(buffer) - 1);
             new_text = g_string_append(new_text, "\\n");
         } else {
-            new_text = g_string_append(new_text, s);
+            new_text = g_string_append(new_text, buffer);
         }
     }
     new_text = g_string_append(new_text, "\"");
     fclose(fp);
-    jsapi_evaluate_script(g_strconcat("document.activeElement.value = ", new_text->str, ";", NULL), &value, &message);
+    jsapi_evaluate_script(g_strconcat("document.activeElement.value = ", 
+        new_text->str, ";", NULL), &value, &message);
 
     /* done */
+    unlink(temp_file_name);
+    g_free(temp_file_name);
     g_string_free(new_text, TRUE);
     g_free(value);
     g_free(message);
-    g_free(tag);
+    return;
+
+error_exit:
     unlink(temp_file_name);
-    return TRUE;
+    g_free(temp_file_name);
+    g_free(value);
+    g_free(message);
 }
 
 static gboolean
