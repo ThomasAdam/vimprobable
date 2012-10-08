@@ -1837,7 +1837,8 @@ open_editor(const Arg *arg) {
     gboolean success;
     GPid child_pid;
     gchar *value = NULL, *message = NULL, *tag = NULL, *edit_url = NULL;
-    gchar *temp_file_name = g_strdup("/tmp/vimprobableeditXXXXXX");
+    gchar *temp_file_name = g_strdup_printf("%s/vimprobableeditXXXXXX",
+      temp_dir);
     int temp_file_handle = -1;
 
     /* check if active element is suitable for text editing */
@@ -2795,6 +2796,11 @@ main(int argc, char *argv[]) {
     if (ver) {
         printf("%s\n", INTERNAL_VERSION);
         return EXIT_SUCCESS;
+    }
+
+    if (getenv("TMPDIR")) {
+      strncpy(temp_dir, getenv("TMPDIR"), MAX_SETTING_SIZE);
+      temp_dir[MAX_SETTING_SIZE-1] = 0;
     }
 
     if( getenv("XDG_CONFIG_HOME") )

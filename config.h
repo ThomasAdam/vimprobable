@@ -20,6 +20,7 @@ static const gboolean enablePlugins     = TRUE; /* TRUE keeps plugins enabled */
 static const gboolean enableJava        = TRUE; /* FALSE disables Java applets */
 static const gboolean enablePagecache   = FALSE; /* TRUE turns on the page cache. */
 static gboolean escape_input_on_load    = TRUE; /* TRUE will disable automatic focusing of input fields via Javascript*/
+char temp_dir[MAX_SETTING_SIZE]         = "/tmp"; /* location of temporary files, default will be overridden if TEMPDIR is set */
 
 /* appearance */
 char statusbgcolor[MAX_SETTING_SIZE]    = "#000000";            /* background color for status bar */
@@ -209,4 +210,5 @@ static Setting browsersettings[] = {
     { "escapeinput",     NULL,               "",                           FALSE,          TRUE,            FALSE,          FALSE  },
     { "strictssl",       NULL,               "",                            FALSE,          TRUE,            FALSE,          FALSE  },
     { "cabundle",        ca_bundle,          "",                            FALSE,          FALSE,           FALSE,          FALSE  },
+    { "tempdir",         temp_dir,           "",                            FALSE,          FALSE,           FALSE,          FALSE  },
 };
