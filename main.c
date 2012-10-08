@@ -1929,11 +1929,14 @@ name. */
 void 
 _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
     FILE *fp;
-    GString *new_text = g_string_new("");
+    GString *set_value_js = g_string_new(
+        "document.activeElement.value = \"");
     g_spawn_close_pid(child_pid);
     gchar *value = NULL, *message = NULL;
     gchar *temp_file_name = data;
-    gchar buffer[255] = "";
+    gchar buffer[BUF_SIZE] = ""; 
+    gchar *buf_ptr = buffer;
+    int char_read;
 
     jsapi_evaluate_script(
         "document.activeElement.disabled = true;"
@@ -1959,35 +1962,43 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
     }
     jsapi_evaluate_script("document.activeElement.value = '';", 
         &value, &message);
-    new_text = g_string_append(new_text, "\"");
-    while (fgets(buffer, 254, fp)) {
-        if (buffer[strlen(buffer)-1] == '\n') {
-            /* encode line breaks into the string as Javascript does not like actual line breaks */
-            new_text = g_string_append_len(
-                new_text, buffer, strlen(buffer) - 1);
-            new_text = g_string_append(new_text, "\\n");
+
+    while (EOF != (char_read = fgetc(fp))) {
+        if (char_read == '\n') {
+            *buf_ptr++ = '\\';
+            *buf_ptr++ = 'n';
+        } else if (char_read == '"') {
+            *buf_ptr++ = '\\';
+            *buf_ptr++ = '"';
         } else {
-            new_text = g_string_append(new_text, buffer);
+            *buf_ptr++ = char_read;
+        }
+        /* ship out as the buffer when space gets tight.  This has
+        fuzz to save on thinking, plus we have enough space for the
+        trailing "; in any case. */
+        if (buf_ptr-buffer>=BUF_SIZE-10) {
+            *buf_ptr = 0;
+            g_string_append(set_value_js, buffer);
+            buf_ptr = buffer;
         }
     }
-    new_text = g_string_append(new_text, "\"");
+    *buf_ptr++ = '"';
+    *buf_ptr++ = ';';
+    *buf_ptr = 0;
+    g_string_append(set_value_js, buffer);
     fclose(fp);
-    /* FIXME: Is the memory returned by g_strconcat actually freed? */
-    jsapi_evaluate_script(g_strconcat("document.activeElement.value = ", 
-        new_text->str, ";", NULL), &value, &message);
+
+    jsapi_evaluate_script(set_value_js->str, &value, &message);
 
     /* Fall through, error and normal exit are identical */
 error_exit:
-    if (new_text) {
-        g_string_free(new_text, TRUE);
-    }
-
     jsapi_evaluate_script(
         "document.activeElement.disabled = false;"
         "document.activeElement.style.background ="
         "   document.activeElement.originalBackground;"
         ,&value, &message);
 
+    g_string_free(set_value_js, TRUE);
     unlink(temp_file_name);
     g_free(temp_file_name);
     g_free(value);

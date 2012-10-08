@@ -191,3 +191,6 @@ enum ConfigFileError {
 
 /* completion list size */
 #define             MAX_LIST_SIZE               40
+
+/* Size of (some) I/O buffers */
+#define             BUF_SIZE                    1024
