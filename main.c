@@ -1901,7 +1901,15 @@ open_editor(const Arg *arg) {
         g_free(message);
         return FALSE;
     }
-    
+   
+    /* mark the active text box as "under processing" */
+    jsapi_evaluate_script(
+        "document.activeElement.disabled = true;"
+        "document.activeElement.originalBackground = "
+        "   document.activeElement.style.background;"
+        "document.activeElement.style.background = '#aaaaaa';"
+        ,&value, &message);
+
     g_child_watch_add(child_pid, _resume_from_editor, temp_file_name);
 
     /* temp_file_name is freed in _resume_from_editor */
@@ -1926,6 +1934,11 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
     gchar *value = NULL, *message = NULL;
     gchar *temp_file_name = data;
     gchar buffer[255] = "";
+
+    jsapi_evaluate_script(
+        "document.activeElement.disabled = true;"
+        "document.activeElement.style.background = '#aaaaaa';"
+        ,&value, &message);
 
     if (child_status) {
         give_feedback("External editor returned with non-zero status,"
@@ -1959,18 +1972,22 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
     }
     new_text = g_string_append(new_text, "\"");
     fclose(fp);
+    /* FIXME: Is the memory returned by g_strconcat actually freed? */
     jsapi_evaluate_script(g_strconcat("document.activeElement.value = ", 
         new_text->str, ";", NULL), &value, &message);
 
-    /* done */
-    unlink(temp_file_name);
-    g_free(temp_file_name);
-    g_string_free(new_text, TRUE);
-    g_free(value);
-    g_free(message);
-    return;
-
+    /* Fall through, error and normal exit are identical */
 error_exit:
+    if (new_text) {
+        g_string_free(new_text, TRUE);
+    }
+
+    jsapi_evaluate_script(
+        "document.activeElement.disabled = false;"
+        "document.activeElement.style.background ="
+        "   document.activeElement.originalBackground;"
+        ,&value, &message);
+
     unlink(temp_file_name);
     g_free(temp_file_name);
     g_free(value);
