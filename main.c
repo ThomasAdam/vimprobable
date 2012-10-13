@@ -255,6 +255,13 @@ webview_open_js_window_cb(WebKitWebView* temp_view, GParamSpec param_spec) {
 
 static WebKitWebView *
 webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
+    if (rememberedURI != NULL && strlen(rememberedURI) > 0) {
+        if (strncmp(rememberedURI, "javascript:", 11) != 0) {
+            Arg a = { .i = TargetNew, .s = rememberedURI };
+            open_arg(&a);
+            return NULL;
+        }
+    }
     /* create a temporary webview to execute the script in */
     WebKitWebView *temp_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
     /* wait until the new webview receives its new URI */
