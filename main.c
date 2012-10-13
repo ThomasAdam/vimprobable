@@ -518,6 +518,11 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     if (length == 0)
         return;
     text = (char*)gtk_entry_get_text(entry);
+
+    /* move focus from inputbox to print potential messages that could not be
+     * printed as long as the inputbox is focused */
+    gtk_widget_grab_focus(GTK_WIDGET(webview));
+
     if (length > 1 && text[0] == ':') {
         success = process_line((text + 1));
     } else if (length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
