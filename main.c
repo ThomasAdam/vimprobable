@@ -1070,17 +1070,15 @@ static gboolean
 open_inspector(const Arg * arg) {
     gboolean inspect_enabled;
     WebKitWebSettings *settings;
-    Arg a;
 
     settings = webkit_web_view_get_settings(webview);
     g_object_get(G_OBJECT(settings), "enable-developer-extras", &inspect_enabled, NULL);
     if (inspect_enabled) {
         webkit_web_inspector_show(inspector);
+        return TRUE;
     } else {
-        a.i = Error;
-        a.s = g_strdup("Webinspector is not enabled");
-        echo(&a);
-        g_free(a.s);
+        echo_message(Error, "Webinspector is not enabled");
+        return FALSE;
     }
 }
 
