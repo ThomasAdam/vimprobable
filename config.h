@@ -145,6 +145,7 @@ Command commands[COMMANDSIZE] = {
     { "openeditor",                                   	open_editor,      {0} },
     { "set",                                           	browser_settings, {0} },
     { "map",                                           	mappings,         {0} },
+    { "inspect",                                        open_inspector,   {0} },
     { "jumpleft",                                       scroll,           {ScrollJumpTo   | DirectionLeft} },
     { "jumpright",                                      scroll,           {ScrollJumpTo   | DirectionRight} },
     { "jumptop",                                        scroll,           {ScrollJumpTo   | DirectionTop} },

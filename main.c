@@ -67,6 +67,7 @@ static gboolean focus_input(const Arg *arg);
 static gboolean open_editor(const Arg *arg);
 void _resume_from_editor(GPid child_pid, int status, gpointer data);
 static gboolean input(const Arg *arg);
+static gboolean open_inspector(const Arg * arg);
 static gboolean navigate(const Arg *arg);
 static gboolean number(const Arg *arg);
 static gboolean open_arg(const Arg *arg);
@@ -139,7 +140,7 @@ static char current_modkey;
 static char *search_handle;
 static gboolean search_direction;
 static gboolean echo_active = TRUE;
-WebKitWebInspector *inspector;
+static WebKitWebInspector *inspector;
 
 static GdkNativeWindow embed = 0;
 static char *configfile = NULL;
@@ -1077,6 +1078,24 @@ echo(const Arg *arg) {
     return TRUE;
 }
 
+static gboolean
+open_inspector(const Arg * arg) {
+    gboolean inspect_enabled;
+    WebKitWebSettings *settings;
+    Arg a;
+
+    settings = webkit_web_view_get_settings(webview);
+    g_object_get(G_OBJECT(settings), "enable-developer-extras", &inspect_enabled, NULL);
+    if (inspect_enabled) {
+        webkit_web_inspector_show(inspector);
+    } else {
+        a.i = Error;
+        a.s = g_strdup("Webinspector is not enabled");
+        echo(&a);
+        g_free(a.s);
+    }
+}
+
 gboolean
 input(const Arg *arg) {
     int pos = 0;
@@ -1698,7 +1717,6 @@ fake_key_event(const Arg *a) {
 
     return TRUE;
 }
-
 
 gboolean
 commandhistoryfetch(const Arg *arg) {
