@@ -317,7 +317,6 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     const gchar *filename;
     gchar *uri, *path;
     uint32_t size;
-    Arg a;
     WebKitDownloadStatus status;
 
     filename = webkit_download_get_suggested_filename(download);
@@ -329,13 +328,10 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     webkit_download_set_destination_uri(download, uri);
     g_free(uri);
     size = (uint32_t)webkit_download_get_total_size(download);
-    a.i = Info;
     if (size > 0)
-        a.s = g_strdup_printf("Download %s started (expected size: %u bytes)...", filename, size);
+        echo_message(Info, "Download %s started (expected size: %u bytes)...", filename, size);
     else
-        a.s = g_strdup_printf("Download %s started (unknown size)...", filename);
-    echo(&a);
-    g_free(a.s);
+        echo_message(Info, "Download %s started (unknown size)...", filename);
     activeDownloads = g_list_prepend(activeDownloads, download);
     g_signal_connect(download, "notify::progress", G_CALLBACK(download_progress), NULL);
     g_signal_connect(download, "notify::status", G_CALLBACK(download_progress), NULL);
@@ -353,20 +349,14 @@ blank_cb(void) {
 
 void
 download_progress(WebKitDownload *d, GParamSpec *pspec) {
-    Arg a;
     WebKitDownloadStatus status = webkit_download_get_status(d);
 
     if (status != WEBKIT_DOWNLOAD_STATUS_STARTED && status != WEBKIT_DOWNLOAD_STATUS_CREATED) {
         if (status != WEBKIT_DOWNLOAD_STATUS_FINISHED) {
-            a.i = Error;
-            a.s = g_strdup_printf("Error while downloading %s", webkit_download_get_suggested_filename(d));
-            echo(&a);
+            echo_message(Error, "Error while downloading %s", webkit_download_get_suggested_filename(d));
         } else {
-            a.i = Info;
-            a.s = g_strdup_printf("Download %s finished", webkit_download_get_suggested_filename(d));
-            echo(&a);
+            echo_message(Info, "Download %s finished", webkit_download_get_suggested_filename(d));
         }
-        g_free(a.s);
         activeDownloads = g_list_remove(activeDownloads, d);
     }
     update_state();
@@ -418,9 +408,7 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
     case ModeNormal:
         if ((CLEAN(event->state) & ~irrelevant) == 0) {
             if (IS_ESCAPE(event)) {
-                a.i = Info;
-                a.s = g_strdup("");
-                echo(&a);
+                echo_message(Info, "");
                 g_free(a.s);
             } else if (current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
                     || (event->keyval == GDK_0 && count))) {
@@ -451,13 +439,13 @@ webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
         }
     case ModePassThrough:
         if (IS_ESCAPE(event)) {
-            echo(&a);
+            echo_message(Info, "");
             set(&a);
             return TRUE;
         }
         break;
     case ModeSendKey:
-        echo(&a);
+        echo_message(Info, "");
         set(&a);
         break;
     }
@@ -1309,7 +1297,7 @@ open_remembered(const Arg *arg)
 
 gboolean
 yank(const Arg *arg) {
-    const char *url, *feedback, *content;
+    const char *url, *content;
 
     if (arg->i & SourceSelection) {
         webkit_web_view_copy_clipboard(webview);
@@ -1318,10 +1306,8 @@ yank(const Arg *arg) {
         if (!content && arg->i & ClipboardGTK)
             content = gtk_clipboard_wait_for_text(clipboards[1]);
         if (content) {
-            feedback = g_strconcat("Yanked ", content, NULL);
+            echo_message(Info, "Yanked %s", content);
             g_free((gpointer *)content);
-            give_feedback(feedback);
-            g_free((gpointer *)feedback);
         }
     } else {
         if (arg->i & SourceURL) {
@@ -1331,8 +1317,8 @@ yank(const Arg *arg) {
         }
         if (!url)
             return TRUE;
-        feedback = g_strconcat("Yanked ", url, NULL);
-        give_feedback(feedback);
+
+        echo_message(Info, "Yanked %s", url);
         if (arg->i & ClipboardPrimary)
             gtk_clipboard_set_text(clipboards[0], url, -1);
         if (arg->i & ClipboardGTK)
@@ -1416,7 +1402,6 @@ gboolean
 search(const Arg *arg) {
     count = count ? count : 1;
     gboolean success, direction = arg->i & DirectionPrev;
-    Arg a;
 
     if (arg->s) {
         free(search_handle);
@@ -1434,12 +1419,9 @@ search(const Arg *arg) {
             if (arg->i & Wrapping) {
                 success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, direction, TRUE);
                 if (success) {
-                    a.i = Warning;
-                    a.s = g_strdup_printf("search hit %s, continuing at %s",
+                    echo_message(Warning, "search hit %s, continuing at %s",
                             direction ? "BOTTOM" : "TOP",
                             direction ? "TOP" : "BOTTOM");
-                    echo(&a);
-                    g_free(a.s);
                 } else
                     break;
             } else
@@ -1447,18 +1429,13 @@ search(const Arg *arg) {
         }
     } while(--count);
     if (!success) {
-        a.i = Error;
-        a.s = g_strdup_printf("Pattern not found: %s", search_handle);
-        echo(&a);
-        g_free(a.s);
+        echo_message(Error, "Pattern not found: %s", search_handle);
     }
     return TRUE;
 }
 
 gboolean
 set(const Arg *arg) {
-    Arg a = { .i = Info | NoAutoHide };
-
     switch (arg->i) {
     case ModeNormal:
         if (search_handle) {
@@ -1469,19 +1446,13 @@ set(const Arg *arg) {
         gtk_widget_grab_focus(GTK_WIDGET(webview));
         break;
     case ModePassThrough:
-        a.s = g_strdup("-- PASS THROUGH --");
-        echo(&a);
-        g_free(a.s);
+        echo_message(Info | NoAutoHide, "-- PASS THROUGH --");
         break;
     case ModeSendKey:
-        a.s = g_strdup("-- PASS TROUGH (next) --");
-        echo(&a);
-        g_free(a.s);
+        echo_message(Info | NoAutoHide, "-- PASS TROUGH (next) --");
         break;
     case ModeInsert: /* should not be called manually but automatically */
-        a.s = g_strdup("-- INSERT --");
-        echo(&a);
-        g_free(a.s);
+        echo_message(Info | NoAutoHide, "-- INSERT --");
         break;
     default:
         return TRUE;
@@ -1540,15 +1511,12 @@ quickmark(const Arg *a) {
         }
         char *ptr = strrchr(buf, '\n');
         *ptr = '\0';
-        Arg x = { .s = buf };
-        if (strlen(buf)) 
+        if (strlen(buf)) {
+            Arg x = { .s = buf };
             return open_arg(&x);
-        else {       
-            x.i = Error;
-            x.s = g_strdup_printf("Quickmark %d not defined", b);
-            echo(&x);
-            g_free(x.s);
-            return false; 
+        } else {
+            echo_message(Error, "Quickmark %d not defined", b);
+            return false;
         }
     } else { return false; }
 }
@@ -1573,10 +1541,7 @@ script(const Arg *arg) {
     }
     g_free(message);
     if (arg->i != Silent && value) {
-        a.i = arg->i;
-        a.s = g_strdup(value);
-        echo(&a);
-        g_free(a.s);
+        echo_message(arg->i, value);
     }
     /* switch mode according to scripts return value */
     if (value) {
@@ -1665,13 +1630,9 @@ fake_key_event(const Arg *a) {
     if(!embed) {
         return FALSE;
     }
-    Arg err;
-    err.i = Error;
     Display *xdpy;
     if ( (xdpy = XOpenDisplay(NULL)) == NULL ) {
-        err.s = g_strdup("Couldn't find the XDisplay.");
-        echo(&err);
-        g_free(err.s);
+        echo_message(Error, "Couldn't find the XDisplay.");
         return FALSE;
     }
        
@@ -1685,32 +1646,24 @@ fake_key_event(const Arg *a) {
     xk.state =  a->i;
 
     if( ! a->s ) {
-        err.s = g_strdup("Zero pointer as argument! Check your config.h");
-        echo(&err);
-        g_free(err.s);
+        echo_message(Error, "Zero pointer as argument! Check your config.h");
         return FALSE;
     }
 
     KeySym keysym;
     if( (keysym = XStringToKeysym(a->s)) == NoSymbol ) {
-        err.s = g_strdup_printf("Couldn't translate %s to keysym", a->s );
-        echo(&err);
-        g_free(err.s);
+        echo_message(Error, "Couldn't translate %s to keysym", a->s );
         return FALSE;
     }
     
     if( (xk.keycode = XKeysymToKeycode(xdpy, keysym)) == NoSymbol ) {
-        err.s = g_strdup("Couldn't translate keysym to keycode");
-        echo(&err);
-        g_free(err.s);
+        echo_message(Error, "Couldn't translate keysym to keycode");
         return FALSE;
     }
    
     xk.type = KeyPress;
     if( !XSendEvent(xdpy, embed, True, KeyPressMask, (XEvent *)&xk) ) {
-        err.s = g_strdup("XSendEvent failed");
-        echo(&err);
-        g_free(err.s);
+        echo_message(Error, "XSendEvent failed");
         return FALSE;
     }
     XFlush(xdpy);
@@ -1762,7 +1715,7 @@ bookmark(const Arg *arg) {
         }
         fprintf(f, "%s", "\n");
         fclose(f);
-        give_feedback( "Bookmark saved" );
+        echo_message(Info, "Bookmark saved");
         return TRUE;
     } else {
     	set_error("Bookmarks file not found.");
@@ -1897,7 +1850,7 @@ open_editor(const Arg *arg) {
     if (temp_file_handle == -1) {
         message = g_strdup_printf("Could not create temporary file: %s",
             strerror(errno));
-        give_feedback(message);
+        echo_message(Error, message);
         g_free(value);
         g_free(message);
         g_free(text);
@@ -1906,7 +1859,7 @@ open_editor(const Arg *arg) {
     if (write(temp_file_handle, text, strlen(text)) != strlen(text)) {
         message = g_strdup_printf("Short write to temporary file: %s",
             strerror(errno));
-        give_feedback(message);
+        echo_message(Error, message);
         g_free(value);
         g_free(message);
         g_free(text);
@@ -1920,7 +1873,7 @@ open_editor(const Arg *arg) {
     success = open_handler_pid(edit_url, &child_pid);
     g_free(edit_url);
     if (!success) {
-        give_feedback("External editor open failed (no handler for"
+        echo_message(Error, "External editor open failed (no handler for"
             " vimprobableedit protocol?)");
         unlink(temp_file_name);
         g_free(value);
@@ -1970,7 +1923,7 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
         ,&value, &message);
 
     if (child_status) {
-        give_feedback("External editor returned with non-zero status,"
+        echo_message(Error, "External editor returned with non-zero status,"
             " discarding edits.");
         goto error_exit;
     }
@@ -2145,7 +2098,7 @@ process_set_line(char *line) {
                     browsersettings[i].var[MAX_SETTING_SIZE - 1] = '\0';
                     /* in case this string is also used for a webkit setting, make sure it's consistent */
                     my_pair.value[MAX_SETTING_SIZE - 1] = '\0';
-                    give_feedback("String too long; automatically truncated!");
+                    echo_message(Info, "String too long; automatically truncated!");
                 }
             }
             if (strlen(browsersettings[i].webkit) > 0) {
@@ -2237,21 +2190,15 @@ process_line(char *line) {
     g_free(command_hist);
 
     if (!found) {
-        a.i = Error;
-        a.s = g_strdup_printf("Not a browser command: %s", c);
-        echo(&a);
-        g_free(a.s);
+        echo_message(Error, "Not a browser command: %s", c);
     } else if (!success) {
-        a.i = Error;
         if (error_msg != NULL) {
-            a.s = g_strdup_printf("%s", error_msg);
+            echo_message(Error, error_msg);
             g_free(error_msg);
             error_msg = NULL;
         } else {
-            a.s = g_strdup_printf("Unknown error. Please file a bug report!");
+            echo_message(Error, "Unknown error. Please file a bug report!");
         }
-        echo(&a);
-        g_free(a.s);
     }
     return success;
 }
@@ -2864,21 +2811,14 @@ main(int argc, char *argv[]) {
      * command line.
      */
     if (!(access(configfile, F_OK) == 0) && cfile) {
-	    char *feedback_str;
-
-	    feedback_str = g_strdup_printf("Config file '%s' doesn't exist", cfile);
-	    give_feedback(feedback_str);
-        g_free(feedback_str);
+        echo_message(Info, "Config file '%s' doesn't exist", cfile);
     } else if ((access(configfile, F_OK) == 0))
 	    configfile_exists = true;
 
     /* read config file */
     /* But only report errors if we failed, and the file existed. */
     if ((SUCCESS != read_rcfile(configfile)) && configfile_exists) {
-        a.i = Error;
-        a.s = g_strdup_printf("Error in config file '%s'", configfile);
-        echo(&a);
-        g_free(a.s);
+        echo_message(Error, "Error in config file '%s'", configfile);
         g_free(configfile);
     }
 

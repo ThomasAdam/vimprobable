@@ -25,7 +25,7 @@ gboolean changemapping(Key *search_key, int maprecord, char *cmd);
 gboolean process_line_arg(const Arg *arg);
 gboolean build_taglist(const Arg *arg, FILE *f);
 void set_error(const char *error);
-void give_feedback(const char *feedback);
+void echo_message(const MessageType type, const char *format, ...);
 Listelement * complete_list(const char *searchfor, const int mode, Listelement *elementlist);
 Listelement * add_list(const char *element, Listelement *elementlist);
 int count_list(Listelement *elementlist);

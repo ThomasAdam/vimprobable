@@ -49,15 +49,10 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
     char qmarks[10][101];
     char buf[100];
     int  i, mark, l=0;
-    Arg a;
     mark = -1;
     mark = atoi(bm);
-    if ( mark < 1 || mark > 9 ) 
-    {
-	    a.i = Error;
-	    a.s = g_strdup_printf("Invalid quickmark, only 1-9");
-	    echo(&a);
-	    g_free(a.s);
+    if ( mark < 1 || mark > 9 ) {
+	    echo_message(Error, "Invalid quickmark, only 1-9");
 	    return TRUE;
     }	    
     if ( uri == NULL ) return FALSE;
@@ -92,10 +87,7 @@ process_save_qmark(const char *bm, WebKitWebView *webview)
     for( i=0; i < 10; ++i ) 
         fprintf(fp, "%s\n", qmarks[i]);
     fclose(fp);
-    a.i = Error;
-    a.s = g_strdup_printf("Saved as quickmark %d: %s", mark, uri);
-    echo(&a);
-    g_free(a.s);
+    echo_message(Error, "Saved as quickmark %d: %s", mark, uri);
 
     return TRUE;
 }
@@ -489,14 +481,18 @@ set_error(const char *error) {
     }
 }
 
-void 
-give_feedback(const char *feedback) 
-{ 
-    Arg a = { .i = Info };
+void
+echo_message(const MessageType type, const char *format, ...)
+{
+    Arg a;
+    va_list ap;
 
-    a.s = g_strdup_printf("%s", feedback);
+    va_start(ap, format);
+    a.i = type;
+    a.s = g_strdup_vprintf(format, ap);
     echo(&a);
     g_free(a.s);
+    va_end(ap);
 }
 
 Listelement *

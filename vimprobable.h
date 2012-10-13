@@ -70,7 +70,13 @@ enum { ZoomText, ZoomFullContent = (1 << 2) };
     relevant for script:
     1 << 3:                         1 = Silent (no echo)
 */
-enum { Info, Warning, Error, NoAutoHide = 1 << 2, Silent = 1 << 3 };
+typedef enum {
+    Info,
+    Warning,
+    Error,
+    NoAutoHide = 1 << 2,
+    Silent = 1 << 3
+} MessageType;
 enum { NthSubdir, Rootdir };
 enum { InsertCurrentURL = 1 };
 enum { Increment, Decrement };
