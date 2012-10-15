@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii vimprobable2.1
 .\"
-.TH VIMPROBABLE2 1 "FEBRUARY 2012" "Linux User Manuals"
+.TH VIMPROBABLE2 1 "JANUARY 2013" "Linux User Manuals"
 .SH NAME
 Vimprobable \- A WWW browser based on webkit with keybindings inspired by Vim, the great editor.
 
@@ -29,14 +29,14 @@ Prints out a short usage summary.
 Prints the version of Vimprobable.
 
 .SH DESCRIPTION
-Vimprobable is a WWW browser that is build around the webkit library. Vimprobable is fast. 
+Vimprobable is a WWW browser that is built around the webkit library. Vimprobable is fast. 
 Vimprobable comes without buttons and other graphic widgets. It is aimed at being controlled 
 as mouselessly as possible. It uses keybindings that are inspired by Vim, the great editor.
 .PP
-Just like Vim, moving through a webpage can be done by entering commands by the keyboard.
+Just like Vim, moving through a webpage can be done by entering commands at the keyboard.
 Most of these commands require just one or two keystrokes.
 .PP
-Vimprobable mimics the ex-commandmode of Vim. By entering a colon (:) commands like open,
+Vimprobable mimics the ex-command mode of Vim. By entering a colon (:) commands like open,
 set and map can be entered.
 
 .SH QUICK START
@@ -72,9 +72,9 @@ Vimprobable recognizes the following motion commands:
 0, $, g, <shift>G, h, j, k, l, Ctrl-b, Ctrl-f, Ctrl-d, Ctrl-u, Ctrl-e, Ctrl-y
 
 .IP "Move through pages"
-Ctrl-i, Ctrl-o, <shift>H, <shift>L
-.PP
 These commands are used to walk through the browse-history.
+Ctrl-i, Ctrl-o, <shift>H, <shift>L
+
 
 .IP "Reloading and cancel loading"
 
@@ -118,7 +118,7 @@ Yank current selection into clipboard
 .I "    " gu
 Load URL one directory up
 
-.I "    " gu
+.I "    " gU
 Load rootdirectory of current URL
 
 .I "    " gh
@@ -159,6 +159,9 @@ Start backward search
 
 .I "    " n
 Next search result
+
+.I "    " N
+Previous search result
 
 
 .IP Hinting
@@ -211,9 +214,9 @@ Shortcut: t
 
 Bookmarks the current page. 
 
-Bookmarks are retrieved by tabcompletion when entering a new URL.
+Bookmarks are retrieved by tab completion when entering a new URL.
 
-You can add tags to the bookmarks by just adding words after the command, e.g.
+You can add tags to the bookmarks by entering tag terms after the command, e.g.
 
 :bma tag1 tag2 tag3
 
