@@ -229,7 +229,7 @@ line into ~/.config/vimprobable/vimprobablerc:
 
 map R reload
 
-.SH MAPPING COLON COMMANDS
+.SH MAPPING KEYS TO COLON COMMANDS
 
 Key can be mapped to any colon commands. Instead of entering an
 internal symbol for the key combination to be mapped to, enter
@@ -243,6 +243,16 @@ This would map Control-s to disable Javascript.
 map i=:javascript console.log('insertmode_on')
 
 This maps the i key to manually activate INSERT mode.
+
+.SH MAPPING COMMANDS TO EXISTING COMMANDS
+
+You can create new commands by mapping them to an already 
+working command line. For example:
+
+map :bmatag1=:bookmark tag1
+
+would create a new command "bmatag1" which would bookmark
+the current page and automatically add "tag1" to it.
 
 .SH INTERACTIVE SETTING
 All settings can be changed on the fly by entering
