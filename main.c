@@ -324,6 +324,7 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
     path = g_build_filename(g_strdup_printf(DOWNLOADS_PATH), filename, NULL);
     uri = g_strconcat("file://", path, NULL);
     webkit_download_set_destination_uri(download, uri);
+    g_free(path);
     g_free(uri);
     size = (uint32_t)webkit_download_get_total_size(download);
     if (size > 0)
