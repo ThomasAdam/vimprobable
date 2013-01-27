@@ -12,7 +12,7 @@
 #include "main.h"
 #include "utilities.h"
 
-extern GList *commandhistory;
+extern GList *commandhistory, *colon_aliases;
 extern int commandpointer;
 extern Command commands[COMMANDSIZE];
 extern KeyList *keylistroot;
@@ -306,6 +306,22 @@ get_modkey(char key) {
 }
 
 gboolean
+process_colon(char *alias, char *cmd) {
+    Alias *a;
+
+    /* mapping one colon alias to another colon command */
+    a = malloc(sizeof(Alias));
+    if (a == NULL) {
+        fprintf(stderr, "Memory exhausted while saving new command.\n");
+        exit(EXIT_FAILURE);
+    }
+    a->alias = ++alias;
+    a->target = cmd;
+    colon_aliases = g_list_prepend(colon_aliases, a);
+    return TRUE;
+}
+
+gboolean
 process_mapping(char *keystring, int maprecord, char *cmd) {
     Key search_key;
 
@@ -437,7 +453,13 @@ process_map_line(char *line) {
         cmd = (char *)malloc(sizeof(char) * strlen(my_pair.value));
         memset(cmd, 0, strlen(my_pair.value));
         strncpy(cmd, (my_pair.value + 1), strlen(my_pair.value) - 1);
-        return process_mapping(my_pair.what, -1, cmd);
+        if (strncmp(my_pair.what, ":", 1) == 0) {
+            /* map new colon command */
+            return process_colon(my_pair.what, cmd);
+        } else {
+            /* map key binding */
+            return process_mapping(my_pair.what, -1, cmd);
+        }
     }
     return FALSE;
 }

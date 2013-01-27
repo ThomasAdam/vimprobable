@@ -149,6 +149,11 @@ typedef struct {
 	char *handler;
 } URIHandler;
 
+typedef struct {
+	char *alias;
+	char *target;
+} Alias;
+
 struct map_pair {
 	char *line;
 	char what[20];
