@@ -1,6 +1,6 @@
 /*
     (c) 2009 by Leon Winter
-    (c) 2009-2012 by Hannes Schueller
+    (c) 2009-2013 by Hannes Schueller
     (c) 2009-2010 by Matto Fransen
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
@@ -37,7 +37,10 @@ static void inputbox_activate_cb(GtkEntry *entry, gpointer user_data);
 static gboolean inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean inputbox_keyrelease_cb(GtkEntry *entry, GdkEventKey *event);
 static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data);
-static WebKitWebView* inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view);
+static WebKitWebView* inspector_new_cb(WebKitWebInspector* inspector, WebKitWebView* web_view);
+static gboolean inspector_show_cb(WebKitWebInspector *inspector);
+static gboolean inspector_close_cb(WebKitWebInspector *inspector);
+static void inspector_finished_cb(WebKitWebInspector *inspector);
 static gboolean notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
 static gboolean webview_console_cb(WebKitWebView *webview, char *message, int line, char *source, gpointer user_data);
 static gboolean webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer user_data);
@@ -246,25 +249,48 @@ webview_mimetype_cb(WebKitWebView *webview, WebKitWebFrame *frame, WebKitNetwork
 }
 
 static WebKitWebView*
-inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
-    gchar*     inspector_title;
-    GtkWidget* inspector_window;
-    GtkWidget* inspector_view;
+inspector_new_cb(WebKitWebInspector *inspector, WebKitWebView* web_view) {
+    return WEBKIT_WEB_VIEW(webkit_web_view_new());
+}
 
-    /* just enough code to show the inspector - no signal handling etc. */
-    inspector_title = g_strdup_printf("Inspect page - %s - Vimprobable2", webkit_web_view_get_uri(web_view));
-    if (client.state.embed) {
-        inspector_window = gtk_plug_new(client.state.embed);
-    } else {
-        inspector_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_wmclass(client.gui.window, "vimprobable2", "Vimprobable2");
+static gboolean
+inspector_show_cb(WebKitWebInspector *inspector) {
+    WebKitWebView *webview;
+    State *state = &client.state;
+
+    if (state->is_inspecting) {
+        return FALSE;
     }
-    gtk_window_set_title(GTK_WINDOW(inspector_window), inspector_title);
-    g_free(inspector_title);
-    inspector_view = webkit_web_view_new();
-    gtk_container_add(GTK_CONTAINER(inspector_window), inspector_view);
-    gtk_widget_show_all(inspector_window);
-    return WEBKIT_WEB_VIEW(inspector_view);
+
+    webview = webkit_web_inspector_get_web_view(inspector);
+    gtk_paned_pack2(GTK_PANED(client.gui.pane), GTK_WIDGET(webview), TRUE, TRUE);
+    gtk_widget_show(GTK_WIDGET(webview));
+
+    state->is_inspecting = TRUE;
+
+    return TRUE;
+}
+
+static gboolean
+inspector_close_cb(WebKitWebInspector *inspector) {
+    GtkWidget *widget;
+    State *state = &client.state;
+
+    if (!state->is_inspecting) {
+        return FALSE;
+    }
+    widget = GTK_WIDGET(webkit_web_inspector_get_web_view(inspector));
+    gtk_widget_hide(widget);
+    gtk_widget_destroy(widget);
+
+    state->is_inspecting = FALSE;
+
+    return TRUE;
+}
+
+static void
+inspector_finished_cb(WebKitWebInspector *inspector) {
+    g_free(inspector);
 }
 
 gboolean
@@ -1039,11 +1065,16 @@ static gboolean
 open_inspector(const Arg * arg) {
     gboolean inspect_enabled;
     WebKitWebSettings *settings;
+    State *state = &client.state;    
 
     settings = webkit_web_view_get_settings(client.gui.webview);
     g_object_get(G_OBJECT(settings), "enable-developer-extras", &inspect_enabled, NULL);
     if (inspect_enabled) {
-        webkit_web_inspector_show(client.gui.inspector);
+        if (state->is_inspecting) {
+            webkit_web_inspector_close(client.gui.inspector);
+        } else {
+            webkit_web_inspector_show(client.gui.inspector);
+        }
         return TRUE;
     } else {
         echo_message(Error, "Webinspector is not enabled");
@@ -2491,6 +2522,7 @@ setup_client(void) {
     state->count            = 0;
     state->rememberedURI[0] = '\0';
     state->manual_focus     = FALSE;
+    state->is_inspecting    = FALSE;
     state->commandhistory   = NULL;
     state->commandpointer   = 0;
 
@@ -2556,6 +2588,9 @@ setup_gui() {
     gui->viewport = gtk_scrolled_window_new(gui->adjust_h, gui->adjust_v);
 #endif
 
+    gui->pane = gtk_vpaned_new();
+    gtk_paned_pack1(GTK_PANED(gui->pane), GTK_WIDGET(gui->box), TRUE, TRUE);
+
     setup_signals();
     gtk_container_add(GTK_CONTAINER(gui->viewport), GTK_WIDGET(gui->webview));
 
@@ -2577,7 +2612,7 @@ setup_gui() {
     gtk_box_pack_start(gui->box, gui->eventbox, FALSE, FALSE, 0);
     gtk_entry_set_has_frame(GTK_ENTRY(gui->inputbox), FALSE);
     gtk_box_pack_end(gui->box, gui->inputbox, FALSE, FALSE, 0);
-    gtk_container_add(GTK_CONTAINER(gui->window), GTK_WIDGET(gui->box));
+    gtk_container_add(GTK_CONTAINER(gui->window), GTK_WIDGET(gui->pane));
     gtk_widget_grab_focus(GTK_WIDGET(gui->webview));
     gtk_widget_show_all(GTK_WIDGET(gui->window));
     set_widget_font_and_color(gui->inputbox, urlboxfont[0], urlboxbgcolor[0], urlboxcolor[0]);
@@ -2655,7 +2690,13 @@ setup_signals() {
     NULL);
     /* inspector */
     g_signal_connect(G_OBJECT(client.gui.inspector),
-        "inspect-web-view",                             G_CALLBACK(inspector_inspect_web_view_cb),   NULL);
+        "inspect-web-view",                             G_CALLBACK(inspector_new_cb),                NULL);
+    g_signal_connect(G_OBJECT(client.gui.inspector),
+        "show-window",                                  G_CALLBACK(inspector_show_cb),               NULL);
+    g_signal_connect(G_OBJECT(client.gui.inspector),
+        "close-window",                                 G_CALLBACK(inspector_close_cb),              NULL);
+    g_signal_connect(G_OBJECT(client.gui.inspector),
+        "finished",                                     G_CALLBACK(inspector_finished_cb),           NULL);
 }
 
 #ifdef ENABLE_USER_SCRIPTFILE

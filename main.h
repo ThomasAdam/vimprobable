@@ -18,6 +18,7 @@ typedef struct {
     GtkAdjustment       *adjust_v;
     GtkWidget           *inputbox;
     GtkWidget           *eventbox;
+    GtkWidget           *pane;
     GtkBox              *statusbar;
     GtkWidget           *status_url;
     GtkWidget           *status_state;
@@ -39,6 +40,7 @@ typedef struct {
     char            rememberedURI[BUF_SIZE];
     GtkClipboard    *clipboards[2];
     gboolean        manual_focus;
+    gboolean        is_inspecting;
     GdkKeymap       *keymap;
 } State;
 
