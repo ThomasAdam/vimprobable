@@ -437,11 +437,11 @@ webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer d
     const char *uri = webkit_web_view_get_uri(webview);
     char *markup;
 
-    memset(client.state.rememberedURI, 0, 1024);
+    memset(client.state.rememberedURI, 0, BUF_SIZE);
     if (link) {
         markup = g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link);
         gtk_label_set_markup(GTK_LABEL(client.gui.status_url), markup);
-        strncpy(client.state.rememberedURI, link, 1024);
+        strncpy(client.state.rememberedURI, link, BUF_SIZE);
         g_free(markup);
     } else
         update_url(uri);
@@ -1491,7 +1491,7 @@ quickmark(const Arg *a) {
 gboolean
 script(const Arg *arg) {
     gchar *value = NULL, *message = NULL;
-    char text[1024] = "";
+    char text[BUF_SIZE] = "";
     Arg a;
     WebKitNetworkRequest *request;
     WebKitDownload *download;

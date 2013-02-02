@@ -36,7 +36,7 @@ typedef struct {
     GList           *activeDownloads;
     GList           *commandhistory;
     int             commandpointer;
-    char            rememberedURI[1024];
+    char            rememberedURI[BUF_SIZE];
     GtkClipboard    *clipboards[2];
     gboolean        manual_focus;
     GdkKeymap       *keymap;
