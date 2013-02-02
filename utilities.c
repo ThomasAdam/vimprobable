@@ -4,6 +4,7 @@
     (c) 2009-2010 by Matto Fransen
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
+    (c) 2013 Daniel Carl
     see LICENSE file
 */
 
@@ -12,20 +13,17 @@
 #include "main.h"
 #include "utilities.h"
 
-extern GList *commandhistory, *colon_aliases;
-extern int commandpointer;
+extern Client client;
 extern Command commands[COMMANDSIZE];
-extern KeyList *keylistroot;
 extern Key keys[];
-extern char *error_msg;
 extern gboolean complete_case_sensitive;
-extern char *config_base;
 static GList *dynamic_searchengines = NULL, *dynamic_uri_handlers = NULL;
 
 void add_modkeys(char key);
 
 void save_command_history(char *line)
 {
+    GList *ch = client.state.commandhistory;
 	char *c = line;
 
 	while (isspace(*c) && *c)
@@ -33,11 +31,11 @@ void save_command_history(char *line)
 	if (!strlen(c))
 		return;
 
-    if (COMMANDHISTSIZE <= g_list_length(commandhistory)) {
+    if (COMMANDHISTSIZE <= g_list_length(ch)) {
         /* if list is too long - remove items from beginning */
-        commandhistory = g_list_delete_link(commandhistory, g_list_first(commandhistory));
+        ch = g_list_delete_link(ch, g_list_first(ch));
     }
-    commandhistory = g_list_append(commandhistory, g_strdup(c));
+    ch = g_list_append(ch, g_strdup(c));
 }
 
 gboolean
@@ -110,8 +108,10 @@ make_keyslist(void)
         }
         current->Element = keys[i];
         current->next = NULL;
-        if (keylistroot == NULL) keylistroot = current;
-        if (ptr != NULL) ptr->next = current;
+        if (client.config.keylistroot == NULL)
+            client.config.keylistroot = current;
+        if (ptr != NULL)
+            ptr->next = current;
         ptr = current;
         i++;
     }
@@ -206,7 +206,7 @@ changemapping(Key *search_key, int maprecord, char *cmd) {
         return FALSE;
     }
 
-    current = keylistroot;
+    current = client.config.keylistroot;
 
     if (current)
         while (current->next != NULL) {
@@ -249,9 +249,11 @@ changemapping(Key *search_key, int maprecord, char *cmd) {
 
     newkey->next           = NULL;
 
-    if (keylistroot == NULL) keylistroot = newkey;
+    if (client.config.keylistroot == NULL)
+        client.config.keylistroot = newkey;
 
-    if (current != NULL) current->next = newkey;
+    if (current != NULL)
+        current->next = newkey;
 
     return TRUE;
 }
@@ -259,15 +261,14 @@ changemapping(Key *search_key, int maprecord, char *cmd) {
 void add_modkeys(char key)
 {
     unsigned int k, len;
-    extern char *modkeys;
-    len = strlen( modkeys );
+    len = strlen(client.config.modkeys );
     while (k < len ) { 
-        if ( modkeys[k] == key ) return;
+        if (client.config.modkeys[k] == key ) return;
         k++;
     }
-    modkeys = realloc(modkeys, len + 2);
-    modkeys[len] = key;
-    modkeys[len+1] = '\0';
+    client.config.modkeys = realloc(client.config.modkeys, len + 2);
+    client.config.modkeys[len] = key;
+    client.config.modkeys[len+1] = '\0';
 }
 
 gboolean
@@ -317,7 +318,7 @@ process_colon(char *alias, char *cmd) {
     }
     a->alias = ++alias;
     a->target = cmd;
-    colon_aliases = g_list_prepend(colon_aliases, a);
+    client.config.colon_aliases = g_list_prepend(client.config.colon_aliases, a);
     return TRUE;
 }
 
@@ -498,8 +499,8 @@ set_error(const char *error) {
     /* it should never happen that set_error is called more than once, 
      * but to avoid any potential memory leaks, we ignore any subsequent 
      * error if the current one has not been shown */
-    if (error_msg == NULL) {
-        error_msg = g_strdup_printf("%s", error);
+    if (client.state.error_msg == NULL) {
+        client.state.error_msg = g_strdup_printf("%s", error);
     }
 }
 

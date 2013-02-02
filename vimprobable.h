@@ -182,15 +182,15 @@ enum ConfigFileError {
 #define MAXTAGSIZE 200
 
 /* bookmarks */
-#define             BOOKMARKS_STORAGE_FILENAME  "%s/vimprobable/bookmarks", config_base
+#define             BOOKMARKS_STORAGE_FILENAME  "%s/vimprobable/bookmarks", client.config.config_base
 
 /* quickmarks */
-#define             QUICKMARK_FILE              "%s/vimprobable/quickmarks", config_base
+#define             QUICKMARK_FILE              "%s/vimprobable/quickmarks", client.config.config_base
 
 /* history */
 #define             HISTORY_MAX_ENTRIES         1000
-#define             HISTORY_STORAGE_FILENAME    "%s/vimprobable/history", config_base
-#define             CLOSED_URL_FILENAME         "%s/vimprobable/closed", config_base
+#define             HISTORY_STORAGE_FILENAME    "%s/vimprobable/history", client.config.config_base
+#define             CLOSED_URL_FILENAME         "%s/vimprobable/closed", client.config.config_base
 
 /* Command size */
 #define	            COMMANDSIZE	                43

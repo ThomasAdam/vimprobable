@@ -5,12 +5,15 @@
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
     (c) 2011 by Albert Kim
+    (c) 2013 Daniel Carl
     see LICENSE file
 */
 
 /* Vimprobable version number */
 #define VERSION "1.2.1"
 #define INTERNAL_VERSION "Vimprobable2/"VERSION
+
+extern Client client;
 
 /* general settings */
 char startpage[MAX_SETTING_SIZE]      = "http://www.vimprobable.org/";
@@ -72,7 +75,7 @@ static URIHandler uri_handlers[] = {
 
 /* cookies */
 #define             ENABLE_COOKIE_SUPPORT
-#define             COOKIES_STORAGE_FILENAME    "%s/vimprobable/cookies", config_base
+#define             COOKIES_STORAGE_FILENAME    "%s/vimprobable/cookies", client.config.config_base
 #define             COOKIES_STORAGE_READONLY    FALSE   /* if TRUE new cookies will be lost if you quit */
 
 /* downloads directory */
@@ -82,11 +85,11 @@ static URIHandler uri_handlers[] = {
 #define             DEFAULT_FONT_SIZE           12
 
 /* user styles */
-#define             USER_STYLESHEET             "%s/vimprobable/style.css", config_base
+#define             USER_STYLESHEET             "%s/vimprobable/style.css", client.config.config_base
 
 /* user javascript */
 #define             ENABLE_USER_SCRIPTFILE
-#define             USER_SCRIPTFILE             "%s/vimprobable/scripts.js", config_base
+#define             USER_SCRIPTFILE             "%s/vimprobable/scripts.js", client.config.config_base
 
 /* ssl */
 static gboolean strict_ssl              = TRUE; /* FALSE will accept any SSL certificate at face value */
@@ -169,7 +172,7 @@ Command commands[COMMANDSIZE] = {
 */
 static Mouse mouse[] = {
     /* modmask,             modkey,         button,            function,        argument */
-    { 0,                    0,              MOUSE_BUTTON_2,    paste,           {TargetCurrent  | ClipboardPrimary  | ClipboardGTK, rememberedURI} },
+    { 0,                    0,              MOUSE_BUTTON_2,    paste,           {TargetCurrent  | ClipboardPrimary  | ClipboardGTK, client.state.rememberedURI} },
     { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_2,    paste,           {TargetNew  | ClipboardPrimary  | ClipboardGTK} },
     { GDK_CONTROL_MASK,     0,              MOUSE_BUTTON_1,    open_remembered, {TargetNew} },
 };

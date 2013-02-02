@@ -5,7 +5,7 @@
     (c) 2010-2011 by Hans-Peter Deifel
     (c) 2010-2011 by Thomas Adam
     (c) 2011 by Albert Kim
-    (c) 2011 by Daniel Carl
+    (c) 2011-2013 by Daniel Carl
     (c) 2012 by Matthew Carter
     see LICENSE file
 */
@@ -89,6 +89,7 @@ static gboolean fake_key_event(const Arg *arg);
 
 static void clear_focus(void);
 static void update_url(const char *uri);
+static void setup_client(void);
 static void setup_modkeys(void);
 static void setup_gui(void);
 static void setup_settings(void);
@@ -116,60 +117,13 @@ static void mop_up(void);
 #include "main.h"
 
 /* variables */
-static GtkWindow *window;
-static GtkWidget *viewport;
-static GtkBox *box;
-static GtkScrollbar *scroll_h;
-static GtkScrollbar *scroll_v;
-static GtkAdjustment *adjust_h;
-static GtkAdjustment *adjust_v;
-static GtkWidget *inputbox;
-static GtkWidget *eventbox;
-static GtkBox *statusbar;
-static GtkWidget *status_url;
-static GtkWidget *status_state;
-static WebKitWebView *webview;
-static SoupSession *session;
-static GtkClipboard *clipboards[2];
-static GdkKeymap *keymap;
-
 static char **args;
-static unsigned int mode = ModeNormal;
-static unsigned int count = 0;
-static float zoomstep;
-char *modkeys;
-static char current_modkey;
-static char *search_handle;
-static gboolean search_direction;
-static gboolean echo_active = TRUE;
-static WebKitWebInspector *inspector;
-
-static GdkNativeWindow embed = 0;
-static char *configfile = NULL;
-static char *winid = NULL;
-
-static char rememberedURI[1024] = "";
-static char followTarget[8] = "";
-char *error_msg = NULL;
-char *config_base = NULL;
-static gboolean manual_focus = FALSE;
-
-GList *activeDownloads, *colon_aliases = NULL;
 
 #include "config.h"
 #include "keymap.h"
 
-GList *commandhistory = NULL;
-int commandpointer = 0;
-
-KeyList *keylistroot = NULL;
-
 /* Cookie support. */
 #ifdef ENABLE_COOKIE_SUPPORT
-static SoupCookieJar *session_cookie_jar = NULL;
-static SoupCookieJar *file_cookie_jar = NULL;
-static time_t cookie_timeout = 4800;
-static char *cookie_store;
 static void setup_cookies(void);
 static char *get_cookies(SoupURI *soup_uri);
 static void load_all_cookies(void);
@@ -177,6 +131,9 @@ static void new_generic_request(SoupSession *soup_ses, SoupMessage *soup_msg, gp
 static void update_cookie_jar(SoupCookieJar *jar, SoupCookie *old, SoupCookie *new);
 static void handle_cookie_request(SoupMessage *soup_msg, gpointer unused);
 #endif
+
+Client client;
+
 /* callbacks */
 void
 window_destroyed_cb(GtkWidget *window, gpointer func_data) {
@@ -185,13 +142,13 @@ window_destroyed_cb(GtkWidget *window, gpointer func_data) {
 
 void
 webview_title_changed_cb(WebKitWebView *webview, WebKitWebFrame *frame, char *title, gpointer user_data) {
-    gtk_window_set_title(window, title);
+    gtk_window_set_title(client.gui.window, title);
 }
 
 void
 webview_progress_changed_cb(WebKitWebView *webview, int progress, gpointer user_data) {
 #ifdef ENABLE_GTK_PROGRESS_BAR
-    gtk_entry_set_progress_fraction(GTK_ENTRY(inputbox), progress == 100 ? 0 : (double)progress/100);
+    gtk_entry_set_progress_fraction(GTK_ENTRY(client.gui.inputbox), progress == 100 ? 0 : (double)progress/100);
 #endif
     update_state();
 }
@@ -220,11 +177,11 @@ webview_load_committed_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointe
     g_free(a.s);
     scripts_run_user_file();
 
-    if (mode == ModeInsert || mode == ModeHints) {
+    if (client.state.mode == ModeInsert || client.state.mode == ModeHints) {
         Arg a = { .i = ModeNormal };
         set(&a);
     }
-    manual_focus = FALSE;
+    client.state.manual_focus = FALSE;
 }
 
 void
@@ -233,7 +190,7 @@ webview_load_finished_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer
     gboolean scripts;
 
     g_object_get(settings, "enable-scripts", &scripts, NULL);
-    if (escape_input_on_load && scripts && !manual_focus && !gtk_widget_is_focus(inputbox)) {
+    if (escape_input_on_load && scripts && !client.state.manual_focus && !gtk_widget_is_focus(client.gui.inputbox)) {
         clear_focus();
     }
     if (HISTORY_MAX_ENTRIES > 0)
@@ -254,9 +211,9 @@ webview_open_js_window_cb(WebKitWebView* temp_view, GParamSpec param_spec) {
 
 static WebKitWebView *
 webview_open_in_new_window_cb(WebKitWebView *webview, WebKitWebFrame *frame, gpointer user_data) {
-    if (rememberedURI != NULL && strlen(rememberedURI) > 0) {
-        if (strncmp(rememberedURI, "javascript:", 11) != 0) {
-            Arg a = { .i = TargetNew, .s = rememberedURI };
+    if (client.state.rememberedURI != NULL && strlen(client.state.rememberedURI) > 0) {
+        if (strncmp(client.state.rememberedURI, "javascript:", 11) != 0) {
+            Arg a = { .i = TargetNew, .s = client.state.rememberedURI };
             open_arg(&a);
             return NULL;
         }
@@ -296,11 +253,11 @@ inspector_inspect_web_view_cb(gpointer inspector, WebKitWebView* web_view) {
 
     /* just enough code to show the inspector - no signal handling etc. */
     inspector_title = g_strdup_printf("Inspect page - %s - Vimprobable2", webkit_web_view_get_uri(web_view));
-    if (embed) {
-        inspector_window = gtk_plug_new(embed);
+    if (client.state.embed) {
+        inspector_window = gtk_plug_new(client.state.embed);
     } else {
         inspector_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_wmclass(window, "vimprobable2", "Vimprobable2");
+        gtk_window_set_wmclass(client.gui.window, "vimprobable2", "Vimprobable2");
     }
     gtk_window_set_title(GTK_WINDOW(inspector_window), inspector_title);
     g_free(inspector_title);
@@ -331,7 +288,7 @@ webview_download_cb(WebKitWebView *webview, WebKitDownload *download, gpointer u
         echo_message(Info, "Download %s started (expected size: %u bytes)...", filename, size);
     else
         echo_message(Info, "Download %s started (unknown size)...", filename);
-    activeDownloads = g_list_prepend(activeDownloads, download);
+    client.state.activeDownloads = g_list_prepend(client.state.activeDownloads, download);
     g_signal_connect(download, "notify::progress", G_CALLBACK(download_progress), NULL);
     g_signal_connect(download, "notify::status", G_CALLBACK(download_progress), NULL);
     status = webkit_download_get_status(download);
@@ -356,7 +313,7 @@ download_progress(WebKitDownload *d, GParamSpec *pspec) {
         } else {
             echo_message(Info, "Download %s finished", webkit_download_get_suggested_filename(d));
         }
-        activeDownloads = g_list_remove(activeDownloads, d);
+        client.state.activeDownloads = g_list_remove(client.state.activeDownloads, d);
     }
     update_state();
 }
@@ -364,26 +321,27 @@ download_progress(WebKitDownload *d, GParamSpec *pspec) {
 
 gboolean
 process_keypress(GdkEventKey *event) {
+    State *state = &client.state;
     KeyList *current;
     guint keyval;
     GdkModifierType irrelevant;
 
     /* Get a mask of modifiers that shouldn't be considered for this event.
      * E.g.: It shouldn't matter whether ';' is shifted or not. */
-    gdk_keymap_translate_keyboard_state(keymap, event->hardware_keycode,
+    gdk_keymap_translate_keyboard_state(state->keymap, event->hardware_keycode,
             event->state, event->group, &keyval, NULL, NULL, &irrelevant);
 
-    current = keylistroot;
+    current = client.config.keylistroot;
 
     while (current != NULL) {
         if (current->Element.mask == (CLEAN(event->state) & ~irrelevant)
-                && (current->Element.modkey == current_modkey
-                    || (!current->Element.modkey && !current_modkey)
+                && (current->Element.modkey == state->current_modkey
+                    || (!current->Element.modkey && !state->current_modkey)
                     || current->Element.modkey == GDK_VoidSymbol )    /* wildcard */
                 && current->Element.key == keyval
                 && current->Element.func)
             if (current->Element.func(&current->Element.arg)) {
-                current_modkey = count = 0;
+                state->current_modkey = state->count = 0;
                 update_state();
                 return TRUE;
             }
@@ -394,28 +352,29 @@ process_keypress(GdkEventKey *event) {
 
 gboolean
 webview_keypress_cb(WebKitWebView *webview, GdkEventKey *event) {
+    State *state = &client.state;
     Arg a = { .i = ModeNormal, .s = NULL };
     guint keyval;
     GdkModifierType irrelevant;
 
     /* Get a mask of modifiers that shouldn't be considered for this event.
      * E.g.: It shouldn't matter whether ';' is shifted or not. */
-    gdk_keymap_translate_keyboard_state(keymap, event->hardware_keycode,
+    gdk_keymap_translate_keyboard_state(state->keymap, event->hardware_keycode,
             event->state, event->group, &keyval, NULL, NULL, &irrelevant);
 
-    switch (mode) {
+    switch (state->mode) {
     case ModeNormal:
         if ((CLEAN(event->state) & ~irrelevant) == 0) {
             if (IS_ESCAPE(event)) {
                 echo_message(Info, "");
                 g_free(a.s);
-            } else if (current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
-                    || (event->keyval == GDK_0 && count))) {
-                count = (count ? count * 10 : 0) + (event->keyval - GDK_0);
+            } else if (state->current_modkey == 0 && ((event->keyval >= GDK_1 && event->keyval <= GDK_9)
+                    || (event->keyval == GDK_0 && state->count))) {
+                state->count = (state->count ? state->count * 10 : 0) + (event->keyval - GDK_0);
                 update_state();
                 return TRUE;
-            } else if (strchr(modkeys, event->keyval) && current_modkey != event->keyval) {
-                current_modkey = event->keyval;
+            } else if (strchr(client.config.modkeys, event->keyval) && state->current_modkey != event->keyval) {
+                state->current_modkey = event->keyval;
                 update_state();
                 return TRUE;
             }
@@ -478,11 +437,11 @@ webview_hoverlink_cb(WebKitWebView *webview, char *title, char *link, gpointer d
     const char *uri = webkit_web_view_get_uri(webview);
     char *markup;
 
-    memset(rememberedURI, 0, 1024);
+    memset(client.state.rememberedURI, 0, 1024);
     if (link) {
         markup = g_markup_printf_escaped("<span font=\"%s\">Link: %s</span>", statusfont, link);
-        gtk_label_set_markup(GTK_LABEL(status_url), markup);
-        strncpy(rememberedURI, link, 1024);
+        gtk_label_set_markup(GTK_LABEL(client.gui.status_url), markup);
+        strncpy(client.state.rememberedURI, link, 1024);
         g_free(markup);
     } else
         update_url(uri);
@@ -493,7 +452,7 @@ webview_console_cb(WebKitWebView *webview, char *message, int line, char *source
     Arg a;
 
     /* Don't change internal mode if the browser doesn't have focus to prevent inconsistent states */
-    if (gtk_window_has_toplevel_focus(window)) {
+    if (gtk_window_has_toplevel_focus(client.gui.window)) {
         if (!strcmp(message, "hintmode_off") || !strcmp(message, "insertmode_off")) {
             a.i = ModeNormal;
             return set(&a);
@@ -507,6 +466,8 @@ webview_console_cb(WebKitWebView *webview, char *message, int line, char *source
 
 void
 inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
+    Gui *gui     = &client.gui;
+    State *state = &client.state;
     char *text;
     guint16 length = gtk_entry_get_text_length(entry);
     Arg a;
@@ -520,24 +481,24 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
 
     /* move focus from inputbox to print potential messages that could not be
      * printed as long as the inputbox is focused */
-    gtk_widget_grab_focus(GTK_WIDGET(webview));
+    gtk_widget_grab_focus(GTK_WIDGET(gui->webview));
 
     if (length > 1 && text[0] == ':') {
         success = process_line((text + 1));
     } else if (length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
-        webkit_web_view_unmark_text_matches(webview);
+        webkit_web_view_unmark_text_matches(gui->webview);
 #ifdef ENABLE_MATCH_HIGHLITING
-        webkit_web_view_mark_text_matches(webview, &text[1], FALSE, 0);
-        webkit_web_view_set_highlight_text_matches(webview, TRUE);
+        webkit_web_view_mark_text_matches(gui->webview, &text[1], FALSE, 0);
+        webkit_web_view_set_highlight_text_matches(gui->webview, TRUE);
 #endif
-        count = 0;
+        state->count = 0;
 #ifndef ENABLE_INCREMENTAL_SEARCH
         a.s =& text[1];
         a.i = searchoptions | (forward ? DirectionForward : DirectionBackwards);
         search(&a);
 #else
-        search_direction = forward;
-        search_handle = g_strdup(&text[1]);
+        state->search_direction = forward;
+        state->search_handle = g_strdup(&text[1]);
 #endif
     } else if (text[0] == '.' || text[0] == ',' || text[0] == ';') {
         a.i = Silent;
@@ -547,17 +508,16 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         update_state();
     } else
         return;
-    if (!echo_active)
-        gtk_entry_set_text(entry, "");
-    gtk_widget_grab_focus(GTK_WIDGET(webview));
+    gtk_widget_grab_focus(GTK_WIDGET(gui->webview));
 }
 
 gboolean
 inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
     Arg a;
     int numval;
+    State *state = &client.state;
 
-    if (mode == ModeHints) {
+    if (state->mode == ModeHints) {
         if (event->keyval == GDK_Tab) {
             a.i = Silent;
             a.s = g_strdup_printf("hints.focusNextHint();");
@@ -590,7 +550,7 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
             a.i = HideCompletion;
             complete(&a);
             a.i = ModeNormal;
-            commandpointer = 0;
+            state->commandpointer = 0;
             return set(&a);
         break;
         case GDK_Tab:
@@ -611,13 +571,13 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
         break;
     }
 
-    if (mode == ModeHints) {
+    if (state->mode == ModeHints) {
         if ((CLEAN(event->state) & GDK_SHIFT_MASK) &&
                 (CLEAN(event->state) & GDK_CONTROL_MASK) &&
                 (event->keyval == GDK_BackSpace)) {
-            count /= 10;
+            state->count /= 10;
             a.i = Silent;
-            a.s = g_strdup_printf("hints.updateHints(%d);", count);
+            a.s = g_strdup_printf("hints.updateHints(%d);", state->count);
             script(&a);
             g_free(a.s);
             update_state();
@@ -625,11 +585,11 @@ inputbox_keypress_cb(GtkEntry *entry, GdkEventKey *event) {
         }
 
         numval = g_unichar_digit_value((gunichar) gdk_keyval_to_unicode(event->keyval));
-        if ((numval >= 1 && numval <= 9) || (numval == 0 && count)) {
+        if ((numval >= 1 && numval <= 9) || (numval == 0 && state->count)) {
             /* allow a zero as non-first number */
-            count = (count ? count * 10 : 0) + numval;
+            state->count = (state->count ? state->count * 10 : 0) + numval;
             a.i = Silent;
-            a.s = g_strdup_printf("hints.updateHints(%d);", count);
+            a.s = g_strdup_printf("hints.updateHints(%d);", state->count);
             script(&a);
             g_free(a.s);
             update_state();
@@ -645,17 +605,18 @@ notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
     int i;
     WebKitHitTestResult *result;
     WebKitHitTestResultContext context;
-     if (mode == ModeNormal && event->type == GDK_BUTTON_RELEASE) {
+    State *state = &client.state;
+    if (state->mode == ModeNormal && event->type == GDK_BUTTON_RELEASE) {
         /* handle mouse click events */
         for (i = 0; i < LENGTH(mouse); i++) {
             if (mouse[i].mask == CLEAN(event->button.state)
-                    && (mouse[i].modkey == current_modkey
-                        || (!mouse[i].modkey && !current_modkey)
+                    && (mouse[i].modkey == state->current_modkey
+                        || (!mouse[i].modkey && !state->current_modkey)
                         || mouse[i].modkey == GDK_VoidSymbol)    /* wildcard */
                     && mouse[i].button == event->button.button
                     && mouse[i].func) {
                 if (mouse[i].func(&mouse[i].arg)) {
-                    current_modkey = count = 0;
+                    state->current_modkey = state->count = 0;
                     update_state();
                     return TRUE;
                 }
@@ -666,9 +627,9 @@ notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
         if (context & WEBKIT_HIT_TEST_RESULT_CONTEXT_EDITABLE) {
             Arg a = { .i = ModeInsert };
             set(&a);
-            manual_focus = TRUE;
+            state->manual_focus = TRUE;
         }
-    } else if (mode == ModeInsert && event->type == GDK_BUTTON_RELEASE) {
+    } else if (state->mode == ModeInsert && event->type == GDK_BUTTON_RELEASE) {
         result = webkit_web_view_get_hit_test_result(WEBKIT_WEB_VIEW(widget), (GdkEventButton*)event);
         g_object_get(result, "context", &context, NULL);
         if (!(context & WEBKIT_HIT_TEST_RESULT_CONTEXT_EDITABLE)) {
@@ -681,7 +642,7 @@ notify_event_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
         if (value && !strcmp(value, "[object HTMLFormElement]")) {
             Arg a = { .i = ModeInsert, .s = NULL };
             set(&a);
-            manual_focus = TRUE;
+            state->manual_focus = TRUE;
         }
         g_free(value);
         g_free(message);
@@ -717,8 +678,8 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
      */
 
     if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
-        webkit_web_view_unmark_text_matches(webview);
-        webkit_web_view_search_text(webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
+        webkit_web_view_unmark_text_matches(client.gui.webview);
+        webkit_web_view_search_text(client.gui.webview, &text[1], searchoptions & CaseSensitive, forward, searchoptions & Wrapping);
         return TRUE;
     } else if (gtk_widget_is_focus(GTK_WIDGET(entry)) && length >= 1 &&
             (text[0] == '.' || text[0] == ',' || text[0] == ';')) {
@@ -759,20 +720,20 @@ static gboolean inputbox_changed_cb(GtkEditable *entry, gpointer user_data) {
                 }
                 break;
         }
-        count = 0;
+        client.state.count = 0;
         if (a.s) {
             script(&a);
             g_free(a.s);
         }
 
         return TRUE;
-    } else if (length == 0 && followTarget[0]) {
-        mode = ModeNormal;
+    } else if (length == 0) {
+        client.state.mode = ModeNormal;
         a.i = Silent;
         a.s = g_strdup("hints.clearHints();");
         script(&a);
         g_free(a.s);
-        count = 0;
+        client.state.count = 0;
         update_state();
     }
 
@@ -827,8 +788,9 @@ complete(const Arg *arg) {
     static char **suggestions;
     static GtkWidget **widgets;
     static int n = 0, m, current = -1;
+    Gui *gui = &client.gui;
 
-    str = (char*)gtk_entry_get_text(GTK_ENTRY(inputbox));
+    str = (char*)gtk_entry_get_text(GTK_ENTRY(gui->inputbox));
     len = strlen(str);
 
     /* Get the length of the list of commands for completion.  We need this to
@@ -1000,10 +962,10 @@ complete(const Arg *arg) {
             g_free(markup);
             gtk_box_pack_start(_table, GTK_WIDGET(el), FALSE, FALSE, 0);
         }
-        gtk_box_pack_start(box, GTK_WIDGET(top_border), FALSE, FALSE, 0);
+        gtk_box_pack_start(gui->box, GTK_WIDGET(top_border), FALSE, FALSE, 0);
         gtk_container_add(GTK_CONTAINER(table), GTK_WIDGET(_table));
-        gtk_box_pack_start(box, GTK_WIDGET(table), FALSE, FALSE, 0);
-        gtk_widget_show_all(GTK_WIDGET(window));
+        gtk_box_pack_start(gui->box, GTK_WIDGET(table), FALSE, FALSE, 0);
+        gtk_widget_show_all(GTK_WIDGET(gui->window));
         if (!n)
             return TRUE;
         current = arg->i == DirectionPrev ? n - 1 : 0;
@@ -1012,19 +974,19 @@ complete(const Arg *arg) {
         gdk_color_parse(completionbgcolor[2], &color);
         gtk_widget_modify_bg(GTK_WIDGET(widgets[current]), GTK_STATE_NORMAL, &color);
         s = g_strconcat(":", suggestions[current], NULL);
-        gtk_entry_set_text(GTK_ENTRY(inputbox), s);
+        gtk_entry_set_text(GTK_ENTRY(gui->inputbox), s);
         g_free(s);
     } else
-        gtk_entry_set_text(GTK_ENTRY(inputbox), prefix);
-    gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
+        gtk_entry_set_text(GTK_ENTRY(gui->inputbox), prefix);
+    gtk_editable_set_position(GTK_EDITABLE(gui->inputbox), -1);
     return TRUE;
 }
 
 gboolean
 descend(const Arg *arg) {
-    char *source = (char*)webkit_web_view_get_uri(webview), *p = &source[0], *new;
+    char *source = (char*)webkit_web_view_get_uri(client.gui.webview), *p = &source[0], *new;
     int i, len;
-    count = count ? count : 1;
+    client.state.count = client.state.count ? client.state.count : 1;
 
     if (!source)
         return TRUE;
@@ -1038,8 +1000,8 @@ descend(const Arg *arg) {
             return TRUE;
         p = source + len;                       /* start at the end */
         if (*(p - 1) == '/')                     /* /\/$/ is not an additional level */
-            ++count;
-        for (i = 0; i < count; i++)
+            ++client.state.count;
+        for (i = 0; i < client.state.count; i++)
             while(*(p--) != '/' || *p == '/')   /* count /\/+/ as one slash */
                 if (p == source)                 /* if we reach the first char pointer quit */
                     return TRUE;
@@ -1050,7 +1012,7 @@ descend(const Arg *arg) {
     new = malloc(len + 1);
     memcpy(new, source, len);
     new[len] = '\0';
-    webkit_web_view_load_uri(webview, new);
+    webkit_web_view_load_uri(client.gui.webview, new);
     free(new);
     return TRUE;
 }
@@ -1062,9 +1024,9 @@ echo(const Arg *arg) {
     if (index < Info || index > Error)
         return TRUE;
 
-    if (!gtk_widget_is_focus(GTK_WIDGET(inputbox))) {
-        set_widget_font_and_color(inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
-        gtk_entry_set_text(GTK_ENTRY(inputbox), !arg->s ? "" : arg->s);
+    if (!gtk_widget_is_focus(GTK_WIDGET(client.gui.inputbox))) {
+        set_widget_font_and_color(client.gui.inputbox, urlboxfont[index], urlboxbgcolor[index], urlboxcolor[index]);
+        gtk_entry_set_text(GTK_ENTRY(client.gui.inputbox), !arg->s ? "" : arg->s);
     }
 
     return TRUE;
@@ -1075,10 +1037,10 @@ open_inspector(const Arg * arg) {
     gboolean inspect_enabled;
     WebKitWebSettings *settings;
 
-    settings = webkit_web_view_get_settings(webview);
+    settings = webkit_web_view_get_settings(client.gui.webview);
     g_object_get(G_OBJECT(settings), "enable-developer-extras", &inspect_enabled, NULL);
     if (inspect_enabled) {
-        webkit_web_inspector_show(inspector);
+        webkit_web_inspector_show(client.gui.inspector);
         return TRUE;
     } else {
         echo_message(Error, "Webinspector is not enabled");
@@ -1089,10 +1051,11 @@ open_inspector(const Arg * arg) {
 gboolean
 input(const Arg *arg) {
     int pos = 0;
-    count = 0;
+    client.state.count = 0;
     const char *url;
     int index = Info;
     Arg a;
+    GtkWidget *inputbox = client.gui.inputbox;
 
     /* if inputbox hidden, show it again */
     if (!gtk_widget_get_visible(inputbox))
@@ -1109,16 +1072,14 @@ input(const Arg *arg) {
     /* to avoid things like :open URL :open URL2  or :open :open URL */
     gtk_entry_set_text(GTK_ENTRY(inputbox), "");
     gtk_editable_insert_text(GTK_EDITABLE(inputbox), arg->s, -1, &pos);
-    if (arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(webview)))
+    if (arg->i & InsertCurrentURL && (url = webkit_web_view_get_uri(client.gui.webview)))
         gtk_editable_insert_text(GTK_EDITABLE(inputbox), url, -1, &pos);
 
     gtk_widget_grab_focus(inputbox);
     gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
 
     if (arg->s[0] == '.' || arg->s[0] == ',' || arg->s[0] == ';') {
-        mode = ModeHints;
-        memset(followTarget, 0, 8);
-        strncpy(followTarget, "current", 8);
+        client.state.mode = ModeHints;
         a.i = Silent;
         switch (arg->s[0]) {
             case '.':
@@ -1158,7 +1119,7 @@ input(const Arg *arg) {
                 }
                 break;
         }
-        count = 0;
+        client.state.count = 0;
         if (a.s) {
             script(&a);
             g_free(a.s);
@@ -1171,19 +1132,19 @@ input(const Arg *arg) {
 gboolean
 navigate(const Arg *arg) {
     if (arg->i & NavigationForwardBack)
-        webkit_web_view_go_back_or_forward(webview, (arg->i == NavigationBack ? -1 : 1) * (count ? count : 1));
+        webkit_web_view_go_back_or_forward(client.gui.webview, (arg->i == NavigationBack ? -1 : 1) * (client.state.count ? client.state.count : 1));
     else if (arg->i & NavigationReloadActions)
-        (arg->i == NavigationReload ? webkit_web_view_reload : webkit_web_view_reload_bypass_cache)(webview);
+        (arg->i == NavigationReload ? webkit_web_view_reload : webkit_web_view_reload_bypass_cache)(client.gui.webview);
     else
-        webkit_web_view_stop_loading(webview);
+        webkit_web_view_stop_loading(client.gui.webview);
     return TRUE;
 }
 
 gboolean
 number(const Arg *arg) {
-    const char *source = webkit_web_view_get_uri(webview);
+    const char *source = webkit_web_view_get_uri(client.gui.webview);
     char *uri, *p, *new;
-    int number, diff = (count ? count : 1) * (arg->i == Increment ? 1 : -1);
+    int number, diff = (client.state.count ? client.state.count : 1) * (arg->i == Increment ? 1 : -1);
 
     if (!source)
         return TRUE;
@@ -1201,7 +1162,7 @@ number(const Arg *arg) {
     number = atoi(p) + diff; /* apply diff on number */
     *p = '\0';
     new = g_strdup_printf("%s%d", uri, number); /* create new uri */
-    webkit_web_view_load_uri(webview, new);
+    webkit_web_view_load_uri(client.gui.webview, new);
     g_free(new);
     free(uri);
     return TRUE;
@@ -1215,7 +1176,9 @@ open_arg(const Arg *arg) {
     int len;
     char *search_uri, *search_term;
 
-    if (embed) {
+    if (client.state.embed) {
+        gchar winid[64];
+        snprintf(winid, LENGTH(winid), "%u", (gint)client.state.embed);
         argv[0] = *args;
         argv[1] = "-e";
         argv[2] = winid;
@@ -1279,7 +1242,7 @@ open_arg(const Arg *arg) {
                 memcpy(&new[sizeof("http://") - 1], s, len + 1);
             }
         }
-        webkit_web_view_load_uri(webview, new);
+        webkit_web_view_load_uri(client.gui.webview, new);
         g_free(new);
     } else
         g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL);
@@ -1289,9 +1252,9 @@ open_arg(const Arg *arg) {
 gboolean
 open_remembered(const Arg *arg)
 {
-    Arg a = {arg->i, rememberedURI};
+    Arg a = {arg->i, client.state.rememberedURI};
 
-    if (strcmp(rememberedURI, "")) {
+    if (strcmp(client.state.rememberedURI, "")) {
         open_arg(&a);
     }
     return TRUE;
@@ -1302,18 +1265,18 @@ yank(const Arg *arg) {
     const char *url, *content;
 
     if (arg->i & SourceSelection) {
-        webkit_web_view_copy_clipboard(webview);
+        webkit_web_view_copy_clipboard(client.gui.webview);
         if (arg->i & ClipboardPrimary)
-            content = gtk_clipboard_wait_for_text(clipboards[0]);
+            content = gtk_clipboard_wait_for_text(client.state.clipboards[0]);
         if (!content && arg->i & ClipboardGTK)
-            content = gtk_clipboard_wait_for_text(clipboards[1]);
+            content = gtk_clipboard_wait_for_text(client.state.clipboards[1]);
         if (content) {
             echo_message(Info, "Yanked %s", content);
             g_free((gpointer *)content);
         }
     } else {
         if (arg->i & SourceURL) {
-            url = webkit_web_view_get_uri(webview);
+            url = webkit_web_view_get_uri(client.gui.webview);
         } else {
             url = arg->s;
         }
@@ -1322,9 +1285,9 @@ yank(const Arg *arg) {
 
         echo_message(Info, "Yanked %s", url);
         if (arg->i & ClipboardPrimary)
-            gtk_clipboard_set_text(clipboards[0], url, -1);
+            gtk_clipboard_set_text(client.state.clipboards[0], url, -1);
         if (arg->i & ClipboardGTK)
-            gtk_clipboard_set_text(clipboards[1], url, -1);
+            gtk_clipboard_set_text(client.state.clipboards[1], url, -1);
     }
     return TRUE;
 }
@@ -1334,16 +1297,16 @@ paste(const Arg *arg) {
     Arg a = { .i = arg->i & TargetNew, .s = NULL };
 
     /* If we're over a link, open it in a new target. */
-    if (strlen(rememberedURI) > 0) {
+    if (strlen(client.state.rememberedURI) > 0) {
         Arg new_target = { .i = TargetNew, .s = arg->s };
         open_arg(&new_target);
         return TRUE;
     }
 
     if (arg->i & ClipboardPrimary)
-        a.s = gtk_clipboard_wait_for_text(clipboards[0]);
+        a.s = gtk_clipboard_wait_for_text(client.state.clipboards[0]);
     if (!a.s && arg->i & ClipboardGTK)
-        a.s = gtk_clipboard_wait_for_text(clipboards[1]);
+        a.s = gtk_clipboard_wait_for_text(client.state.clipboards[1]);
     if (a.s) {
         open_arg(&a);
         g_free(a.s);
@@ -1355,9 +1318,10 @@ gboolean
 quit(const Arg *arg) {
     FILE *f;
     const char *filename;
-    const char *uri = webkit_web_view_get_uri(webview);
+    const char *uri = webkit_web_view_get_uri(client.gui.webview);
     if (uri != NULL) {
         /* write last URL into status file for recreation with "u" */
+        filename = g_strdup_printf("%s", client.config.config_base);
         filename = g_strdup_printf(CLOSED_URL_FILENAME);
         f = fopen(filename, "w");
         g_free((gpointer *)filename);
@@ -1395,31 +1359,32 @@ revive(const Arg *arg) {
 static 
 gboolean print_frame(const Arg *arg)
 {
-    WebKitWebFrame *frame = webkit_web_view_get_main_frame(webview);
+    WebKitWebFrame *frame = webkit_web_view_get_main_frame(client.gui.webview);
     webkit_web_frame_print (frame);
     return TRUE;
 }
 
 gboolean
 search(const Arg *arg) {
-    count = count ? count : 1;
+    State *state = &client.state;
+    state->count = state->count ? state->count : 1;
     gboolean success, direction = arg->i & DirectionPrev;
 
     if (arg->s) {
-        free(search_handle);
-        search_handle = g_strdup(arg->s);
+        free(state->search_handle);
+        state->search_handle = g_strdup(arg->s);
     }
-    if (!search_handle)
+    if (!state->search_handle)
         return TRUE;
     if (arg->i & DirectionAbsolute)
-        search_direction = direction;
+        state->search_direction = direction;
     else
-        direction ^= search_direction;
+        direction ^= state->search_direction;
     do {
-        success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, direction, FALSE);
+        success = webkit_web_view_search_text(client.gui.webview, state->search_handle, arg->i & CaseSensitive, direction, FALSE);
         if (!success) {
             if (arg->i & Wrapping) {
-                success = webkit_web_view_search_text(webview, search_handle, arg->i & CaseSensitive, direction, TRUE);
+                success = webkit_web_view_search_text(client.gui.webview, state->search_handle, arg->i & CaseSensitive, direction, TRUE);
                 if (success) {
                     echo_message(Warning, "search hit %s, continuing at %s",
                             direction ? "BOTTOM" : "TOP",
@@ -1429,9 +1394,9 @@ search(const Arg *arg) {
             } else
                 break;
         }
-    } while(--count);
+    } while(--state->count);
     if (!success) {
-        echo_message(Error, "Pattern not found: %s", search_handle);
+        echo_message(Error, "Pattern not found: %s", state->search_handle);
     }
     return TRUE;
 }
@@ -1440,12 +1405,12 @@ gboolean
 set(const Arg *arg) {
     switch (arg->i) {
     case ModeNormal:
-        if (search_handle) {
-            search_handle = NULL;
-            webkit_web_view_unmark_text_matches(webview);
+        if (client.state.search_handle) {
+            client.state.search_handle = NULL;
+            webkit_web_view_unmark_text_matches(client.gui.webview);
         }
-        gtk_entry_set_text(GTK_ENTRY(inputbox), "");
-        gtk_widget_grab_focus(GTK_WIDGET(webview));
+        gtk_entry_set_text(GTK_ENTRY(client.gui.inputbox), "");
+        gtk_widget_grab_focus(GTK_WIDGET(client.gui.webview));
         break;
     case ModePassThrough:
         echo_message(Info | NoAutoHide, "-- PASS THROUGH --");
@@ -1459,7 +1424,7 @@ set(const Arg *arg) {
     default:
         return TRUE;
     }
-    mode = arg->i;
+    client.state.mode = arg->i;
     return TRUE;
 }
 
@@ -1479,7 +1444,7 @@ jsapi_ref_to_string(JSContextRef context, JSValueRef ref) {
 
 void
 jsapi_evaluate_script(const gchar *script, gchar **value, gchar **message) {
-    WebKitWebFrame *frame = webkit_web_view_get_main_frame(webview);
+    WebKitWebFrame *frame = webkit_web_view_get_main_frame(client.gui.webview);
     JSGlobalContextRef context = webkit_web_frame_get_global_context(frame);
     JSStringRef str;
     JSValueRef val, exception;
@@ -1553,14 +1518,14 @@ script(const Arg *arg) {
         } else if (strncmp(value, "insert;", 7) == 0) {
             a.i = ModeInsert;
             set(&a);
-            manual_focus = TRUE;
+            client.state.manual_focus = TRUE;
         } else if (strncmp(value, "save;", 5) == 0) {
             /* forced download */
             a.i = ModeNormal;
             set(&a);
             request = webkit_network_request_new((value + 5));
             download = webkit_download_new(request);
-            webview_download_cb(webview, download, (gpointer *)NULL);
+            webview_download_cb(client.gui.webview, download, (gpointer *)NULL);
         } else if (strncmp(value, "yank;", 5) == 0) {
             /* yank link URL to clipboard */
             a.i = ModeNormal;
@@ -1570,7 +1535,7 @@ script(const Arg *arg) {
             yank(&a);
         } else if (strncmp(value, "colon;", 6) == 0) {
             /* use link URL for colon command */
-            strncpy(text, (char *)gtk_entry_get_text(GTK_ENTRY(inputbox)), 1023);
+            strncpy(text, (char *)gtk_entry_get_text(GTK_ENTRY(client.gui.inputbox)), 1023);
             a.i = ModeNormal;
             set(&a);
             switch (text[1]) {
@@ -1596,10 +1561,11 @@ script(const Arg *arg) {
 
 gboolean
 scroll(const Arg *arg) {
-    GtkAdjustment *adjust = (arg->i & OrientationHoriz) ? adjust_h : adjust_v;
+    GtkAdjustment *adjust = (arg->i & OrientationHoriz) ? client.gui.adjust_h : client.gui.adjust_v;
     int max = gtk_adjustment_get_upper(adjust) - gtk_adjustment_get_page_size(adjust);
     float val = gtk_adjustment_get_value(adjust) / max * 100;
     int direction = (arg->i & (1 << 2)) ? 1 : -1;
+    unsigned int count = client.state.count;
 
     if ((direction == 1 && val < 100) || (direction == -1 && val > 0)) {
         if (arg->i & ScrollMove)
@@ -1619,17 +1585,19 @@ scroll(const Arg *arg) {
 
 gboolean
 zoom(const Arg *arg) {
-    webkit_web_view_set_full_content_zoom(webview, (arg->i & ZoomFullContent) > 0);
-    webkit_web_view_set_zoom_level(webview, (arg->i & ZoomOut) ?
-        webkit_web_view_get_zoom_level(webview) +
-            (((float)(count ? count : 1)) * (arg->i & (1 << 1) ? 1.0 : -1.0) * zoomstep) :
+    unsigned int count = client.state.count;
+
+    webkit_web_view_set_full_content_zoom(client.gui.webview, (arg->i & ZoomFullContent) > 0);
+    webkit_web_view_set_zoom_level(client.gui.webview, (arg->i & ZoomOut) ?
+        webkit_web_view_get_zoom_level(client.gui.webview) +
+            (((float)(count ? count : 1)) * (arg->i & (1 << 1) ? 1.0 : -1.0) * client.config.zoomstep) :
         (count ? (float)count / 100.0 : 1.0));
     return TRUE;
 }
 
 gboolean 
 fake_key_event(const Arg *a) {
-    if(!embed) {
+    if(!client.state.embed) {
         return FALSE;
     }
     Display *xdpy;
@@ -1644,7 +1612,7 @@ fake_key_event(const Arg *a) {
     xk.time = CurrentTime;
     xk.same_screen = True;
     xk.x = xk.y = xk.x_root = xk.y_root = 1;
-    xk.window = embed;
+    xk.window = client.state.embed;
     xk.state =  a->i;
 
     if( ! a->s ) {
@@ -1664,7 +1632,7 @@ fake_key_event(const Arg *a) {
     }
    
     xk.type = KeyPress;
-    if( !XSendEvent(xdpy, embed, True, KeyPressMask, (XEvent *)&xk) ) {
+    if( !XSendEvent(xdpy, client.state.embed, True, KeyPressMask, (XEvent *)&xk) ) {
         echo_message(Error, "XSendEvent failed");
         return FALSE;
     }
@@ -1675,21 +1643,22 @@ fake_key_event(const Arg *a) {
 
 gboolean
 commandhistoryfetch(const Arg *arg) {
-    const int length = g_list_length(commandhistory);
+    State *state = &client.state;
+    const int length = g_list_length(client.state.commandhistory);
     gchar *input_message = NULL;
 
     if (length > 0) {
         if (arg->i == DirectionPrev) {
-            commandpointer = (length + commandpointer - 1) % length;
+            state->commandpointer = (length + state->commandpointer - 1) % length;
         } else {
-            commandpointer = (length + commandpointer + 1) % length;
+            state->commandpointer = (length + state->commandpointer + 1) % length;
         }
 
-        const char* command = (char *)g_list_nth_data(commandhistory, commandpointer);
+        const char* command = (char *)g_list_nth_data(state->commandhistory, state->commandpointer);
         input_message = g_strconcat(":", command, NULL);
-        gtk_entry_set_text(GTK_ENTRY(inputbox), input_message);
+        gtk_entry_set_text(GTK_ENTRY(client.gui.inputbox), input_message);
         g_free(input_message);
-        gtk_editable_set_position(GTK_EDITABLE(inputbox), -1);
+        gtk_editable_set_position(GTK_EDITABLE(client.gui.inputbox), -1);
         return TRUE;
     }
 
@@ -1700,8 +1669,8 @@ gboolean
 bookmark(const Arg *arg) {
     FILE *f;
     const char *filename;
-    const char *uri = webkit_web_view_get_uri(webview);
-    const char *title = webkit_web_view_get_title(webview);
+    const char *uri = webkit_web_view_get_uri(client.gui.webview);
+    const char *title = webkit_web_view_get_title(client.gui.webview);
     filename = g_strdup_printf(BOOKMARKS_STORAGE_FILENAME);
     f = fopen(filename, "a");
     g_free((gpointer *)filename);
@@ -1732,8 +1701,8 @@ gboolean
 history() {
     FILE *f;
     const char *filename;
-    const char *uri = webkit_web_view_get_uri(webview);
-    const char *title = webkit_web_view_get_title(webview);
+    const char *uri = webkit_web_view_get_uri(client.gui.webview);
+    const char *title = webkit_web_view_get_title(client.gui.webview);
     char *entry, buffer[512], *new;
     int n, i = 0;
     gboolean finished = FALSE;
@@ -1806,9 +1775,9 @@ history() {
 
 static gboolean
 view_source(const Arg * arg) {
-    gboolean current_mode = webkit_web_view_get_view_source_mode(webview);
-    webkit_web_view_set_view_source_mode(webview, !current_mode);
-    webkit_web_view_reload(webview);
+    gboolean current_mode = webkit_web_view_get_view_source_mode(client.gui.webview);
+    webkit_web_view_set_view_source_mode(client.gui.webview, !current_mode);
+    webkit_web_view_reload(client.gui.webview);
     return TRUE;
 }
 
@@ -1998,7 +1967,7 @@ focus_input(const Arg *arg) {
     script(&a);
     g_free(a.s);
     update_state();
-    manual_focus = TRUE;
+    client.state.manual_focus = TRUE;
     return TRUE;
 }
 
@@ -2069,7 +2038,7 @@ process_set_line(char *line) {
     gboolean          boolval;
     WebKitWebSettings *settings;
 
-    settings = webkit_web_view_get_settings(webview);
+    settings = webkit_web_view_get_settings(client.gui.webview);
     my_pair.line = line;
     c = search_word(0);
     if (!strlen(my_pair.what))
@@ -2092,7 +2061,7 @@ process_set_line(char *line) {
                 return FALSE;
             /* process qmark? */
             if (strlen(my_pair.what) == 5 && strncmp("qmark", my_pair.what, 5) == 0) {
-                return (process_save_qmark(my_pair.value, webview));
+                return (process_save_qmark(my_pair.value, client.gui.webview));
             }
             /* interpret boolean values */
             if (browsersettings[i].boolval) {
@@ -2128,12 +2097,12 @@ process_set_line(char *line) {
                 } else {
                     g_object_set((GObject*)settings, browsersettings[i].webkit, my_pair.value, NULL);
                 }
-                webkit_web_view_set_settings(webview, settings);
+                webkit_web_view_set_settings(client.gui.webview, settings);
             }
 
             if (strlen(my_pair.what) == 14) {
                 if (strncmp("acceptlanguage", my_pair.what, 14) == 0) {
-                    g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
+                    g_object_set(G_OBJECT(client.net.session), "accept-language", acceptlanguage, NULL);
                 } else if (strncmp("completioncase", my_pair.what, 14) == 0) {
                     complete_case_sensitive = boolval;
                 }
@@ -2142,9 +2111,9 @@ process_set_line(char *line) {
             } else if (strlen(my_pair.what) == 10 && strncmp("scrollbars", my_pair.what, 10) == 0) {
                 toggle_scrollbars(boolval);
             } else if (strlen(my_pair.what) == 9 && strncmp("statusbar", my_pair.what, 9) == 0) {
-                gtk_widget_set_visible(GTK_WIDGET(statusbar), boolval);
+                gtk_widget_set_visible(GTK_WIDGET(client.gui.statusbar), boolval);
             } else if (strlen(my_pair.what) == 8 && strncmp("inputbox", my_pair.what, 8) == 0) {
-                gtk_widget_set_visible(inputbox, boolval);
+                gtk_widget_set_visible(client.gui.inputbox, boolval);
             } else if (strlen(my_pair.what) == 11 && strncmp("escapeinput", my_pair.what, 11) == 0) {
                 escape_input_on_load = boolval;
             }
@@ -2153,14 +2122,14 @@ process_set_line(char *line) {
             if (strlen(my_pair.what) == 9 && strncmp("strictssl", my_pair.what, 9) == 0) {
                 if (boolval) {
                     strict_ssl = TRUE;
-                    g_object_set(G_OBJECT(session), "ssl-strict", TRUE, NULL);
+                    g_object_set(G_OBJECT(client.net.session), "ssl-strict", TRUE, NULL);
                 } else {
                     strict_ssl = FALSE;
-                    g_object_set(G_OBJECT(session), "ssl-strict", FALSE, NULL);
+                    g_object_set(G_OBJECT(client.net.session), "ssl-strict", FALSE, NULL);
                 }
             }
             if (strlen(my_pair.what) == 8 && strncmp("cabundle", my_pair.what, 8) == 0) {
-                g_object_set(G_OBJECT(session), SOUP_SESSION_SSL_CA_FILE, ca_bundle, NULL);
+                g_object_set(G_OBJECT(client.net.session), SOUP_SESSION_SSL_CA_FILE, ca_bundle, NULL);
             }
             if (strlen(my_pair.what) == 10 && strncmp("windowsize", my_pair.what, 10) == 0) {
                 set_default_winsize(my_pair.value);
@@ -2168,7 +2137,7 @@ process_set_line(char *line) {
 
             /* reload page? */
             if (browsersettings[i].reload)
-                webkit_web_view_reload(webview);
+                webkit_web_view_reload(client.gui.webview);
             return TRUE;
         }
     }
@@ -2193,7 +2162,7 @@ process_line(char *line) {
     command_hist = g_strdup(c);
 
     /* check for colon command aliases first */
-    for (l = colon_aliases; l; l = g_list_next(l)) {
+    for (l = client.config.colon_aliases; l; l = g_list_next(l)) {
         Alias *alias = (Alias *)l->data;
         if (length == strlen(alias->alias) && strncmp(alias->alias, line, length) == 0) {
             /* reroute to target command */
@@ -2224,10 +2193,10 @@ process_line(char *line) {
     if (!found) {
         echo_message(Error, "Not a browser command: %s", c);
     } else if (!success) {
-        if (error_msg != NULL) {
-            echo_message(Error, error_msg);
-            g_free(error_msg);
-            error_msg = NULL;
+        if (client.state.error_msg != NULL) {
+            echo_message(Error, client.state.error_msg);
+            g_free(client.state.error_msg);
+            client.state.error_msg = NULL;
         } else {
             echo_message(Error, "Unknown error. Please file a bug report!");
         }
@@ -2307,7 +2276,7 @@ toggle_proxy(gboolean onoff) {
     char    *filename, *new;
 
     if (onoff == FALSE)  {
-        g_object_set(session, "proxy-uri", NULL, NULL);
+        g_object_set(client.net.session, "proxy-uri", NULL, NULL);
     } else  {
         filename = (char *)g_getenv("http_proxy");
 
@@ -2321,7 +2290,7 @@ toggle_proxy(gboolean onoff) {
             new = g_strrstr(filename, "http://") ? g_strdup(filename) : g_strdup_printf("http://%s", filename);
             proxy_uri = soup_uri_new(new);
 
-            g_object_set(session, "proxy-uri", proxy_uri, NULL);
+            g_object_set(client.net.session, "proxy-uri", proxy_uri, NULL);
 
             soup_uri_free(proxy_uri);
             g_free(new);
@@ -2331,16 +2300,17 @@ toggle_proxy(gboolean onoff) {
 
 void
 toggle_scrollbars(gboolean onoff) {
+    Gui *gui = &client.gui;
 	if (onoff == TRUE) {
-		adjust_h = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(viewport));
-		adjust_v = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(viewport));
-		gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+		gui->adjust_h = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(gui->viewport));
+		gui->adjust_v = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(gui->viewport));
+		gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(gui->viewport), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	} else {
-		adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
-		adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
-		gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+		gui->adjust_v = gtk_range_get_adjustment(GTK_RANGE(gui->scroll_v));
+		gui->adjust_h = gtk_range_get_adjustment(GTK_RANGE(gui->scroll_h));
+		gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(gui->viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 	}
-	gtk_widget_set_scroll_adjustments (GTK_WIDGET(webview), adjust_h, adjust_v);
+	gtk_widget_set_scroll_adjustments (GTK_WIDGET(gui->webview), gui->adjust_h, gui->adjust_v);
 
 	return;
 }
@@ -2363,11 +2333,12 @@ void set_default_winsize(const char * const size) {
 	    y = 480;
 
 out:
-    gtk_window_resize(GTK_WINDOW(window), x, y);
+    gtk_window_resize(GTK_WINDOW(client.gui.window), x, y);
 }
 
 void
 update_url(const char *uri) {
+    Gui *gui = &client.gui;
     gboolean ssl = g_str_has_prefix(uri, "https://");
     GdkColor color;
     WebKitWebFrame *frame;
@@ -2380,8 +2351,8 @@ update_url(const char *uri) {
 #ifdef ENABLE_HISTORY_INDICATOR
     char before[] = " [";
     char after[] = "]";
-    gboolean back = webkit_web_view_can_go_back(webview);
-    gboolean fwd = webkit_web_view_can_go_forward(webview);
+    gboolean back = webkit_web_view_can_go_back(gui->webview);
+    gboolean fwd = webkit_web_view_can_go_forward(gui->webview);
 
     if (!back && !fwd)
         before[0] = after[0] = '\0';
@@ -2394,10 +2365,10 @@ update_url(const char *uri) {
         "<span font=\"%s\">%s</span>", statusfont, uri
 #endif
     );
-    gtk_label_set_markup(GTK_LABEL(status_url), markup);
+    gtk_label_set_markup(GTK_LABEL(gui->status_url), markup);
     g_free(markup);
     if (ssl) {
-        frame = webkit_web_view_get_main_frame(webview);
+        frame = webkit_web_view_get_main_frame(gui->webview);
         src = webkit_web_frame_get_data_source(frame);
         request = webkit_web_data_source_get_request(src);
         msg = webkit_network_request_get_message(request);
@@ -2408,26 +2379,27 @@ update_url(const char *uri) {
             sslactivecolor = sslinvalidbgcolor;
     }
     gdk_color_parse(ssl ? sslactivecolor : statusbgcolor, &color);
-    gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &color);
+    gtk_widget_modify_bg(gui->eventbox, GTK_STATE_NORMAL, &color);
     gdk_color_parse(ssl ? sslcolor : statuscolor, &color);
-    gtk_widget_modify_fg(GTK_WIDGET(status_url), GTK_STATE_NORMAL, &color);
-    gtk_widget_modify_fg(GTK_WIDGET(status_state), GTK_STATE_NORMAL, &color);
+    gtk_widget_modify_fg(GTK_WIDGET(gui->status_url), GTK_STATE_NORMAL, &color);
+    gtk_widget_modify_fg(GTK_WIDGET(gui->status_state), GTK_STATE_NORMAL, &color);
 }
 
 void
 update_state() {
+    State* state = &client.state;
     char *markup;
-    int download_count = g_list_length(activeDownloads);
+    int download_count = g_list_length(state->activeDownloads);
     GString *status = g_string_new("");
 
     /* construct the status line */
 
     /* count, modkey and input buffer */
-    g_string_append_printf(status, "%.0d", count);
-    if (current_modkey) g_string_append_c(status, current_modkey);
+    g_string_append_printf(status, "%.0d", state->count);
+    if (state->current_modkey) g_string_append_c(status, state->current_modkey);
 
     /* the number of active downloads */
-    if (activeDownloads) {
+    if (state->activeDownloads) {
         g_string_append_printf(status, " %d active %s", download_count,
                 (download_count == 1) ? "download" : "downloads");
     }
@@ -2438,20 +2410,20 @@ update_state() {
         int progress = -1;
         char progressbar[progressbartick + 1];
 
-        if (activeDownloads) {
+        if (state->activeDownloads) {
             progress = 0;
             GList *ptr;
 
-            for (ptr = activeDownloads; ptr; ptr = g_list_next(ptr)) {
+            for (ptr = state->activeDownloads; ptr; ptr = g_list_next(ptr)) {
                 progress += 100 * webkit_download_get_progress(ptr->data);
             }
 
             progress /= download_count;
 
-        } else if (webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FINISHED
-                && webkit_web_view_get_load_status(webview) != WEBKIT_LOAD_FAILED) {
+        } else if (webkit_web_view_get_load_status(client.gui.webview) != WEBKIT_LOAD_FINISHED
+                && webkit_web_view_get_load_status(client.gui.webview) != WEBKIT_LOAD_FAILED) {
 
-            progress = webkit_web_view_get_progress(webview) * 100;
+            progress = webkit_web_view_get_progress(client.gui.webview) * 100;
         }
 
         if (progress >= 0) {
@@ -2464,8 +2436,8 @@ update_state() {
 
     /* and the current scroll position */
     {
-        int max = gtk_adjustment_get_upper(adjust_v) - gtk_adjustment_get_page_size(adjust_v);
-        int val = (int)(gtk_adjustment_get_value(adjust_v) / max * 100);
+        int max = gtk_adjustment_get_upper(client.gui.adjust_v) - gtk_adjustment_get_page_size(client.gui.adjust_v);
+        int val = (int)(gtk_adjustment_get_value(client.gui.adjust_v) / max * 100);
 
         if (max == 0)
             g_string_append(status, " All");
@@ -2479,93 +2451,112 @@ update_state() {
 
 
     markup = g_markup_printf_escaped("<span font=\"%s\">%s</span>", statusfont, status->str);
-    gtk_label_set_markup(GTK_LABEL(status_state), markup);
+    gtk_label_set_markup(GTK_LABEL(client.gui.status_state), markup);
     g_free(markup);
 
     g_string_free(status, TRUE);
 }
 
+static void
+setup_client(void) {
+    State *state = &client.state;
+    Config *config = &client.config;
+
+    state->mode             = ModeNormal;
+    state->count            = 0;
+    state->rememberedURI[0] = '\0';
+    state->manual_focus     = FALSE;
+    state->commandhistory   = NULL;
+    state->commandpointer   = 0;
+
+    config->colon_aliases  = NULL;
+    config->cookie_timeout = 4800;
+}
+
 void
 setup_modkeys() {
     unsigned int i;
-    modkeys = calloc(LENGTH(keys) + 1, sizeof(char));
-    char *ptr = modkeys;
+    client.config.modkeys = calloc(LENGTH(keys) + 1, sizeof(char));
+    char *ptr = client.config.modkeys;
 
     for (i = 0; i < LENGTH(keys); i++)
-        if (keys[i].modkey && !strchr(modkeys, keys[i].modkey))
+        if (keys[i].modkey && !strchr(client.config.modkeys, keys[i].modkey))
             *(ptr++) = keys[i].modkey;
-    modkeys = realloc(modkeys, &ptr[0] - &modkeys[0] + 1);
+    client.config.modkeys = realloc(client.config.modkeys, &ptr[0] - &client.config.modkeys[0] + 1);
 }
 
 void
 setup_gui() {
-    scroll_h = GTK_SCROLLBAR(gtk_hscrollbar_new(NULL));
-    scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
-    adjust_h = gtk_range_get_adjustment(GTK_RANGE(scroll_h));
-    adjust_v = gtk_range_get_adjustment(GTK_RANGE(scroll_v));
-    if (embed) {
-        window = GTK_WINDOW(gtk_plug_new(embed));
+    Gui *gui = &client.gui;
+    State *state = &client.state;
+
+    gui->scroll_h = GTK_SCROLLBAR(gtk_hscrollbar_new(NULL));
+    gui->scroll_v = GTK_SCROLLBAR(gtk_vscrollbar_new(NULL));
+    gui->adjust_h = gtk_range_get_adjustment(GTK_RANGE(gui->scroll_h));
+    gui->adjust_v = gtk_range_get_adjustment(GTK_RANGE(gui->scroll_v));
+    if (client.state.embed) {
+        gui->window = GTK_WINDOW(gtk_plug_new(client.state.embed));
     } else {
-        window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
-        gtk_window_set_wmclass(GTK_WINDOW(window), "vimprobable2", "Vimprobable2");
+        gui->window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
+        gtk_window_set_wmclass(GTK_WINDOW(gui->window), "vimprobable2", "Vimprobable2");
     }
-    gtk_window_set_default_size(GTK_WINDOW(window), 640, 480);
-    box = GTK_BOX(gtk_vbox_new(FALSE, 0));
-    inputbox = gtk_entry_new();
-    webview = (WebKitWebView*)webkit_web_view_new();
-    statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
-    eventbox = gtk_event_box_new();
-    status_url = gtk_label_new(NULL);
-    status_state = gtk_label_new(NULL);
+    gtk_window_set_default_size(GTK_WINDOW(gui->window), 640, 480);
+    gui->box = GTK_BOX(gtk_vbox_new(FALSE, 0));
+    gui->inputbox = gtk_entry_new();
+    gui->webview = (WebKitWebView*)webkit_web_view_new();
+    gui->statusbar = GTK_BOX(gtk_hbox_new(FALSE, 0));
+    gui->eventbox = gtk_event_box_new();
+    gui->status_url = gtk_label_new(NULL);
+    gui->status_state = gtk_label_new(NULL);
     GdkColor bg;
     PangoFontDescription *font;
     GdkGeometry hints = { 1, 1 };
-    inspector = webkit_web_view_get_inspector(WEBKIT_WEB_VIEW(webview));
+    gui->inspector = webkit_web_view_get_inspector(WEBKIT_WEB_VIEW(gui->webview));
 
-    clipboards[0] = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
-    clipboards[1] = gtk_clipboard_get(GDK_NONE);
+    state->clipboards[0] = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
+    state->clipboards[1] = gtk_clipboard_get(GDK_NONE);
     setup_settings();
     gdk_color_parse(statusbgcolor, &bg);
-    gtk_widget_modify_bg(eventbox, GTK_STATE_NORMAL, &bg);
-    gtk_widget_set_name(GTK_WIDGET(window), "Vimprobable2");
-    gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
+    gtk_widget_modify_bg(gui->eventbox, GTK_STATE_NORMAL, &bg);
+    gtk_widget_set_name(GTK_WIDGET(gui->window), "Vimprobable2");
+    gtk_window_set_geometry_hints(gui->window, NULL, &hints, GDK_HINT_MIN_SIZE);
 
-    keymap = gdk_keymap_get_default();
+    state->keymap = gdk_keymap_get_default();
 
 #ifdef DISABLE_SCROLLBAR
-    viewport = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+    gui->viewport = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(gui->viewport), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
 #else
     /* Ensure we still see scrollbars. */
-    GtkWidget *viewport = gtk_scrolled_window_new(adjust_h, adjust_v);
+    gui->viewport = gtk_scrolled_window_new(gui->adjust_h, gui->adjust_v);
 #endif
 
     setup_signals();
-    gtk_container_add(GTK_CONTAINER(viewport), GTK_WIDGET(webview));
+    gtk_container_add(GTK_CONTAINER(gui->viewport), GTK_WIDGET(gui->webview));
 
     /* Ensure we set the scroll adjustments now, so that if we're not drawing
      * titlebars, we can still scroll.
      */
-    gtk_widget_set_scroll_adjustments(GTK_WIDGET(webview), adjust_h, adjust_v);
+    gtk_widget_set_scroll_adjustments(GTK_WIDGET(gui->webview), gui->adjust_h, gui->adjust_v);
 
     font = pango_font_description_from_string(urlboxfont[0]);
-    gtk_widget_modify_font(GTK_WIDGET(inputbox), font);
+    gtk_widget_modify_font(GTK_WIDGET(gui->inputbox), font);
     pango_font_description_free(font);
-    gtk_entry_set_inner_border(GTK_ENTRY(inputbox), NULL);
-    gtk_misc_set_alignment(GTK_MISC(status_url), 0.0, 0.0);
-    gtk_misc_set_alignment(GTK_MISC(status_state), 1.0, 0.0);
-    gtk_box_pack_start(statusbar, status_url, TRUE, TRUE, 2);
-    gtk_box_pack_start(statusbar, status_state, FALSE, FALSE, 2);
-    gtk_container_add(GTK_CONTAINER(eventbox), GTK_WIDGET(statusbar));
-    gtk_box_pack_start(box, viewport, TRUE, TRUE, 0);
-    gtk_box_pack_start(box, eventbox, FALSE, FALSE, 0);
-    gtk_entry_set_has_frame(GTK_ENTRY(inputbox), FALSE);
-    gtk_box_pack_end(box, inputbox, FALSE, FALSE, 0);
-    gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(box));
-    gtk_widget_grab_focus(GTK_WIDGET(webview));
-    gtk_widget_show_all(GTK_WIDGET(window));
-    set_widget_font_and_color(inputbox, urlboxfont[0], urlboxbgcolor[0], urlboxcolor[0]);
-    g_object_set(gtk_widget_get_settings(inputbox), "gtk-entry-select-on-focus", FALSE, NULL);
+    gtk_entry_set_inner_border(GTK_ENTRY(gui->inputbox), NULL);
+    gtk_misc_set_alignment(GTK_MISC(gui->status_url), 0.0, 0.0);
+    gtk_misc_set_alignment(GTK_MISC(gui->status_state), 1.0, 0.0);
+    gtk_box_pack_start(gui->statusbar, gui->status_url, TRUE, TRUE, 2);
+    gtk_box_pack_start(gui->statusbar, gui->status_state, FALSE, FALSE, 2);
+    gtk_container_add(GTK_CONTAINER(gui->eventbox), GTK_WIDGET(gui->statusbar));
+    gtk_box_pack_start(gui->box, gui->viewport, TRUE, TRUE, 0);
+    gtk_box_pack_start(gui->box, gui->eventbox, FALSE, FALSE, 0);
+    gtk_entry_set_has_frame(GTK_ENTRY(gui->inputbox), FALSE);
+    gtk_box_pack_end(gui->box, gui->inputbox, FALSE, FALSE, 0);
+    gtk_container_add(GTK_CONTAINER(gui->window), GTK_WIDGET(gui->box));
+    gtk_widget_grab_focus(GTK_WIDGET(gui->webview));
+    gtk_widget_show_all(GTK_WIDGET(gui->window));
+    set_widget_font_and_color(gui->inputbox, urlboxfont[0], urlboxbgcolor[0], urlboxcolor[0]);
+    g_object_set(gtk_widget_get_settings(gui->inputbox), "gtk-entry-select-on-focus", FALSE, NULL);
 }
 
 void
@@ -2573,9 +2564,9 @@ setup_settings() {
     WebKitWebSettings *settings = (WebKitWebSettings*)webkit_web_settings_new();
     char *filename, *file_url;
 
-    session = webkit_get_default_session();
-    g_object_set(G_OBJECT(session), "ssl-ca-file", ca_bundle, NULL);
-    g_object_set(G_OBJECT(session), "ssl-strict", strict_ssl, NULL);
+    client.net.session = webkit_get_default_session();
+    g_object_set(G_OBJECT(client.net.session), "ssl-ca-file", ca_bundle, NULL);
+    g_object_set(G_OBJECT(client.net.session), "ssl-strict", strict_ssl, NULL);
     g_object_set(G_OBJECT(settings), "default-font-size", DEFAULT_FONT_SIZE, NULL);
     g_object_set(G_OBJECT(settings), "enable-scripts", enablePlugins, NULL);
     g_object_set(G_OBJECT(settings), "enable-plugins", enablePlugins, NULL);
@@ -2587,8 +2578,8 @@ setup_settings() {
     g_free(file_url);
     g_free(filename);
     g_object_set(G_OBJECT(settings), "user-agent", useragent, NULL);
-    g_object_get(G_OBJECT(settings), "zoom-step", &zoomstep, NULL);
-    webkit_web_view_set_settings(webview, settings);
+    g_object_get(G_OBJECT(settings), "zoom-step", &client.config.zoomstep, NULL);
+    webkit_web_view_set_settings(client.gui.webview, settings);
 
     /* proxy */
     toggle_proxy(use_proxy);
@@ -2596,22 +2587,22 @@ setup_settings() {
 
 void
 setup_signals() {
-    WebKitWebFrame *frame = webkit_web_view_get_main_frame(webview);
+    WebKitWebFrame *frame = webkit_web_view_get_main_frame(client.gui.webview);
 #ifdef ENABLE_COOKIE_SUPPORT
     /* Headers. */
-    g_signal_connect_after(G_OBJECT(session), "request-started", G_CALLBACK(new_generic_request), NULL);
+    g_signal_connect_after(G_OBJECT(client.net.session), "request-started", G_CALLBACK(new_generic_request), NULL);
 #endif
     /* Accept-language header */
-    g_object_set(G_OBJECT(session), "accept-language", acceptlanguage, NULL);
+    g_object_set(G_OBJECT(client.net.session), "accept-language", acceptlanguage, NULL);
     /* window */
-    g_object_connect(G_OBJECT(window),
+    g_object_connect(G_OBJECT(client.gui.window),
         "signal::destroy",                              G_CALLBACK(window_destroyed_cb),            NULL,
     NULL);
     /* frame */
     g_signal_connect(G_OBJECT(frame),
         "scrollbars-policy-changed",                    G_CALLBACK(blank_cb),                       NULL);
     /* webview */
-    g_object_connect(G_OBJECT(webview),
+    g_object_connect(G_OBJECT(client.gui.webview),
         "signal::title-changed",                        G_CALLBACK(webview_title_changed_cb),        NULL,
         "signal::load-progress-changed",                G_CALLBACK(webview_progress_changed_cb),     NULL,
         "signal::load-committed",                       G_CALLBACK(webview_load_committed_cb),       NULL,
@@ -2627,11 +2618,11 @@ setup_signals() {
         "signal::event",                                G_CALLBACK(notify_event_cb),                 NULL,
     NULL);
     /* webview adjustment */
-    g_object_connect(G_OBJECT(adjust_v),
+    g_object_connect(G_OBJECT(client.gui.adjust_v),
         "signal::value-changed",                        G_CALLBACK(webview_scroll_cb),               NULL,
     NULL);
     /* inputbox */
-    g_object_connect(G_OBJECT(inputbox),
+    g_object_connect(G_OBJECT(client.gui.inputbox),
         "signal::activate",                             G_CALLBACK(inputbox_activate_cb),            NULL,
         "signal::key-press-event",                      G_CALLBACK(inputbox_keypress_cb),            NULL,
         "signal::key-release-event",                    G_CALLBACK(inputbox_keyrelease_cb),          NULL,
@@ -2640,7 +2631,7 @@ setup_signals() {
 #endif
     NULL);
     /* inspector */
-    g_signal_connect(G_OBJECT(inspector),
+    g_signal_connect(G_OBJECT(client.gui.inspector),
         "inspect-web-view",                             G_CALLBACK(inspector_inspect_web_view_cb),   NULL);
 }
 
@@ -2675,22 +2666,21 @@ scripts_run_user_file() {
 void
 setup_cookies()
 {
-    if (file_cookie_jar)
-        g_object_unref(file_cookie_jar);
+    Network *net = &client.net;
+    if (net->file_cookie_jar)
+        g_object_unref(net->file_cookie_jar);
 
-    if (session_cookie_jar)
-		g_object_unref(session_cookie_jar);
+    if (net->session_cookie_jar)
+		g_object_unref(net->session_cookie_jar);
 
-	session_cookie_jar = soup_cookie_jar_new();
+	net->session_cookie_jar = soup_cookie_jar_new();
 
-	cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
+	net->cookie_store = g_strdup_printf(COOKIES_STORAGE_FILENAME);
 
 	load_all_cookies();
 
-	g_signal_connect(G_OBJECT(file_cookie_jar), "changed",
+	g_signal_connect(G_OBJECT(net->file_cookie_jar), "changed",
 			G_CALLBACK(update_cookie_jar), NULL);
-
-	return;
 }
 
 /* TA:  XXX - we should be using this callback for any header-requests we
@@ -2721,7 +2711,7 @@ char *
 get_cookies(SoupURI *soup_uri) {
 	char *cookie_str;
 
-	cookie_str = soup_cookie_jar_get_cookies(file_cookie_jar, soup_uri, TRUE);
+	cookie_str = soup_cookie_jar_get_cookies(client.net.file_cookie_jar, soup_uri, TRUE);
 
 	return cookie_str;
 }
@@ -2738,12 +2728,12 @@ handle_cookie_request(SoupMessage *soup_msg, gpointer unused)
 		SoupDate *soup_date;
 		cookie = soup_cookie_copy((SoupCookie *)resp_cookie->data);
 
-		if (cookie_timeout && cookie->expires == NULL) {
-			soup_date = soup_date_new_from_time_t(time(NULL) + cookie_timeout * 10);
+		if (client.config.cookie_timeout && cookie->expires == NULL) {
+			soup_date = soup_date_new_from_time_t(time(NULL) + client.config.cookie_timeout * 10);
 			soup_cookie_set_expires(cookie, soup_date);
 			soup_date_free(soup_date);
 		}
-		soup_cookie_jar_add_cookie(file_cookie_jar, cookie);
+		soup_cookie_jar_add_cookie(client.net.file_cookie_jar, cookie);
 	}
 
 	soup_cookies_free(cookie_list);
@@ -2762,7 +2752,7 @@ update_cookie_jar(SoupCookieJar *jar, SoupCookie *old, SoupCookie *new)
 	SoupCookie *copy;
 	copy = soup_cookie_copy(new);
 
-	soup_cookie_jar_add_cookie(session_cookie_jar, copy);
+	soup_cookie_jar_add_cookie(client.net.session_cookie_jar, copy);
 
 	return;
 }
@@ -2770,17 +2760,18 @@ update_cookie_jar(SoupCookieJar *jar, SoupCookie *old, SoupCookie *new)
 void
 load_all_cookies(void)
 {
+    Network *net = &client.net;
 	GSList *cookie_list;
-	file_cookie_jar = soup_cookie_jar_text_new(cookie_store, COOKIES_STORAGE_READONLY);
+	net->file_cookie_jar = soup_cookie_jar_text_new(net->cookie_store, COOKIES_STORAGE_READONLY);
 
 	/* Put them back in the session store. */
-	GSList *cookies_from_file = soup_cookie_jar_all_cookies(file_cookie_jar);
+	GSList *cookies_from_file = soup_cookie_jar_all_cookies(net->file_cookie_jar);
 	cookie_list = cookies_from_file;
 
 	for (; cookies_from_file;
 	       cookies_from_file = cookies_from_file->next)
 	{
-		soup_cookie_jar_add_cookie(session_cookie_jar, cookies_from_file->data);
+		soup_cookie_jar_add_cookie(net->session_cookie_jar, cookies_from_file->data);
 	}
 
 	soup_cookies_free(cookies_from_file);
@@ -2795,8 +2786,8 @@ void
 mop_up(void) {
 	/* Free up any nasty globals before exiting. */
 #ifdef ENABLE_COOKIE_SUPPORT
-	if (cookie_store)
-		g_free(cookie_store);
+	if (client.net.cookie_store)
+		g_free(client.net.cookie_store);
 #endif
 	return;
 }
@@ -2808,6 +2799,7 @@ main(int argc, char *argv[]) {
     static gboolean ver = false;
     static gboolean configfile_exists = FALSE;
     static const char *cfile = NULL;
+    static gchar *winid = NULL;
     static GOptionEntry opts[] = {
             { "version", 'v', 0, G_OPTION_ARG_NONE, &ver, "print version", NULL },
             { "embed", 'e', 0, G_OPTION_ARG_STRING, &winid, "embedded", NULL },
@@ -2816,6 +2808,7 @@ main(int argc, char *argv[]) {
     };
     static GError *err;
     args = argv;
+    Config *config = &client.config;
 
     /* command line argument: version */
     if (!gtk_init_with_args(&argc, &argv, "[<uri>]", opts, NULL, &err)) {
@@ -2829,30 +2822,28 @@ main(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
 
+    setup_client();
+
     if (getenv("TMPDIR")) {
       strncpy(temp_dir, getenv("TMPDIR"), MAX_SETTING_SIZE);
       temp_dir[MAX_SETTING_SIZE-1] = 0;
     }
 
     if( getenv("XDG_CONFIG_HOME") )
-        config_base = g_strdup_printf("%s", getenv("XDG_CONFIG_HOME"));
+        config->config_base = g_strdup_printf("%s", getenv("XDG_CONFIG_HOME"));
     else
-        config_base = g_strdup_printf("%s/.config/", getenv("HOME"));
+        config->config_base = g_strdup_printf("%s/.config/", getenv("HOME"));
 
     if (cfile)
-        configfile = g_strdup(cfile);
+        config->configfile = g_strdup(cfile);
     else
-        configfile = g_strdup_printf(RCFILE);
+        config->configfile = g_strdup_printf(RCFILE);
 
     if (!g_thread_supported())
         g_thread_init(NULL);
 
     if (winid) {
-        if (strncmp(winid, "0x", 2) == 0) {
-            embed = strtol(winid, NULL, 16);
-        } else {
-            embed = atoi(winid);
-        }
+        client.state.embed = strtol(winid, NULL, 16);
     }
 
     setup_modkeys();
@@ -2869,16 +2860,16 @@ main(int argc, char *argv[]) {
     /* And only warn the user, if they explicitly asked for a config on the
      * command line.
      */
-    if (!(access(configfile, F_OK) == 0) && cfile) {
+    if (!(access(config->configfile, F_OK) == 0) && cfile) {
         echo_message(Info, "Config file '%s' doesn't exist", cfile);
-    } else if ((access(configfile, F_OK) == 0))
+    } else if ((access(config->configfile, F_OK) == 0))
 	    configfile_exists = true;
 
     /* read config file */
     /* But only report errors if we failed, and the file existed. */
-    if ((SUCCESS != read_rcfile(configfile)) && configfile_exists) {
-        echo_message(Error, "Error in config file '%s'", configfile);
-        g_free(configfile);
+    if ((SUCCESS != read_rcfile(config->configfile)) && configfile_exists) {
+        echo_message(Error, "Error in config file '%s'", config->configfile);
+        g_free(config->configfile);
     }
 
     /* command line argument: URL */

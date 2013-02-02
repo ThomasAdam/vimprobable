@@ -8,7 +8,7 @@
 */
 
 /* config file */
-#define             RCFILE                      "%s/vimprobable/vimprobablerc", config_base
+#define             RCFILE                      "%s/vimprobable/vimprobablerc", client.config.config_base
 
 /* max entries in command history */
 #define COMMANDHISTSIZE 50
