@@ -2843,7 +2843,11 @@ main(int argc, char *argv[]) {
         g_thread_init(NULL);
 
     if (winid) {
-        client.state.embed = strtol(winid, NULL, 16);
+        if (strncmp(winid, "0x", 2) == 0) {
+            client.state.embed = strtol(winid, NULL, 16);
+        } else {
+            client.state.embed = atoi(winid);
+        }
     }
 
     setup_modkeys();
