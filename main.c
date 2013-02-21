@@ -11,6 +11,7 @@
 */
 
 #include <X11/Xlib.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
@@ -1209,6 +1210,7 @@ open_arg(const Arg *arg) {
     Arg a = { .i = NavigationReload };
     int len;
     char *search_uri, *search_term;
+    struct stat statbuf;
 
     if (client.state.embed) {
         gchar winid[64];
@@ -1259,10 +1261,17 @@ open_arg(const Arg *arg) {
                     ++s;
                 }
                 *p = '\0';
-            } else if (strcspn(s, "/") == 0 || strcspn(s, "./") == 0) {  /* prepend "file://" */
-                new = g_malloc(sizeof("file://") + len);
-                strcpy(new, "file://");
-                memcpy(&new[sizeof("file://") - 1], s, len + 1);
+            } else if (!stat(s, &statbuf))  {                       /* prepend "file://" */
+                char *rpath = realpath(s, NULL);
+                if (rpath != NULL) {
+                    len = strlen(rpath);
+                    new = g_malloc(sizeof("file://") + len);
+                    sprintf(new, "file://%s", rpath);
+                    free(rpath);
+                } else {
+                    new = g_malloc(sizeof("file://") + len);
+                    sprintf(new, "file://%s", s);
+                }
             } else if (p || !strchr(s, '.')) {                      /* whitespaces or no dot? */
                 search_uri = find_uri_for_searchengine(defaultsearch);
                 if (search_uri != NULL) {
