@@ -23,7 +23,7 @@ void add_modkeys(char key);
 
 void save_command_history(char *line)
 {
-    GList *ch = client.state.commandhistory;
+    State *s = &client.state;
 	char *c = line;
 
 	while (isspace(*c) && *c)
@@ -31,11 +31,11 @@ void save_command_history(char *line)
 	if (!strlen(c))
 		return;
 
-    if (COMMANDHISTSIZE <= g_list_length(ch)) {
+    if (COMMANDHISTSIZE <= g_list_length(s->commandhistory)) {
         /* if list is too long - remove items from beginning */
-        ch = g_list_delete_link(ch, g_list_first(ch));
+        s->commandhistory = g_list_delete_link(s->commandhistory, g_list_first(s->commandhistory));
     }
-    ch = g_list_append(ch, g_strdup(c));
+    s->commandhistory = g_list_append(s->commandhistory, g_strdup(c));
 }
 
 gboolean
