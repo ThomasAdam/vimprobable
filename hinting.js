@@ -297,11 +297,7 @@ function Hints() {
             }
             if (j === 1 && elem.style.display != "none" && elem.style.visibility != "hidden") {
                 elem.focus();
-                tag = elem.nodeName.toLowerCase();
-                if (tag == "textarea" || tag == "input") {
-                    return "insert;";
-                }
-                break;
+                return "insert;";
             }
             if (elem == document.activeElement) {
                 j = 1;
@@ -311,10 +307,7 @@ function Hints() {
         /* no appropriate field found focused - focus the first one */
         if (j === 0 && first !== null) {
             first.focus();
-            tag = elem.nodeName.toLowerCase();
-            if (tag == "textarea" || tag == "input") {
-                return "insert;";
-            }
+            return "insert;";
         }
     };
 
