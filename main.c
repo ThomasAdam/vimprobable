@@ -2643,9 +2643,7 @@ setup_signals() {
         "signal::activate",                             G_CALLBACK(inputbox_activate_cb),            NULL,
         "signal::key-press-event",                      G_CALLBACK(inputbox_keypress_cb),            NULL,
         "signal::key-release-event",                    G_CALLBACK(inputbox_keyrelease_cb),          NULL,
-#ifdef ENABLE_INCREMENTAL_SEARCH
         "signal::changed",                              G_CALLBACK(inputbox_changed_cb),             NULL,
-#endif
     NULL);
     /* inspector */
     g_signal_connect(G_OBJECT(client.gui.inspector),
