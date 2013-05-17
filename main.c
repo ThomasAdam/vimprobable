@@ -1957,8 +1957,6 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
     fclose(fp);
 
     jsapi_evaluate_script(set_value_js->str, &value, &message);
-    g_free(value);
-    g_free(message);
 
     /* Fall through, error and normal exit are identical */
 error_exit:
