@@ -471,7 +471,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     char *text;
     guint16 length = gtk_entry_get_text_length(entry);
     Arg a;
-    gboolean success = FALSE, forward = FALSE;
+    gboolean forward = FALSE;
 
     a.i = HideCompletion;
     complete(&a);
@@ -484,7 +484,7 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
     gtk_widget_grab_focus(GTK_WIDGET(gui->webview));
 
     if (length > 1 && text[0] == ':') {
-        success = process_line((text + 1));
+        process_line((text + 1));
     } else if (length > 1 && ((forward = text[0] == '/') || text[0] == '?')) {
         webkit_web_view_unmark_text_matches(gui->webview);
 #ifdef ENABLE_MATCH_HIGHLITING
