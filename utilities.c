@@ -316,7 +316,9 @@ process_colon(char *alias, char *cmd) {
         fprintf(stderr, "Memory exhausted while saving new command.\n");
         exit(EXIT_FAILURE);
     }
-    a->alias = ++alias;
+    a->alias = malloc(strlen(alias)*sizeof(char));
+    memset(a->alias, 0, strlen(alias));
+    strncpy(a->alias, (alias + 1), strlen(alias) - 1);
     a->target = cmd;
     client.config.colon_aliases = g_list_prepend(client.config.colon_aliases, a);
     return TRUE;
