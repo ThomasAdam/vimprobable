@@ -1503,6 +1503,7 @@ script(const Arg *arg) {
     jsapi_evaluate_script(arg->s, &value, &message);
     if (message) {
         set_error(message);
+        g_free(value);
         g_free(message);
         return FALSE;
     }
@@ -1795,8 +1796,10 @@ open_editor(const Arg *arg) {
 
     /* check if active element is suitable for text editing */
     jsapi_evaluate_script("document.activeElement.tagName", &value, &message);
-    if (value == NULL)
+    if (value == NULL) {
+        g_free(message);
         return FALSE;
+    }
     tag = g_strdup(value);
     if (strcmp(tag, "INPUT") == 0) {
         /* extra check: type == text */
@@ -1806,6 +1809,8 @@ open_editor(const Arg *arg) {
             g_free(message);
             return FALSE;
         }
+        g_free(value);
+        g_free(message);
     } else if (strcmp(tag, "TEXTAREA") != 0) {
         g_free(value);
         g_free(message);
@@ -1895,6 +1900,8 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
         "document.activeElement.disabled = true;"
         "document.activeElement.style.background = '#aaaaaa';"
         ,&value, &message);
+    g_free(value);
+    g_free(message);
 
     if (child_status) {
         echo_message(Error, "External editor returned with non-zero status,"
@@ -1915,6 +1922,8 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
     }
     jsapi_evaluate_script("document.activeElement.value = '';", 
         &value, &message);
+    g_free(value);
+    g_free(message);
 
     while (EOF != (char_read = fgetc(fp))) {
         if (char_read == '\n') {
@@ -1942,6 +1951,8 @@ _resume_from_editor(GPid child_pid, int child_status, gpointer data) {
     fclose(fp);
 
     jsapi_evaluate_script(set_value_js->str, &value, &message);
+    g_free(value);
+    g_free(message);
 
     /* Fall through, error and normal exit are identical */
 error_exit:
@@ -2650,10 +2661,12 @@ scripts_run_user_file() {
         gchar *value = NULL, *message = NULL;
 
         jsapi_evaluate_script(js, &value, &message);
+        g_free(js);
         if (message) {
             fprintf(stderr, "%s", message);
-            g_free(message);
         }
+        g_free(value);
+        g_free(message);
     } else {
         fprintf(stderr, "Cannot open %s: %s\n", user_scriptfile, error ? error->message : "file not found");
     }
