@@ -1557,6 +1557,16 @@ script(const Arg *arg) {
                 input(&a);
                 g_free(a.s);
             }
+        } else if (strncmp(value, "open;", 5) == 0 || strncmp(value, "tabopen;", 8) == 0) {
+            /* TODO: open element */
+            a.i = ModeNormal;
+            set(&a);
+            if (strncmp(value, "open;", 5) == 0)
+                a.i = TargetCurrent;
+            else
+                a.i = TargetNew;
+            a.s = (strchr(value, ';') + 1);
+            open_arg(&a);
         } else if (strncmp(value, "error;", 6) == 0) {
             a.i = Error;
             set(&a);

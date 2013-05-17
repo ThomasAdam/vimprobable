@@ -258,8 +258,10 @@ function Hints() {
 
         switch (mode)
         {
-            case "f": case "i": result = _open(el); break;
-            case "F": case "I": result = _openNewWindow(el); break;
+            case "f": result = _open(el); break;
+            case "F": result = _openNewWindow(el); break;
+            case "i": result = "open;" + _getElemtSource(el); break;
+            case "I": result = "tabopen;" + _getElemtSource(el); break;
             case "s": result = "save;" + _getElemtSource(el); break;
             case "y": result = "yank;" + _getElemtSource(el); break;
             case "O": result = "colon;" + _getElemtSource(el); break;
