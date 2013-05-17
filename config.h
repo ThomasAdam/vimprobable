@@ -165,6 +165,10 @@ Command commands[COMMANDSIZE] = {
     { "scrollright",                                    scroll,           {ScrollMove     | DirectionRight    | UnitLine} },
     { "scrollup",                                       scroll,           {ScrollMove     | DirectionTop      | UnitLine} },
     { "scrolldown",                                     scroll,           {ScrollMove     | DirectionBottom   | UnitLine} },
+    { "zi",                                             zoom,             {ZoomIn         | ZoomText} },
+    { "zo",                                             zoom,             {ZoomOut        | ZoomText} },
+    { "pgzi",                                           zoom,             {ZoomIn         | ZoomFullContent} },
+    { "pgzo",                                           zoom,             {ZoomOut        | ZoomFullContent} },
 };
 
 /* mouse bindings
