@@ -498,6 +498,9 @@ inputbox_activate_cb(GtkEntry *entry, gpointer user_data) {
         search(&a);
 #else
         state->search_direction = forward;
+        if (state->search_handle) {
+            g_free(state->search_handle);
+        }
         state->search_handle = g_strdup(&text[1]);
 #endif
     } else if (text[0] == '.' || text[0] == ',' || text[0] == ';') {
@@ -1371,7 +1374,9 @@ search(const Arg *arg) {
     gboolean success, direction = arg->i & DirectionPrev;
 
     if (arg->s) {
-        free(state->search_handle);
+        if (state->search_handle) {
+            g_free(state->search_handle);
+        }
         state->search_handle = g_strdup(arg->s);
     }
     if (!state->search_handle)
@@ -1406,6 +1411,7 @@ set(const Arg *arg) {
     switch (arg->i) {
     case ModeNormal:
         if (client.state.search_handle) {
+            g_free(client.state.search_handle);
             client.state.search_handle = NULL;
             webkit_web_view_unmark_text_matches(client.gui.webview);
         }
